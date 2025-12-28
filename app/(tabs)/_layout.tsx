@@ -16,8 +16,8 @@ export default function TabLayout() {
         tabBarStyle: {
           paddingLeft: 20,
           paddingRight: 20,
-          paddingTop: 20,
-          height: 100
+          paddingTop: 10,
+          height: 85
         },
       }}>
       <Tabs.Screen
@@ -27,7 +27,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }: { color: string }) => <Feather name="home" size={24} color={color} />,
         }}
       />
-      <Tabs.Screen  
+      <Tabs.Screen
         name="product"
         options={{
           title: 'Product',

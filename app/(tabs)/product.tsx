@@ -57,15 +57,16 @@ const Product = () => {
 
         const isLowStock = product.stock < 10;
         return (
-            <Text style={{ fontSize: 12, color: isLowStock ? '#D32F2F' : '#1B5E20', fontWeight: '500'}}>
+            <Text style={{ fontSize: 12, color: isLowStock ? '#D32F2F' : '#1B5E20', fontWeight: '500' }}>
                 {product.stock} in stock
             </Text>
         );
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <ScrollView style={{ paddingHorizontal: 16 }}>
+        <View>
+        <ScrollView style={{ paddingHorizontal: 20 }}>
+            <SafeAreaView style={{ flex: 1 }}>
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
                     <TouchableOpacity>
@@ -212,31 +213,32 @@ const Product = () => {
                         </View>
                     ))}
                 </View>
-            </ScrollView>
+            </SafeAreaView>
+        </ScrollView>
 
-            {/* Floating Action Button */}
-            <TouchableOpacity
-                style={{
-                    position: 'absolute',
-                    right: 24,
-                    bottom: 24,
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: '#278687',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    elevation: 4,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 3.84,
-                }}
-                onPress={() => console.log('Add new product')}
-            >
-                <MaterialIcons name="add" size={24} color="white" />
-            </TouchableOpacity>
-        </SafeAreaView>
+            {/* Floating Action Button */ }
+    <TouchableOpacity
+        style={{
+            position: 'absolute',
+            right: 24,
+            bottom: 24,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: '#278687',
+            justifyContent: 'center',
+            alignItems: 'center',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        }}
+        onPress={() => console.log('Add new product')}
+    >
+        <MaterialIcons name="add" size={24} color="white" />
+    </TouchableOpacity>
+    </View>
     );
 };
 

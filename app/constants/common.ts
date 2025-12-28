@@ -64,10 +64,51 @@ export const recentOrders = [
         items: '5 items • Wireless Earbuds 2x, Case 1x...',
         total: '$349.99',
         image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2023',
+        status: 'Processing',
+        address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+        rating: '4.2 (1.5k)',
+        customerName: 'Sarah Johnson',
+        items: '3 items • Laptop 1x, Mouse 2x',
+        total: '$1,250.50',
+        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2022',
+        status: 'Shipped',
+        address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
+        rating: '4.9 (2.1k)',
+        customerName: 'Michael Brown',
+        items: '5 items • Wireless Earbuds 2x, Case 1x...',
+        total: '$349.99',
+        image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2023',
+        status: 'Processing',
+        address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
+        rating: '4.2 (1.5k)',
+        customerName: 'Sarah Johnson',
+        items: '3 items • Laptop 1x, Mouse 2x',
+        total: '$1,250.50',
+        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2022',
+        status: 'Shipped',
+        address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
+        rating: '4.9 (2.1k)',
+        customerName: 'Michael Brown',
+        items: '5 items • Wireless Earbuds 2x, Case 1x...',
+        total: '$349.99',
+        image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
     }
 ];
 
 // product data
+// In common.ts
 export const sampleProducts: Product[] = [
     {
         id: '1',
@@ -95,5 +136,32 @@ export const sampleProducts: Product[] = [
         stock: 0,
         status: 'draft',
         image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZWFyYnVkc3xlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: '4',
+        name: 'Smart Watch Pro',
+        sku: 'SKU: SW-400',
+        price: '$249.99',
+        stock: 12,
+        status: 'active',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d2F0Y2h8ZW58MHx8MHx8fDA%3D'
+    },
+    {
+        id: '5',
+        name: 'Bluetooth Speaker',
+        sku: 'SKU: BS-500',
+        price: '$79.99',
+        stock: 8,
+        status: 'active',
+        image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Ymx1ZXRvb3RoJTIwc3BlYWtlcnxlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: '6',
+        name: 'Laptop Stand',
+        sku: 'SKU: LS-600',
+        price: '$39.99',
+        stock: 3,
+        status: 'low_stock',
+        image: 'https://images.unsplash.com/photo-1581094794329-e8f4acd3d9b7?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bGFwdG9wJTIwc3RhbmR8ZW58MHx8MHx8fDA%3D'
     }
 ];
