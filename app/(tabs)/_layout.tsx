@@ -1,33 +1,58 @@
+import { HapticTab } from '@/components/haptic-tab';
+import AntDesign from '@expo/vector-icons/AntDesign';
+import Feather from '@expo/vector-icons/Feather';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: '#278687',
         headerShown: false,
         tabBarButton: HapticTab,
+        tabBarStyle: {
+          paddingLeft: 20,
+          paddingRight: 20,
+          paddingTop: 20,
+          height: 100
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }: { color: string }) => <Feather name="home" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen  
+        name="product"
+        options={{
+          title: 'Product',
+          tabBarIcon: ({ color }: { color: string }) => <Feather name="shopping-bag" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="order"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Order',
+          tabBarIcon: ({ color }: { color: string }) => <Feather name="box" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+          tabBarIcon: ({ color }: { color: string }) => <AntDesign name="message" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }: { color: string }) => <FontAwesome5 name="user-circle" size={24} color={color} />,
         }}
       />
     </Tabs>
