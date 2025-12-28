@@ -46,17 +46,37 @@ export const recentOrders = [
         image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGFya2luZyUyMGxvdHxlbnwwfHwwfHx8MA%3D%3D'
     },
     {
-        id: 'ORD-2023',
+        id: 'ORD-2024',
+        status: 'Completed',
+        address: '4517 Washington Ave. Manchester, Kentucky 39495',
+        rating: '4.7 (1.8k)',
+        customerName: 'John Doe',
+        items: '2 items • Smart Watch 1x, Charger 1x',
+        total: '$450.00',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2026',
+        status: 'Delivered',
+        address: '3891 Ranchview Dr. Richardson, California 62639',
+        rating: '4.5 (2.3k)',
+        customerName: 'Emma Wilson',
+        items: '1 item • Gaming Console 1x',
+        total: '$499.99',
+        image: 'https://images.unsplash.com/photo-1607853202273-797f1c22a38e?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FtaW5nJTIwY29uc29sZXxlbnwwfHwwfHx8MA%3D%3D'
+    },
+    {
+        id: 'ORD-2027',
         status: 'Processing',
         address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
         rating: '4.2 (1.5k)',
         customerName: 'Sarah Johnson',
         items: '3 items • Laptop 1x, Mouse 2x',
         total: '$1,250.50',
-        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
+        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
     },
     {
-        id: 'ORD-2022',
+        id: 'ORD-2028',
         status: 'Shipped',
         address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
         rating: '4.9 (2.1k)',
@@ -66,47 +86,16 @@ export const recentOrders = [
         image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
     },
     {
-        id: 'ORD-2023',
-        status: 'Processing',
-        address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-        rating: '4.2 (1.5k)',
-        customerName: 'Sarah Johnson',
-        items: '3 items • Laptop 1x, Mouse 2x',
-        total: '$1,250.50',
-        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-        id: 'ORD-2022',
-        status: 'Shipped',
-        address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
-        rating: '4.9 (2.1k)',
-        customerName: 'Michael Brown',
-        items: '5 items • Wireless Earbuds 2x, Case 1x...',
-        total: '$349.99',
-        image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-        id: 'ORD-2023',
-        status: 'Processing',
-        address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-        rating: '4.2 (1.5k)',
-        customerName: 'Sarah Johnson',
-        items: '3 items • Laptop 1x, Mouse 2x',
-        total: '$1,250.50',
-        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
-    },
-    {
-        id: 'ORD-2022',
-        status: 'Shipped',
-        address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
-        rating: '4.9 (2.1k)',
-        customerName: 'Michael Brown',
-        items: '5 items • Wireless Earbuds 2x, Case 1x...',
-        total: '$349.99',
-        image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
+        id: 'ORD-2029',
+        status: 'Completed',
+        address: '1234 Main St. Austin, Texas 73301',
+        rating: '4.6 (1.9k)',
+        customerName: 'David Wilson',
+        items: '2 items • Smartphone 1x, Case 1x',
+        total: '$899.99',
+        image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D'
     }
 ];
-
 // product data
 // In common.ts
 export const sampleProducts: Product[] = [

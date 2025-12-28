@@ -1,22 +1,53 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import React from 'react'
+import { router } from 'expo-router'
+import React, { useState } from 'react'
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { recentOrders } from '../constants/common'
 
-const OrderTabs = () => {
-    return (
+type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Completed';
 
-        <SafeAreaView style={{ paddingHorizontal: 20 }}>
-            <View>
+interface Order {
+    id: string;
+    status: OrderStatus;
+    address: string;
+    rating: string;
+    customerName: string;
+    items: string;
+    total: string;
+    image: string;
+}
+
+const OrderTabs = () => {
+    const [activeFilter, setActiveFilter] = useState<string>('All');
+    const [searchQuery, setSearchQuery] = useState<string>('');
+
+    const filteredOrders = recentOrders.filter(order => {
+        // Filter by status
+        const statusMatch = activeFilter === 'All' || order.status === activeFilter;
+
+        // Filter by search query (customer name)
+        const searchMatch = searchQuery.trim() === '' ||
+            order.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+
+        return statusMatch && searchMatch;
+    }) as Order[];
+
+    const handleBack = () => {
+        router.back();
+    };
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleBack()}>
                         <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
                     </TouchableOpacity>
                     <Text style={{ fontSize: 18, fontWeight: '600' }}>Orders</Text>
                     <View />
                 </View>
+
                 {/* Order Search */}
                 <View style={{ marginVertical: 16 }}>
                     <TextInput placeholder="Search by name" style={{
@@ -26,17 +57,54 @@ const OrderTabs = () => {
                         padding: 16,
                         backgroundColor: '#FFF',
                         fontSize: 14
-                    }} />
+                    }} value={searchQuery}
+                        onChangeText={setSearchQuery} />
                 </View>
-                {/* This is for order list sorting */}
-                <View>
-                    <Text>Sort by</Text>
+
+                {/* This is for order list filtering */}
+                <View style={{ height: 50 }}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ alignItems: 'center' }}
+                    >
+                        {['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Completed'].map((filter) => {
+                            const isActive = activeFilter === filter;
+
+                            return (
+                                <TouchableOpacity
+                                    key={filter}
+                                    style={{
+                                        paddingVertical: 8,
+                                        paddingHorizontal: 16,
+                                        borderRadius: 8,
+                                        marginRight: 8,
+                                        backgroundColor: isActive ? '#278687' : '#deede8',
+                                    }}
+                                    onPress={() => setActiveFilter(filter)}
+                                >
+                                    <Text style={{
+                                        color: isActive ? 'white' : '#2B2B2B',
+                                        fontSize: 14,
+                                        fontWeight: isActive ? '600' : '400'
+                                    }}>
+                                        {filter}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
                 </View>
+
                 {/* this is for order list */}
-                <ScrollView style={{ marginBottom: 100 }}>
-                    <View style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                        {recentOrders.map((order: any) => (
-                            <View
+                <ScrollView
+                    style={{ flex: 1, marginTop: 16 }}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={{ gap: 12 }}>
+                        {filteredOrders.map((order: Order) => (
+                            <TouchableOpacity
                                 key={order.id}
                                 style={{
                                     backgroundColor: 'white',
@@ -49,8 +117,6 @@ const OrderTabs = () => {
                                     elevation: 2,
                                 }}
                             >
-
-
                                 <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                                     <Image
                                         source={{ uri: order.image }}
@@ -69,7 +135,9 @@ const OrderTabs = () => {
                                                 style={{
                                                     backgroundColor: order.status === 'Completed' ? '#E3F9E7' :
                                                         order.status === 'Pending' ? '#FFF3E0' :
-                                                            order.status === 'Processing' ? '#E3F2FD' : '#F3E5F5',
+                                                            order.status === 'Processing' ? '#E3F2FD' :
+                                                                order.status === 'Shipped' ? '#FFF3E0' :
+                                                                    order.status === 'Delivered' ? '#E8F5E9' : '#F3E5F5',
                                                     paddingHorizontal: 8,
                                                     paddingVertical: 2,
                                                     borderRadius: 12,
@@ -79,7 +147,9 @@ const OrderTabs = () => {
                                                     style={{
                                                         color: order.status === 'Completed' ? '#1B5E20' :
                                                             order.status === 'Pending' ? '#E65100' :
-                                                                order.status === 'Processing' ? '#0D47A1' : '#4A148C',
+                                                                order.status === 'Processing' ? '#0D47A1' :
+                                                                    order.status === 'Shipped' ? '#F57C00' :
+                                                                        order.status === 'Delivered' ? '#2E7D32' : '#4A148C',
                                                         fontSize: 10,
                                                         fontWeight: '500',
                                                     }}
@@ -114,7 +184,7 @@ const OrderTabs = () => {
                                     </View>
                                     <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>{order.total}</Text>
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 </ScrollView>
