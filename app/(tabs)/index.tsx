@@ -1,190 +1,270 @@
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { commonData } from '../constants/common';
-import { images } from '../constants/import_images';
+import { commonData, quickActions, recentOrders } from '../constants/common';
 
-// Quick actions data
-const quickActions = [
-  { id: 1, name: 'Add Product', icon: images.add_product },
-  { id: 2, name: 'Add Client', icon: images.order_icon },
-  { id: 3, name: 'Add Order', icon: images.invoice_icon },
-  { id: 4, name: 'Add Expense', icon: images.analytics_icon },
-];
+
 export default function HomeScreen() {
   return (
-    <SafeAreaView>
-      <View style={{
-        paddingLeft: 20,
-        paddingRight: 20,
-      }}>
-        {/* THIS IS FOR HOME HEADER */}
+    <ScrollView>
+      <SafeAreaView>
         <View style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingTop: 12,
-          paddingBottom: 12,
+          paddingLeft: 20,
+          paddingRight: 20,
         }}>
-          <View>
-            <Text style={{
-              fontSize: 18,
-              fontWeight: 'semibold',
-            }}>Hi, Rokey Mahmud</Text>
-            <Text style={{
-              fontSize: 14,
-            }}>Dec12,2025</Text>
-          </View>
+          {/* THIS IS FOR HOME HEADER */}
           <View style={{
             flexDirection: 'row',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 12,
+            paddingTop: 12,
+            paddingBottom: 12,
           }}>
-            <View style={{
-              backgroundColor: 'white',
-              padding: 12,
-              borderRadius: "100%",
-              borderWidth: 0.5,
-              borderColor: "#E3E6F0",
-            }}>
-              <Feather name="headphones" size={24} color="black" />
+            <View>
+              <Text style={{
+                fontSize: 18,
+                fontWeight: 'semibold',
+              }}>Hi, Rokey Mahmud</Text>
+              <Text style={{
+                fontSize: 14,
+              }}>Dec12,2025</Text>
             </View>
             <View style={{
-              backgroundColor: 'white',
-              padding: 12,
-              borderRadius: "100%",
-              borderWidth: 0.5,
-              borderColor: "#E3E6F0",
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
             }}>
-              <Ionicons name="notifications-outline" size={24} color="black" />
-            </View>
-          </View>
-        </View>
-        {/* THIS IS FOR THIS MONTHS INFO PART */}
-        <View>
-          <Text style={{
-            fontSize: 16,
-            fontWeight: '600',
-            marginBottom: 16,
-          }}>This Month</Text>
-
-          <View style={{
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 12,
-            marginBottom: 12,
-          }}>
-            {commonData.map((item, index) => (
-              <View key={index} style={{
+              <View style={{
                 backgroundColor: 'white',
-                borderRadius: 16,
-                padding: 16,
-                width: '48%',
-                gap: 6,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.05,
-                shadowRadius: 8,
-                elevation: 2,
+                padding: 12,
+                borderRadius: "100%",
+                borderWidth: 0.5,
+                borderColor: "#E3E6F0",
               }}>
-                {/* <View style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                  <View style={{
-                    backgroundColor: '#F3F6FF',
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <Feather 
-                      name={item.metric === 'Sales' ? 'dollar-sign' : 
-                            item.metric === 'Active Orders' ? 'shopping-bag' :
-                            item.metric === 'Products' ? 'package' : 'users'} 
-                      size={18} 
-                      color="#4C6FFF" 
-                    />
-                  </View>
-                 
-                </View> */}
-                <Text style={{
-                  fontSize: 14,
-                  marginBottom: 4,
-                }}>
-                  {item.metric}
-                </Text>
-                <Text style={{
-                  fontSize: 18,
-                  fontWeight: '500',
-                }}>
-                  {item.value}
-                </Text>
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 12,
-                }}>
-                  <Feather
-                    name={item.trend === 'up' ? 'trending-up' : 'trending-down'}
-                    size={12}
-                    color={item.trend === 'up' ? '#088738' : '#E83808'}
-                    style={{ marginRight: 2 }}
-                  />
-                  <Text style={{
-                    fontSize: 10,
-                    color: item.trend === 'up' ? '#088738' : '#E83808',
-                    fontWeight: '500',
-                  }}>
-                    {item.change}
-                  </Text>
-                </View>
+                <Feather name="headphones" size={24} color="black" />
               </View>
-            ))}
+              <View style={{
+                backgroundColor: 'white',
+                padding: 12,
+                borderRadius: "100%",
+                borderWidth: 0.5,
+                borderColor: "#E3E6F0",
+              }}>
+                <Ionicons name="notifications-outline" size={24} color="black" />
+              </View>
+            </View>
           </View>
-          {/* THIS IS FOR Quick Actions */}
+          {/* THIS IS FOR THIS MONTHS INFO PART */}
           <View>
             <Text style={{
               fontSize: 16,
-              fontWeight: '500',
-            }}>Quick Actions</Text>
+              fontWeight: '600',
+              marginBottom: 16,
+            }}>This Month</Text>
+
             <View style={{
               flexDirection: 'row',
-              marginTop: 10,
-              marginBottom: 10,
-              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 12,
+              marginBottom: 12,
             }}>
-              {quickActions.map((action) => (
-                <View key={action.id} style={{
-                  alignItems: 'center',
+              {commonData.map((item, index) => (
+                <View key={index} style={{
+                  backgroundColor: 'white',
+                  borderRadius: 16,
+                  padding: 16,
+                  width: '48%',
+                  gap: 6,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.05,
+                  shadowRadius: 8,
+                  elevation: 2,
                 }}>
-                  <TouchableOpacity style={{
-                    backgroundColor: "white",
-                    padding: 10,
-                    borderRadius: "100%",
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <Image source={action.icon} style={{ width: 24, height: 24 }} />
-                  </TouchableOpacity>
                   <Text style={{
-                    fontSize: 10,
-                    textAlign: 'center',
-                    marginTop: 6
+                    fontSize: 14,
+                    marginBottom: 4,
                   }}>
-                    {action.name}
+                    {item.metric}
                   </Text>
+                  <Text style={{
+                    fontSize: 18,
+                    fontWeight: '500',
+                  }}>
+                    {item.value}
+                  </Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 12,
+                  }}>
+                    <Feather
+                      name={item.trend === 'up' ? 'trending-up' : 'trending-down'}
+                      size={12}
+                      color={item.trend === 'up' ? '#088738' : '#E83808'}
+                      style={{ marginRight: 2 }}
+                    />
+                    <Text style={{
+                      fontSize: 10,
+                      color: item.trend === 'up' ? '#088738' : '#E83808',
+                      fontWeight: '500',
+                    }}>
+                      {item.change}
+                    </Text>
+                  </View>
                 </View>
               ))}
             </View>
+            {/* THIS IS FOR Quick Actions */}
+            <View>
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '500',
+              }}>Quick Actions</Text>
+              <View style={{
+                flexDirection: 'row',
+                marginTop: 10,
+                marginBottom: 10,
+                justifyContent: 'space-between',
+              }}>
+                {quickActions.map((action: any) => (
+                  <View key={action.id} style={{
+                    alignItems: 'center',
+                  }}>
+                    <TouchableOpacity style={{
+                      backgroundColor: "white",
+                      padding: 10,
+                      borderRadius: "100%",
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <Image source={action.icon} style={{ width: 24, height: 24 }} />
+                    </TouchableOpacity>
+                    <Text style={{
+                      fontSize: 10,
+                      textAlign: 'center',
+                      marginTop: 6
+                    }}>
+                      {action.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            {/* THIS IS FOR Recent Orders */}
+            <View style={{
+              marginTop: 10,
+              marginBottom: 10,
+            }}>
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}>
+                <Text style={{
+                  fontSize: 16,
+                  fontWeight: '500',
+                }}>Recent Orders</Text>
+                <TouchableOpacity onPress={() => {
+                  console.log('Navigate to orders tab');
+                }}>
+                  <Text style={{
+                    fontSize: 12,
+                    color: "#278687",
+                    fontWeight: '500',
+                  }}>View All</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ marginTop: 12, gap: 12 }}>
+                {recentOrders.slice(0, 3).map((order) => (
+                  <View
+                    key={order.id}
+                    style={{
+                      backgroundColor: 'white',
+                      borderRadius: 12,
+                      padding: 12,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 3,
+                      elevation: 2,
+                    }}
+                  >
+
+
+                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                      <Image
+                        source={{ uri: order.image }}
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 8,
+                          marginRight: 12,
+                        }}
+                        resizeMode="cover"
+                      />
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <Text style={{ color: "#2B2B2B", fontSize: 16 }}>#{order.id}</Text>
+                          <View
+                            style={{
+                              backgroundColor: order.status === 'Completed' ? '#E3F9E7' :
+                                order.status === 'Pending' ? '#FFF3E0' :
+                                  order.status === 'Processing' ? '#E3F2FD' : '#F3E5F5',
+                              paddingHorizontal: 8,
+                              paddingVertical: 2,
+                              borderRadius: 12,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: order.status === 'Completed' ? '#1B5E20' :
+                                  order.status === 'Pending' ? '#E65100' :
+                                    order.status === 'Processing' ? '#0D47A1' : '#4A148C',
+                                fontSize: 10,
+                                fontWeight: '500',
+                              }}
+                            >
+                              {order.status}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>{order.address}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Ionicons name="star" size={12} color="#FFC107" />
+                          <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.rating}</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      backgroundColor: "#eaf2f2",
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      paddingBottom: 10,
+                      paddingTop: 10,
+                      borderRadius: 6,
+                      marginTop: 8,
+                    }}>
+                      <View>
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687", }}>{order.customerName}</Text>
+                        <Text style={{ fontSize: 12, color: '#278687', }}>{order.items}</Text>
+                      </View>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>{order.total}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
           </View>
         </View>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ScrollView>
   );
 }
