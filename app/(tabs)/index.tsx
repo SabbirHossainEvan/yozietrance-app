@@ -35,7 +35,7 @@ export default function HomeScreen() {
               alignItems: 'center',
               gap: 12,
             }}>
-              <View style={{
+              <TouchableOpacity style={{
                 backgroundColor: 'white',
                 padding: 12,
                 borderRadius: "100%",
@@ -43,8 +43,8 @@ export default function HomeScreen() {
                 borderColor: "#E3E6F0",
               }}>
                 <Feather name="headphones" size={24} color="black" />
-              </View>
-              <View style={{
+              </TouchableOpacity>
+              <TouchableOpacity style={{
                 backgroundColor: 'white',
                 padding: 12,
                 borderRadius: "100%",
@@ -52,7 +52,7 @@ export default function HomeScreen() {
                 borderColor: "#E3E6F0",
               }}>
                 <Ionicons name="notifications-outline" size={24} color="black" />
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
           {/* THIS IS FOR THIS MONTHS INFO PART */}
