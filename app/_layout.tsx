@@ -1,9 +1,9 @@
+import { useColorScheme } from '@/hooks/use-color-scheme';
 import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { StatusBar } from 'react-native';
+import 'react-native-reanimated';
+import "./global.css";
 
 const CustomLightTheme: Theme = {
   ...DefaultTheme,

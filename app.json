@@ -23,6 +23,7 @@
       "package": "com.soriful420.yozietranceApp"
     },
     "web": {
+      "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
