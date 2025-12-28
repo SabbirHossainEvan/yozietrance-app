@@ -57,14 +57,14 @@ const Product = () => {
 
         const isLowStock = product.stock < 10;
         return (
-            <Text style={{ fontSize: 12, color: isLowStock ? '#D32F2F' : '#1B5E20', fontWeight: '500' }}>
+            <Text style={{ fontSize: 12, color: isLowStock ? '#D32F2F' : '#1B5E20', fontWeight: '500'}}>
                 {product.stock} in stock
             </Text>
         );
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FB' }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <ScrollView style={{ paddingHorizontal: 16 }}>
                 {/* Header */}
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
@@ -91,40 +91,6 @@ const Product = () => {
                         onChangeText={setSearchQuery}
                     />
                 </View>
-
-                {/* Filter Tabs */}
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{ marginBottom: 16 }}
-                >
-                    {['All', 'Active', 'Drafts', 'Low Stock'].map((filter) => {
-                        const filterValue = filter.toLowerCase().replace(' ', '_');
-                        const isActive = activeFilter === (filterValue === 'low_stock' ? 'low_stock' : filterValue);
-
-                        return (
-                            <TouchableOpacity
-                                key={filter}
-                                style={{
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 16,
-                                    borderRadius: 20,
-                                    marginRight: 8,
-                                    backgroundColor: isActive ? '#278687' : '#F0F0F0',
-                                }}
-                                onPress={() => setActiveFilter(filterValue === 'all' ? 'all' : filterValue as any)}
-                            >
-                                <Text style={{
-                                    color: isActive ? 'white' : '#666',
-                                    fontWeight: '500',
-                                    fontSize: 14
-                                }}>
-                                    {filter}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
 
                 {/* Summary Cards */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -161,7 +127,38 @@ const Product = () => {
                         <Text style={{ fontSize: 18, fontWeight: '600', color: '#D32F2F' }}>{lowStockCount}</Text>
                     </View>
                 </View>
+                {/* Filter Tabs */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginBottom: 16 }}
+                >
+                    {['All', 'Active', 'Drafts', 'Low Stock'].map((filter) => {
+                        const filterValue = filter.toLowerCase().replace(' ', '_');
+                        const isActive = activeFilter === (filterValue === 'low_stock' ? 'low_stock' : filterValue);
 
+                        return (
+                            <TouchableOpacity
+                                key={filter}
+                                style={{
+                                    paddingVertical: 8,
+                                    paddingHorizontal: 16,
+                                    borderRadius: 8,
+                                    marginRight: 8,
+                                    backgroundColor: isActive ? '#278687' : '#deede8',
+                                }}
+                                onPress={() => setActiveFilter(filterValue === 'all' ? 'all' : filterValue as any)}
+                            >
+                                <Text style={{
+                                    color: isActive ? 'white' : '#2B2B2B',
+                                    fontSize: 14
+                                }}>
+                                    {filter}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
                 {/* Product List */}
                 <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Inventory Items</Text>
                 <View style={{ marginBottom: 80 }}>
@@ -185,16 +182,15 @@ const Product = () => {
                             <Image
                                 source={{ uri: product.image }}
                                 style={{
-                                    width: 60,
-                                    height: 60,
+                                    width: 85,
+                                    height: "100%",
                                     borderRadius: 8,
                                     marginRight: 12
                                 }}
                                 resizeMode="cover"
                             />
-                            <View style={{ flex: 1 }}>
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                    <Text style={{ fontSize: 14, fontWeight: '500' }}>#{product.id}</Text>
+                            <View style={{ flex: 1, position: 'relative' }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, position: 'absolute', right: 0, bottom: 0 }}>
                                     {renderStockStatus(product)}
                                 </View>
                                 <Text
