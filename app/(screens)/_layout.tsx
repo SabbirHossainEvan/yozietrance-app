@@ -27,6 +27,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="chat_box"
+                options={{
+                    headerShown: false
+                }}
+            />
         </Stack>
     );
 }

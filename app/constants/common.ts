@@ -523,3 +523,463 @@ export const sampleProducts: Product[] = [
         }
     }
 ];
+
+// Professional Chat Data Structure
+export interface ChatMessage {
+    id: string;
+    text: string;
+    timestamp: Date;
+    isOwn: boolean;
+    type: 'text' | 'image' | 'file';
+}
+
+export interface ChatConversation {
+    id: string;
+    participant: {
+        id: string;
+        name: string;
+        avatar: string;
+        customerId?: string;
+        email?: string;
+        phone?: string;
+    };
+    lastMessage: {
+        text: string;
+        timestamp: Date;
+        isOwn: boolean;
+    };
+    unreadCount: number;
+    isOnline: boolean;
+    isTyping: boolean;
+    messages: ChatMessage[];
+    orderContext?: {
+        orderId: string;
+        orderNumber: string;
+        status: string;
+    };
+    metadata: {
+        createdAt: Date;
+        updatedAt: Date;
+        isArchived: boolean;
+        isStarred: boolean;
+        tags: string[];
+    };
+}
+
+export interface SupportTicket {
+    id: string;
+    title: string;
+    description: string;
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    status: 'open' | 'in_progress' | 'resolved' | 'closed';
+    category: 'technical' | 'billing' | 'shipping' | 'general' | 'product';
+    customer: {
+        id: string;
+        name: string;
+        email: string;
+        avatar: string;
+    };
+    assignedTo?: {
+        id: string;
+        name: string;
+        avatar: string;
+    };
+    createdAt: Date;
+    updatedAt: Date;
+    messages: ChatMessage[];
+    attachments: string[];
+}
+
+// Sample Chat Conversations Data
+export const chatConversations: ChatConversation[] = [
+    {
+        id: 'chat-001',
+        participant: {
+            id: 'user-001',
+            name: 'Ronald Richards',
+            avatar: 'https://i.pravatar.cc/150?img=12',
+            customerId: '#225432',
+            email: 'ronald.richards@email.com',
+            phone: '+1-234-567-8900'
+        },
+        lastMessage: {
+            text: 'Hey, how are you doing? I wanted to check on my order status.',
+            timestamp: new Date('2025-12-30T14:30:00'),
+            isOwn: false
+        },
+        unreadCount: 2,
+        isOnline: true,
+        isTyping: false,
+        messages: [
+            {
+                id: 'msg-001',
+                text: 'Hi! I have a question about my recent order.',
+                timestamp: new Date('2025-12-30T14:25:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-002',
+                text: 'Hello! I\'d be happy to help you with your order. What\'s your order number?',
+                timestamp: new Date('2025-12-30T14:27:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-003',
+                text: 'It\'s ORD-2025. I was wondering when it will be shipped.',
+                timestamp: new Date('2025-12-30T14:28:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-004',
+                text: 'Let me check that for you... Your order is currently being processed and should ship within 24 hours.',
+                timestamp: new Date('2025-12-30T14:29:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-005',
+                text: 'Hey, how are you doing? I wanted to check on my order status.',
+                timestamp: new Date('2025-12-30T14:30:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        orderContext: {
+            orderId: 'ORD-2025',
+            orderNumber: '#ORD-2025',
+            status: 'Processing'
+        },
+        metadata: {
+            createdAt: new Date('2025-12-30T14:25:00'),
+            updatedAt: new Date('2025-12-30T14:30:00'),
+            isArchived: false,
+            isStarred: false,
+            tags: ['order-inquiry', 'processing']
+        }
+    },
+    {
+        id: 'chat-002',
+        participant: {
+            id: 'user-002',
+            name: 'Sarah Johnson',
+            avatar: 'https://i.pravatar.cc/150?img=47',
+            customerId: '#225435',
+            email: 'sarah.j@email.com',
+            phone: '+1-234-567-8901'
+        },
+        lastMessage: {
+            text: 'The order has been shipped! Thank you so much!',
+            timestamp: new Date('2025-12-30T13:15:00'),
+            isOwn: false
+        },
+        unreadCount: 1,
+        isOnline: false,
+        isTyping: false,
+        messages: [
+            {
+                id: 'msg-006',
+                text: 'Hi, I just received a notification that my order was shipped.',
+                timestamp: new Date('2025-12-30T13:10:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-007',
+                text: 'Yes, that\'s correct! Your gaming console has been shipped and should arrive in 3-5 business days.',
+                timestamp: new Date('2025-12-30T13:12:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-008',
+                text: 'The order has been shipped! Thank you so much!',
+                timestamp: new Date('2025-12-30T13:15:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        orderContext: {
+            orderId: 'ORD-2026',
+            orderNumber: '#ORD-2026',
+            status: 'Shipped'
+        },
+        metadata: {
+            createdAt: new Date('2025-12-30T13:10:00'),
+            updatedAt: new Date('2025-12-30T13:15:00'),
+            isArchived: false,
+            isStarred: true,
+            tags: ['shipping', 'delivered']
+        }
+    },
+    {
+        id: 'chat-003',
+        participant: {
+            id: 'user-003',
+            name: 'Michael Brown',
+            avatar: 'https://i.pravatar.cc/150?img=18',
+            customerId: '#225436',
+            email: 'michael.b@email.com',
+            phone: '+1-234-567-8902'
+        },
+        lastMessage: {
+            text: 'Thanks for your help! Really appreciate it.',
+            timestamp: new Date('2025-12-29T16:45:00'),
+            isOwn: false
+        },
+        unreadCount: 0,
+        isOnline: true,
+        isTyping: false,
+        messages: [
+            {
+                id: 'msg-009',
+                text: 'I need help with my laptop order. Can you help me?',
+                timestamp: new Date('2025-12-29T16:40:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-010',
+                text: 'Of course! I can help you with your laptop order. What seems to be the issue?',
+                timestamp: new Date('2025-12-29T16:42:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-011',
+                text: 'I wanted to upgrade the RAM but I\'m not sure if it\'s possible.',
+                timestamp: new Date('2025-12-29T16:43:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-012',
+                text: 'I\'ve checked your order and yes, we can upgrade the RAM to 16GB for an additional $50. Would you like me to update your order?',
+                timestamp: new Date('2025-12-29T16:44:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-013',
+                text: 'Thanks for your help! Really appreciate it.',
+                timestamp: new Date('2025-12-29T16:45:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        orderContext: {
+            orderId: 'ORD-2027',
+            orderNumber: '#ORD-2027',
+            status: 'Processing'
+        },
+        metadata: {
+            createdAt: new Date('2025-12-29T16:40:00'),
+            updatedAt: new Date('2025-12-29T16:45:00'),
+            isArchived: false,
+            isStarred: false,
+            tags: ['product-inquiry', 'upgrade']
+        }
+    },
+    {
+        id: 'chat-004',
+        participant: {
+            id: 'user-004',
+            name: 'Emily Wilson',
+            avatar: 'https://i.pravatar.cc/150?img=32',
+            customerId: '#225434',
+            email: 'emily.w@email.com',
+            phone: '+1-234-567-8903'
+        },
+        lastMessage: {
+            text: 'Can you check my order status? It should have been delivered yesterday.',
+            timestamp: new Date('2025-12-28T10:30:00'),
+            isOwn: false
+        },
+        unreadCount: 3,
+        isOnline: false,
+        isTyping: true,
+        messages: [
+            {
+                id: 'msg-014',
+                text: 'Hello, I haven\'t received my order yet. It was supposed to be delivered yesterday.',
+                timestamp: new Date('2025-12-28T10:25:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-015',
+                text: 'I\'m sorry to hear that. Let me check your tracking information right away.',
+                timestamp: new Date('2025-12-28T10:27:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-016',
+                text: 'Can you check my order status? It should have been delivered yesterday.',
+                timestamp: new Date('2025-12-28T10:30:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        orderContext: {
+            orderId: 'ORD-2026',
+            orderNumber: '#ORD-2026',
+            status: 'Delivered'
+        },
+        metadata: {
+            createdAt: new Date('2025-12-28T10:25:00'),
+            updatedAt: new Date('2025-12-28T10:30:00'),
+            isArchived: false,
+            isStarred: false,
+            tags: ['delivery-issue', 'urgent']
+        }
+    },
+    {
+        id: 'chat-005',
+        participant: {
+            id: 'user-005',
+            name: 'David Wilson',
+            avatar: 'https://i.pravatar.cc/150?img=22',
+            customerId: '#225437',
+            email: 'david.w@email.com',
+            phone: '+1-234-567-8904'
+        },
+        lastMessage: {
+            text: 'Great! The smartphone looks amazing. Thanks for the quick delivery!',
+            timestamp: new Date('2025-12-27T15:20:00'),
+            isOwn: false
+        },
+        unreadCount: 0,
+        isOnline: false,
+        isTyping: false,
+        messages: [
+            {
+                id: 'msg-017',
+                text: 'Hi, I just received my smartphone and it\'s perfect!',
+                timestamp: new Date('2025-12-27T15:15:00'),
+                isOwn: false,
+                type: 'text'
+            },
+            {
+                id: 'msg-018',
+                text: 'That\'s wonderful to hear! We\'re glad you\'re happy with your purchase.',
+                timestamp: new Date('2025-12-27T15:18:00'),
+                isOwn: true,
+                type: 'text'
+            },
+            {
+                id: 'msg-019',
+                text: 'Great! The smartphone looks amazing. Thanks for the quick delivery!',
+                timestamp: new Date('2025-12-27T15:20:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        orderContext: {
+            orderId: 'ORD-2029',
+            orderNumber: '#ORD-2029',
+            status: 'Completed'
+        },
+        metadata: {
+            createdAt: new Date('2025-12-27T15:15:00'),
+            updatedAt: new Date('2025-12-27T15:20:00'),
+            isArchived: false,
+            isStarred: true,
+            tags: ['feedback', 'satisfied']
+        }
+    }
+];
+
+// Sample Support Tickets Data
+export const supportTickets: SupportTicket[] = [
+    {
+        id: 'ticket-001',
+        title: 'Order Delivery Delay',
+        description: 'Customer reports that order ORD-2026 was supposed to be delivered yesterday but hasn\'t arrived yet.',
+        priority: 'high',
+        status: 'open',
+        category: 'shipping',
+        customer: {
+            id: 'user-004',
+            name: 'Emily Wilson',
+            email: 'emily.w@email.com',
+            avatar: 'https://i.pravatar.cc/150?img=32'
+        },
+        assignedTo: {
+            id: 'agent-001',
+            name: 'John Agent',
+            avatar: 'https://i.pravatar.cc/150?img=68'
+        },
+        createdAt: new Date('2025-12-28T10:00:00'),
+        updatedAt: new Date('2025-12-28T10:30:00'),
+        messages: [
+            {
+                id: 'ticket-msg-001',
+                text: 'I need help with my delayed order. It was supposed to be delivered yesterday.',
+                timestamp: new Date('2025-12-28T10:00:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        attachments: []
+    },
+    {
+        id: 'ticket-002',
+        title: 'Product Defect - Laptop Stand',
+        description: 'Customer received a defective laptop stand with broken adjustment mechanism.',
+        priority: 'medium',
+        status: 'in_progress',
+        category: 'product',
+        customer: {
+            id: 'user-006',
+            name: 'James Smith',
+            email: 'james.s@email.com',
+            avatar: 'https://i.pravatar.cc/150?img=45'
+        },
+        createdAt: new Date('2025-12-27T14:00:00'),
+        updatedAt: new Date('2025-12-27T16:30:00'),
+        messages: [
+            {
+                id: 'ticket-msg-002',
+                text: 'The laptop stand I received is broken. The adjustment mechanism doesn\'t work.',
+                timestamp: new Date('2025-12-27T14:00:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        attachments: ['broken-stand-photo.jpg']
+    },
+    {
+        id: 'ticket-003',
+        title: 'Billing Inquiry - Multiple Charges',
+        description: 'Customer was charged twice for the same order.',
+        priority: 'urgent',
+        status: 'resolved',
+        category: 'billing',
+        customer: {
+            id: 'user-007',
+            name: 'Lisa Anderson',
+            email: 'lisa.a@email.com',
+            avatar: 'https://i.pravatar.cc/150?img=25'
+        },
+        assignedTo: {
+            id: 'agent-002',
+            name: 'Sarah Support',
+            avatar: 'https://i.pravatar.cc/150?img=69'
+        },
+        createdAt: new Date('2025-12-26T09:00:00'),
+        updatedAt: new Date('2025-12-26T11:00:00'),
+        messages: [
+            {
+                id: 'ticket-msg-003',
+                text: 'I was charged twice for my order. Can you help me get a refund?',
+                timestamp: new Date('2025-12-26T09:00:00'),
+                isOwn: false,
+                type: 'text'
+            }
+        ],
+        attachments: ['bank-statement.pdf']
+    }
+];
