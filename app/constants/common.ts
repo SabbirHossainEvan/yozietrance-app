@@ -96,61 +96,228 @@ export const recentOrders = [
         image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D'
     }
 ];
-// product data
-// In common.ts
+// Sample products data
 export const sampleProducts: Product[] = [
     {
         id: '1',
         name: 'Wireless Noise Canceling Headphones',
-        sku: 'SKU: EC-100',
-        price: '$200.00',
-        stock: 52,
+        sku: 'EC-100',
+        price: "500",
+        stock: 123,
         status: 'active',
-        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8aGVhZHBob25lc3xlbnwwfHwwfHx8MA%3D%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e',
+            'https://images.unsplash.com/photo-1585386959984-a41552231693'
+        ],
+
+        rating: 4.8,
+        reviewsCount: 1200,
+
+        stats: {
+            onStock: 123,
+            processing: 123,
+            totalSold: 123
+        },
+
+        description:
+            'Industry-leading noise cancelling with Dual Noise Sensor technology. Next-level music with Edge-A, co-developed with Sony Music Studios Tokyo. Up to 30-hour battery life with quick charging.',
+
+        specification: {
+            brand: 'JBL',
+            model: 'Tune 720BT',
+            connectivity: 'Bluetooth / Charging cable',
+            bluetooth: '5.3',
+            colors: ['Black', 'White'],
+            weight: '220g',
+            size: '40mm',
+            chargingTime: '2 hours',
+            playtime: 'Up to 76 hours'
+        }
     },
+
     {
         id: '2',
         name: 'Smartphone X',
-        sku: 'SKU: SP-200',
-        price: '$899.99',
+        sku: 'SP-200',
+        price: "899.99",
         stock: 5,
         status: 'low_stock',
-        image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9'
+        ],
+
+        rating: 4.6,
+        reviewsCount: 980,
+
+        stats: {
+            onStock: 5,
+            processing: 2,
+            totalSold: 540
+        },
+
+        description:
+            'High-performance smartphone with OLED display, ultra-fast processor, professional camera system and long-lasting battery.',
+
+        specification: {
+            brand: 'TechX',
+            model: 'X-Pro',
+            connectivity: '5G / USB-C',
+            bluetooth: '5.2',
+            colors: ['Black', 'Blue'],
+            weight: '190g',
+            size: '6.5 inch',
+            chargingTime: '1.5 hours',
+            playtime: 'Up to 24 hours'
+        }
     },
+
     {
         id: '3',
         name: 'Wireless Earbuds Pro',
-        sku: 'SKU: EP-300',
-        price: '$149.99',
+        sku: 'EP-300',
+        price: "149.99",
         stock: 0,
         status: 'draft',
-        image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8ZWFyYnVkc3xlbnwwfHwwfHx8MA%3D%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1590658268037-6bf12165a8df'
+        ],
+
+        rating: 4.4,
+        reviewsCount: 760,
+
+        stats: {
+            onStock: 0,
+            processing: 0,
+            totalSold: 890
+        },
+
+        description:
+            'Premium wireless earbuds with immersive sound, active noise cancellation, and compact charging case.',
+
+        specification: {
+            brand: 'SoundMax',
+            model: 'Pro Buds',
+            connectivity: 'Bluetooth / Type-C',
+            bluetooth: '5.3',
+            colors: ['Black', 'White'],
+            weight: '60g',
+            size: 'In-ear',
+            chargingTime: '1 hour',
+            playtime: 'Up to 28 hours'
+        }
     },
+
     {
         id: '4',
         name: 'Smart Watch Pro',
-        sku: 'SKU: SW-400',
-        price: '$249.99',
+        sku: 'SW-400',
+        price: "249.99",
         stock: 12,
         status: 'active',
-        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8d2F0Y2h8ZW58MHx8MHx8fDA%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+        ],
+
+        rating: 4.7,
+        reviewsCount: 1500,
+
+        stats: {
+            onStock: 12,
+            processing: 4,
+            totalSold: 1020
+        },
+
+        description:
+            'Advanced smartwatch with fitness tracking, heart-rate monitoring, AMOLED display, and water resistance.',
+
+        specification: {
+            brand: 'FitTime',
+            model: 'Pro X',
+            connectivity: 'Bluetooth / Magnetic charger',
+            bluetooth: '5.1',
+            colors: ['Black', 'Silver'],
+            weight: '55g',
+            size: '1.9 inch',
+            chargingTime: '2 hours',
+            playtime: 'Up to 14 days'
+        }
     },
+
     {
         id: '5',
         name: 'Bluetooth Speaker',
-        sku: 'SKU: BS-500',
-        price: '$79.99',
+        sku: 'BS-500',
+        price: "79.99",
         stock: 8,
         status: 'active',
-        image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8Ymx1ZXRvb3RoJTIwc3BlYWtlcnxlbnwwfHwwfHx8MA%3D%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb'
+        ],
+
+        rating: 4.5,
+        reviewsCount: 640,
+
+        stats: {
+            onStock: 8,
+            processing: 3,
+            totalSold: 780
+        },
+
+        description:
+            'Portable Bluetooth speaker with deep bass, waterproof design, and long battery life.',
+
+        specification: {
+            brand: 'BoomSound',
+            model: 'BS-500',
+            connectivity: 'Bluetooth / USB',
+            bluetooth: '5.0',
+            colors: ['Red', 'Black'],
+            weight: '480g',
+            size: 'Medium',
+            chargingTime: '3 hours',
+            playtime: 'Up to 20 hours'
+        }
     },
+
     {
         id: '6',
         name: 'Laptop Stand',
-        sku: 'SKU: LS-600',
-        price: '$39.99',
+        sku: 'LS-600',
+        price: "39.99",
         stock: 3,
         status: 'low_stock',
-        image: 'https://images.unsplash.com/photo-1581094794329-e8f4acd3d9b7?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8bGFwdG9wJTIwc3RhbmR8ZW58MHx8MHx8fDA%3D'
+
+        images: [
+            'https://images.unsplash.com/photo-1581094794329-e8f4acd3d9b7'
+        ],
+
+        rating: 4.3,
+        reviewsCount: 320,
+
+        stats: {
+            onStock: 3,
+            processing: 1,
+            totalSold: 410
+        },
+
+        description:
+            'Ergonomic aluminum laptop stand with adjustable height for better posture and airflow.',
+
+        specification: {
+            brand: 'DeskPro',
+            model: 'LiftStand',
+            connectivity: 'N/A',
+            bluetooth: 'N/A',
+            colors: ['Silver'],
+            weight: '900g',
+            size: 'Adjustable',
+            chargingTime: 'N/A',
+            playtime: 'N/A'
+        }
     }
 ];

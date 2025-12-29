@@ -10,11 +10,36 @@ type Product = {
     id: string;
     name: string;
     sku: string;
-    price: string;
+    price: string; // string ই থাকবে
     stock: number;
     status: 'active' | 'draft' | 'low_stock';
-    image: string;
+
+    images: string[];
+
+    rating: number;
+    reviewsCount: number;
+
+    stats: {
+        onStock: number;
+        processing: number;
+        totalSold: number;
+    };
+
+    description: string;
+
+    specification: {
+        brand: string;
+        model: string;
+        connectivity: string;
+        bluetooth: string;
+        colors: string[];
+        weight: string;
+        size: string;
+        chargingTime: string;
+        playtime: string;
+    };
 };
+
 
 const Product = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -168,9 +193,13 @@ const Product = () => {
                     </ScrollView>
                     {/* Product List */}
                     <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Inventory Items</Text>
-                    <View style={{ marginBottom: 80 }}>
-                        {filteredProducts.map((product) => (
-                            <View
+                    <View>
+                        {filteredProducts.map((product: Product) => (
+                            <TouchableOpacity
+                                onPress={() => router.push({
+                                    pathname: '/(screens)/product_details',
+                                    params: { id: product.id }
+                                })}
                                 key={product.id}
                                 style={{
                                     backgroundColor: 'white',
@@ -187,7 +216,7 @@ const Product = () => {
                                 }}
                             >
                                 <Image
-                                    source={{ uri: product.image }}
+                                    source={{ uri: product.images[0] }}
                                     style={{
                                         width: 85,
                                         height: "100%",
@@ -216,7 +245,7 @@ const Product = () => {
                                         <Text style={{ fontSize: 14, fontWeight: '600' }}>{product.price}</Text>
                                     </View>
                                 </View>
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 </SafeAreaView>
