@@ -10,7 +10,7 @@ type Product = {
     id: string;
     name: string;
     sku: string;
-    price: string; // string ই থাকবে
+    price: string;
     stock: number;
     status: 'active' | 'draft' | 'low_stock';
 
@@ -138,7 +138,8 @@ const Product = () => {
                             elevation: 2,
                         }}>
                             <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Total value</Text>
-                            <Text style={{ fontSize: 18, fontWeight: '600' }}>${totalValue}</Text>
+                            {/* Fixed part: remove extra $ */}
+                            <Text style={{ fontSize: 18, fontWeight: '600' }}>{totalValue}</Text>
                         </View>
 
                         <View style={{
@@ -154,7 +155,8 @@ const Product = () => {
                         }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Text style={{ fontSize: 12, color: '#666' }}>Low stock items</Text>
-                                <Ionicons name="warning-outline" size={16} color="red" />                            </View>
+                                <Ionicons name="warning-outline" size={16} color="red" />
+                            </View>
                             <Text style={{ fontSize: 18, fontWeight: '600' }}>{lowStockCount}</Text>
                         </View>
                     </View>
@@ -217,33 +219,53 @@ const Product = () => {
                                 <Image
                                     source={{ uri: product.images[0] }}
                                     style={{
-                                        width: 85,
-                                        height: "100%",
+                                        width: 60,
+                                        height: 60,
                                         borderRadius: 8,
-                                        marginRight: 12
+                                        marginRight: 12,
                                     }}
-                                    resizeMode="cover"
                                 />
-                                <View style={{ flex: 1, position: 'relative' }}>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, position: 'absolute', right: 0, bottom: 0 }}>
-                                        {renderStockStatus(product)}
-                                    </View>
-                                    <Text
-                                        style={{
-                                            fontSize: 14,
-                                            fontWeight: '500',
-                                            marginBottom: 4,
-                                            flexShrink: 1
-                                        }}
-                                        numberOfLines={1}
-                                    >
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{
+                                        fontSize: 16,
+                                        fontWeight: '600',
+                                        marginBottom: 4
+                                    }}>
                                         {product.name}
                                     </Text>
-                                    <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>{product.sku}</Text>
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Text style={{ fontSize: 14, fontWeight: '600' }}>{product.price}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={{
+                                            fontSize: 14,
+                                            color: '#6B7280',
+                                            marginRight: 8
+                                        }}>
+                                            {product.sku}
+                                        </Text>
+                                        <View style={{
+                                            paddingHorizontal: 8,
+                                            paddingVertical: 2,
+                                            borderRadius: 12,
+                                            backgroundColor: product.status === 'active' ? '#D1FAE5' :
+                                                product.status === 'low_stock' ? '#FEF3C7' : '#E5E7EB',
+                                        }}>
+                                            <Text style={{
+                                                fontSize: 10,
+                                                color: product.status === 'active' ? '#065F46' :
+                                                    product.status === 'low_stock' ? '#92400E' : '#4B5563',
+                                                fontWeight: '500'
+                                            }}>
+                                                {product.status}
+                                            </Text>
+                                        </View>
                                     </View>
                                 </View>
+                                <Text style={{
+                                    fontSize: 16,
+                                    fontWeight: '700',
+                                    color: '#111827'
+                                }}>
+                                    ${product.price}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>

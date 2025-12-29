@@ -37,65 +37,267 @@ export const quickActions = [
 export const recentOrders = [
     {
         id: 'ORD-2025',
-        status: 'Pending',
-        address: '6391 Elgin St. Celina, Delaware 10299',
-        rating: '4.8 (1.2k)',
-        customerName: 'Alice Freeman',
-        items: '4 items • Wireless Headphones 3x...',
-        total: '$259.00',
-        image: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cGFya2luZyUyMGxvdHxlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2025',
+
+        customer: {
+            name: 'Ronald Richards',
+            customerId: '#225432',
+            avatar: 'https://i.pravatar.cc/150?img=12'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Wireless Headphones',
+                description: 'Lorem ipsum ultricies in tortor...',
+                price: 20,
+                quantity: 2,
+                image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e'
+            },
+            {
+                id: '2',
+                title: 'Bluetooth Speaker',
+                description: 'Lorem ipsum ultricies in tortor...',
+                price: 20,
+                quantity: 2,
+                image: 'https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb'
+            }
+        ],
+
+        payment: {
+            subtotal: 80,
+            tax: 10,
+            shipping: 0.6,
+            grandTotal: 90.6,
+            status: 'Paid',
+            method: 'Visa Credit Card ending 4242'
+        },
+
+        orderStatus: {
+            status: 'Processing',
+            location: 'Mirpur 11, Dhaka',
+            date: '22 May 2025'
+        }
     },
+
     {
         id: 'ORD-2024',
-        status: 'Completed',
-        address: '4517 Washington Ave. Manchester, Kentucky 39495',
-        rating: '4.7 (1.8k)',
-        customerName: 'John Doe',
-        items: '2 items • Smart Watch 1x, Charger 1x',
-        total: '$450.00',
-        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZHVjdHxlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2024',
+
+        customer: {
+            name: 'John Doe',
+            customerId: '#225433',
+            avatar: 'https://i.pravatar.cc/150?img=15'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Smart Watch Pro',
+                description: 'Fitness tracking smartwatch',
+                price: 200,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30'
+            },
+            {
+                id: '2',
+                title: 'Fast Charger',
+                description: 'USB-C fast charger',
+                price: 50,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0'
+            }
+        ],
+
+        payment: {
+            subtotal: 250,
+            tax: 20,
+            shipping: 5,
+            grandTotal: 275,
+            status: 'Paid',
+            method: 'MasterCard ending 2211'
+        },
+
+        orderStatus: {
+            status: 'Completed',
+            location: 'Manchester, KY',
+            date: '13 May 2025'
+        }
     },
+
     {
         id: 'ORD-2026',
-        status: 'Delivered',
-        address: '3891 Ranchview Dr. Richardson, California 62639',
-        rating: '4.5 (2.3k)',
-        customerName: 'Emma Wilson',
-        items: '1 item • Gaming Console 1x',
-        total: '$499.99',
-        image: 'https://images.unsplash.com/photo-1607853202273-797f1c22a38e?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Z2FtaW5nJTIwY29uc29sZXxlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2026',
+
+        customer: {
+            name: 'Emma Wilson',
+            customerId: '#225434',
+            avatar: 'https://i.pravatar.cc/150?img=32'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Gaming Console',
+                description: 'Next-gen gaming console',
+                price: 499.99,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1607853202273-797f1c22a38e'
+            }
+        ],
+
+        payment: {
+            subtotal: 499.99,
+            tax: 30,
+            shipping: 0,
+            grandTotal: 529.99,
+            status: 'Paid',
+            method: 'Visa ending 8899'
+        },
+
+        orderStatus: {
+            status: 'Delivered',
+            location: 'California',
+            date: '07 May 2025'
+        }
     },
+
     {
         id: 'ORD-2027',
-        status: 'Processing',
-        address: '1901 Thornridge Cir. Shiloh, Hawaii 81063',
-        rating: '4.2 (1.5k)',
-        customerName: 'Sarah Johnson',
-        items: '3 items • Laptop 1x, Mouse 2x',
-        total: '$1,250.50',
-        image: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8b2ZmaWNlJTIwZGVza3xlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2027',
+
+        customer: {
+            name: 'Sarah Johnson',
+            customerId: '#225435',
+            avatar: 'https://i.pravatar.cc/150?img=47'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Laptop',
+                description: 'High performance laptop',
+                price: 1000,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853'
+            },
+            {
+                id: '2',
+                title: 'Wireless Mouse',
+                description: 'Ergonomic mouse',
+                price: 125.25,
+                quantity: 2,
+                image: 'https://images.unsplash.com/photo-1527814050087-3793815479db'
+            }
+        ],
+
+        payment: {
+            subtotal: 1250.5,
+            tax: 80,
+            shipping: 10,
+            grandTotal: 1340.5,
+            status: 'Pending',
+            method: 'Cash on Delivery'
+        },
+
+        orderStatus: {
+            status: 'Processing',
+            location: 'Hawaii',
+            date: '16 May 2025'
+        }
     },
+
     {
         id: 'ORD-2028',
-        status: 'Shipped',
-        address: '2118 Thornridge Cir. Syracuse, Connecticut 35624',
-        rating: '4.9 (2.1k)',
-        customerName: 'Michael Brown',
-        items: '5 items • Wireless Earbuds 2x, Case 1x...',
-        total: '$349.99',
-        image: 'https://images.unsplash.com/photo-1517502884422-41eaead166d4?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y29mZmVlJTIwc2hvcHxlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2028',
+
+        customer: {
+            name: 'Michael Brown',
+            customerId: '#225436',
+            avatar: 'https://i.pravatar.cc/150?img=18'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Wireless Earbuds',
+                description: 'Noise canceling earbuds',
+                price: 70,
+                quantity: 2,
+                image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df'
+            },
+            {
+                id: '2',
+                title: 'Protective Case',
+                description: 'Silicone earbuds case',
+                price: 40,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1585386959984-a41552231693'
+            }
+        ],
+
+        payment: {
+            subtotal: 180,
+            tax: 15,
+            shipping: 5,
+            grandTotal: 200,
+            status: 'Paid',
+            method: 'Visa ending 6622'
+        },
+
+        orderStatus: {
+            status: 'Shipped',
+            location: 'Connecticut',
+            date: '14 May 2025'
+        }
     },
+
     {
         id: 'ORD-2029',
-        status: 'Completed',
-        address: '1234 Main St. Austin, Texas 73301',
-        rating: '4.6 (1.9k)',
-        customerName: 'David Wilson',
-        items: '2 items • Smartphone 1x, Case 1x',
-        total: '$899.99',
-        image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&q=80&w=1000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c21hcnRwaG9uZXxlbnwwfHwwfHx8MA%3D%3D'
+        orderNumber: '#ORD-2029',
+
+        customer: {
+            name: 'David Wilson',
+            customerId: '#225437',
+            avatar: 'https://i.pravatar.cc/150?img=22'
+        },
+
+        orderItems: [
+            {
+                id: '1',
+                title: 'Smartphone',
+                description: 'Latest generation smartphone',
+                price: 799.99,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9'
+            },
+            {
+                id: '2',
+                title: 'Phone Case',
+                description: 'Shockproof phone case',
+                price: 100,
+                quantity: 1,
+                image: 'https://images.unsplash.com/photo-1580910051074-7e54d57f1c0b'
+            }
+        ],
+
+        payment: {
+            subtotal: 899.99,
+            tax: 50,
+            shipping: 0,
+            grandTotal: 949.99,
+            status: 'Paid',
+            method: 'Visa ending 3344'
+        },
+
+        orderStatus: {
+            status: 'Completed',
+            location: 'Austin, TX',
+            date: '03 May 2025'
+        }
     }
 ];
+
 // Sample products data
 export const sampleProducts: Product[] = [
     {

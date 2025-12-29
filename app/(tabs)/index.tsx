@@ -198,11 +198,9 @@ export default function HomeScreen() {
                       elevation: 2,
                     }}
                   >
-
-
                     <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                       <Image
-                        source={{ uri: order.image }}
+                        source={{ uri: order.customer.avatar }}
                         style={{
                           width: 80,
                           height: 80,
@@ -213,12 +211,14 @@ export default function HomeScreen() {
                       />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <Text style={{ color: "#2B2B2B", fontSize: 16 }}>#{order.id}</Text>
+                          <Text style={{ color: "#2B2B2B", fontSize: 16 }}>{order.orderNumber}</Text>
                           <View
                             style={{
-                              backgroundColor: order.status === 'Completed' ? '#E3F9E7' :
-                                order.status === 'Pending' ? '#FFF3E0' :
-                                  order.status === 'Processing' ? '#E3F2FD' : '#F3E5F5',
+                              backgroundColor: order.orderStatus.status === 'Completed' ? '#E3F9E7' :
+                                order.orderStatus.status === 'Pending' ? '#FFF3E0' :
+                                  order.orderStatus.status === 'Processing' ? '#E3F2FD' :
+                                    order.orderStatus.status === 'Delivered' ? '#F3E5F5' :
+                                      order.orderStatus.status === 'Shipped' ? '#E1F5FE' : '#F3E5F5',
                               paddingHorizontal: 8,
                               paddingVertical: 2,
                               borderRadius: 12,
@@ -226,21 +226,23 @@ export default function HomeScreen() {
                           >
                             <Text
                               style={{
-                                color: order.status === 'Completed' ? '#1B5E20' :
-                                  order.status === 'Pending' ? '#E65100' :
-                                    order.status === 'Processing' ? '#0D47A1' : '#4A148C',
+                                color: order.orderStatus.status === 'Completed' ? '#1B5E20' :
+                                  order.orderStatus.status === 'Pending' ? '#E65100' :
+                                    order.orderStatus.status === 'Processing' ? '#0D47A1' :
+                                      order.orderStatus.status === 'Delivered' ? '#4A148C' :
+                                        order.orderStatus.status === 'Shipped' ? '#01579B' : '#4A148C',
                                 fontSize: 10,
                                 fontWeight: '500',
                               }}
                             >
-                              {order.status}
+                              {order.orderStatus.status}
                             </Text>
                           </View>
                         </View>
-                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>{order.address}</Text>
+                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>{order.customer.name}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Ionicons name="star" size={12} color="#FFC107" />
-                          <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.rating}</Text>
+                          <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.customer.customerId}</Text>
                         </View>
                       </View>
                     </View>
@@ -258,10 +260,10 @@ export default function HomeScreen() {
                       marginTop: 8,
                     }}>
                       <View>
-                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687", }}>{order.customerName}</Text>
-                        <Text style={{ fontSize: 12, color: '#278687', }}>{order.items}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687", }}>{order.customer.name}</Text>
+                        <Text style={{ fontSize: 12, color: '#278687', }}>{order.customer.customerId}</Text>
                       </View>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>{order.total}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>${order.payment.grandTotal}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
