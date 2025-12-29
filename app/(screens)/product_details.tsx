@@ -77,30 +77,33 @@ const ProductDetails = () => {
                         borderRadius: 12,
                         padding: 12,
                         marginVertical: 16,
+                        width: '100%',
                     }}>
                         <View style={{
                             flexDirection: 'row',
                             justifyContent: 'space-between',
                             alignItems: 'center',
                         }}>
-                            <Text style={{
-                                fontSize: 20,
-                                fontWeight: '600',
-                            }}>{product.name}</Text>
-                            <View style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 4,
-                                borderRadius: 12,
-                                backgroundColor: product.status === 'active' ? '#D1FAE5' :
-                                    product.status === 'low_stock' ? '#FEF3C7' : '#E5E7EB',
-                            }}>
-                                <Text style={{ fontSize: 12, fontWeight: '500' }}>
-                                    {product.status === 'active' ? 'Active' :
-                                        product.status === 'low_stock' ? 'Low Stock' : 'Draft'}
-                                </Text>
-                            </View>
                         </View>
-
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: '600',
+                        }}>{product.name}</Text>
+                        <View style={{
+                            paddingHorizontal: 12,
+                            paddingVertical: 4,
+                            borderRadius: 12,
+                            position: 'absolute',
+                            top: 12,
+                            right: 12,
+                            backgroundColor: product.status === 'active' ? '#D1FAE5' :
+                                product.status === 'low_stock' ? '#FEF3C7' : '#E5E7EB',
+                        }}>
+                            <Text style={{ fontSize: 12, fontWeight: '500' }}>
+                                {product.status === 'active' ? 'Active' :
+                                    product.status === 'low_stock' ? 'Low Stock' : 'Draft'}
+                            </Text>
+                        </View>
                         <Text style={{ fontSize: 14, color: '#6B7280', marginBottom: 8 }}>{product.sku}</Text>
                         <Text style={{ fontSize: 20, fontWeight: '700', color: '#111827', marginBottom: 16 }}>
                             ${product.price}

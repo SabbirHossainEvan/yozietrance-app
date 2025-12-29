@@ -15,6 +15,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="order_details"
+                options={{
+                    headerShown: false
+                }}
+            />
         </Stack>
     );
 }

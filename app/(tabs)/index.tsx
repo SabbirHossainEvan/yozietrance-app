@@ -1,5 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { commonData, quickActions, recentOrders } from '../constants/common';
@@ -180,7 +181,11 @@ export default function HomeScreen() {
               </View>
               <View style={{ marginTop: 12, gap: 12 }}>
                 {recentOrders.slice(0, 3).map((order) => (
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push({
+                      pathname: '/(screens)/order_details',
+                      params: { id: order.id }
+                    })}
                     key={order.id}
                     style={{
                       backgroundColor: 'white',
@@ -258,7 +263,7 @@ export default function HomeScreen() {
                       </View>
                       <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>{order.total}</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>

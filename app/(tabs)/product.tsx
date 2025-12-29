@@ -152,11 +152,10 @@ const Product = () => {
                             shadowRadius: 4,
                             elevation: 2,
                         }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                <Ionicons name="warning" size={16} color="#D32F2F" style={{ marginRight: 4 }} />
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Text style={{ fontSize: 12, color: '#666' }}>Low stock items</Text>
-                            </View>
-                            <Text style={{ fontSize: 18, fontWeight: '600', color: '#D32F2F' }}>{lowStockCount}</Text>
+                                <Ionicons name="warning-outline" size={16} color="red" />                            </View>
+                            <Text style={{ fontSize: 18, fontWeight: '600' }}>{lowStockCount}</Text>
                         </View>
                     </View>
                     {/* Filter Tabs */}
