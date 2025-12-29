@@ -49,15 +49,20 @@ const OrderDetails = () => {
                     <MaterialIcons name="arrow-back-ios-new" size={20} color="black" />
                 </TouchableOpacity>
                 <Text style={{ fontSize: 16, fontWeight: '600' }}>Orders {order.orderNumber}</Text>
-                <TouchableOpacity style={{
-                    backgroundColor: "#278687",
-                    padding: 8,
-                    borderRadius: 50,
-                    width: 36,
-                    height: 36,
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
+                <TouchableOpacity
+                    onPress={() => router.push({
+                        pathname: '/(screens)/export_invoice',
+                        params: { id: order.id }
+                    })}
+                    style={{
+                        backgroundColor: "#278687",
+                        padding: 8,
+                        borderRadius: 50,
+                        width: 36,
+                        height: 36,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
                     <Feather name="download" size={18} color="white" />
                 </TouchableOpacity>
             </View>
@@ -175,7 +180,6 @@ const OrderDetails = () => {
                     {/* Payment Details Section */}
                     <View style={{
                         backgroundColor: '#fff',
-
                         borderRadius: 12,
                         padding: 16,
                         shadowColor: '#000',
@@ -381,10 +385,9 @@ const OrderDetails = () => {
                                 </Text>
                             </View>
                         </View>
-                        <View>
-
-                        </View>
                     </View>
+
+                    {/* Action Buttons */}
                     <View style={{
                         flexDirection: 'row',
                         paddingBottom: 12
@@ -413,7 +416,7 @@ const OrderDetails = () => {
                             backgroundColor: '#278687',
                             marginLeft: 12,
                         }}>
-                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>Update Stutas</Text>
+                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>Update Status</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -533,4 +536,5 @@ const OrderDetails = () => {
         </SafeAreaView>
     );
 };
+
 export default OrderDetails;

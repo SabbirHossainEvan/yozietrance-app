@@ -21,6 +21,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="export_invoice"
+                options={{
+                    headerShown: false
+                }}
+            />
         </Stack>
     );
 }
