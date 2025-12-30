@@ -6,8 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SettingsScreen = () => {
     // Helper for rendering menu rows
-    const SettingItem = ({ label }: { label: string }) => (
+    const SettingItem = ({ label, onPress }: { label: string; onPress: () => void }) => (
         <TouchableOpacity
+            onPress={onPress}
             style={{
                 flexDirection: 'row',
                 justifyContent: 'space-between',
@@ -50,14 +51,14 @@ const SettingsScreen = () => {
                     paddingBottom: 30
                 }}
             >
-                {/* Menu List */}
                 <View style={{ marginBottom: 40 }}>
-                    <SettingItem label="Change Password" />
-                    <SettingItem label="About Us" />
-                    <SettingItem label="Help" />
-                    <SettingItem label="Support Requests" />
-                    <SettingItem label="Privacy Policy" />
-                    <SettingItem label="Terms of service" />
+
+                    <SettingItem label="Change Password" onPress={() => router.push('/(screens)/change_password')} />
+                    <SettingItem label="About Us" onPress={() => router.push('/(screens)/about_us')} />
+                    <SettingItem label="Help" onPress={() => router.push('/(screens)/help')} />
+                    <SettingItem label="Support Requests" onPress={() => router.push('/(screens)/support_requests')} />
+                    <SettingItem label="Privacy Policy" onPress={() => router.push('/(screens)/privacy_policy')} />
+                    <SettingItem label="Terms of service" onPress={() => router.push('/(screens)/terms_of_service')} />
                 </View>
 
                 {/* Spacer to push button to bottom if content is short */}

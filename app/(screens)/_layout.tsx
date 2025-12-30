@@ -51,6 +51,37 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="privacy_policy"
+                options={{
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="about_us"
+                options={{
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="help"
+                options={{
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="terms_of_service"
+                options={{
+                    headerShown: false
+                }}
+            />
+            <Stack.Screen
+                name="change_password"
+                options={{
+                    headerShown: false
+                }}
+            />
+
         </Stack>
     );
 }
