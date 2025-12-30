@@ -106,7 +106,7 @@ const Product = () => {
                 </View>
 
                 {/* Scrollable Content */}
-                <ScrollView 
+                <ScrollView
                     style={{ flex: 1 }}
                     showsVerticalScrollIndicator={false}
                 >
@@ -127,7 +127,7 @@ const Product = () => {
                         />
                     </View>
 
-                    {/* Summary Cards */}
+                    {/*Cards */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
                         <View style={{
                             backgroundColor: 'white',
@@ -196,7 +196,7 @@ const Product = () => {
                     </ScrollView>
 
                     {/* Product List */}
-                    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 , marginTop : 16 }}>Inventory Items</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16, marginTop: 16 }}>Inventory Items</Text>
                     <View>
                         {filteredProducts.map((product: Product) => (
                             <TouchableOpacity
@@ -209,6 +209,7 @@ const Product = () => {
                                     backgroundColor: 'white',
                                     borderRadius: 12,
                                     padding: 12,
+                                    marginHorizontal: 1,
                                     marginBottom: 12,
                                     flexDirection: 'row',
                                     alignItems: 'center',

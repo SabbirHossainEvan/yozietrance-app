@@ -13,10 +13,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: {
-          paddingLeft: 20,
-          paddingRight: 20,
           paddingTop: 10,
-          height: 85
+          height: 70
         },
       }}
     >

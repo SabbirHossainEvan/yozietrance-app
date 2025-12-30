@@ -9,6 +9,7 @@ const OrderDetails = () => {
     const { id } = useLocalSearchParams();
     const order = recentOrders.find(order => order.id === id);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
 
     if (!order) {
         return (
@@ -400,12 +401,12 @@ const OrderDetails = () => {
                             borderRadius: 16,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderWidth: 1,
+                            borderWidth: 1.7,
                             borderColor: '#FF5C5C',
                         }}>
                             <Text style={{ color: '#FF5C5C', fontWeight: '600', fontSize: 16 }}>Cancel Order</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setShowCancelModal(true)} style={{
+                        <TouchableOpacity onPress={() => setShowUpdateStatusModal(true)} style={{
                             flex: 1,
                             flexDirection: 'row',
                             gap: 8,
@@ -444,19 +445,6 @@ const OrderDetails = () => {
                         maxWidth: 320,
                         alignItems: 'center',
                     }}>
-                        {/* Warning Icon */}
-                        <View style={{
-                            width: 64,
-                            height: 64,
-                            borderRadius: 32,
-                            backgroundColor: '#FEE2E2',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            marginBottom: 16,
-                        }}>
-                            <MaterialIcons name="warning" size={32} color="#DC2626" />
-                        </View>
-
                         {/* Title */}
                         <Text style={{
                             fontSize: 20,
@@ -491,8 +479,8 @@ const OrderDetails = () => {
                                     flex: 1,
                                     paddingVertical: 14,
                                     borderRadius: 12,
-                                    borderWidth: 1,
-                                    borderColor: '#D1D5DB',
+                                    borderWidth: 1.7,
+                                    borderColor: '#FF5C5C',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}
@@ -500,7 +488,7 @@ const OrderDetails = () => {
                                 <Text style={{
                                     fontSize: 16,
                                     fontWeight: '600',
-                                    color: '#374151',
+                                    color: '#FF5C5C',
                                 }}>
                                     No, keep it
                                 </Text>
@@ -516,7 +504,7 @@ const OrderDetails = () => {
                                     flex: 1,
                                     paddingVertical: 14,
                                     borderRadius: 12,
-                                    backgroundColor: '#DC2626',
+                                    backgroundColor: '#278687',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                 }}
@@ -527,6 +515,105 @@ const OrderDetails = () => {
                                     color: '#fff',
                                 }}>
                                     Yes, cancel
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Update Status Confirmation Modal */}
+            <Modal
+                visible={showUpdateStatusModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowUpdateStatusModal(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                }}>
+                    <View style={{
+                        backgroundColor: '#fff',
+                        borderRadius: 16,
+                        padding: 24,
+                        width: '100%',
+                        maxWidth: 320,
+                        alignItems: 'center',
+                    }}>
+                        {/* Title */}
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: '600',
+                            color: '#1F2937',
+                            textAlign: 'center',
+                            marginBottom: 8,
+                        }}>
+                            Update Status?
+                        </Text>
+
+                        {/* Description */}
+                        <Text style={{
+                            fontSize: 14,
+                            color: '#6B7280',
+                            textAlign: 'center',
+                            lineHeight: 20,
+                            marginBottom: 24,
+                        }}>
+                            Are you sure you want to update the status?
+                        </Text>
+
+                        {/* Buttons */}
+                        <View style={{
+                            flexDirection: 'row',
+                            width: '100%',
+                            gap: 12,
+                        }}>
+                            <TouchableOpacity
+                                onPress={() => setShowUpdateStatusModal(false)}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 14,
+                                    borderRadius: 12,
+                                    borderWidth: 1.7,
+                                    borderColor: '#FF5C5C',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Text style={{
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    color: '#FF5C5C',
+                                }}>
+                                    Cancel
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setShowUpdateStatusModal(false);
+                                    // Handle actual update status logic here
+                                    console.log('Status updated');
+                                }}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 14,
+                                    borderRadius: 12,
+                                    backgroundColor: '#278687',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Text style={{
+                                    fontSize: 16,
+                                    fontWeight: '600',
+                                    color: '#fff',
+                                }}>
+                                    Yes
                                 </Text>
                             </TouchableOpacity>
                         </View>

@@ -1,11 +1,27 @@
 import { notifications } from '@/constants/common'
 import { MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
-import React from 'react'
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import React, { useState } from 'react'
+import { Image, Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const Notifications = () => {
+    const [notificationList, setNotificationList] = useState(notifications);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+
+    const handleDelete = () => {
+        if (selectedId) {
+            setNotificationList(prev => prev.filter(item => item.id !== selectedId));
+            setModalVisible(false);
+            setSelectedId(null);
+        }
+    };
+
+    const confirmDelete = (id: string) => {
+        setSelectedId(id);
+        setModalVisible(true);
+    };
     const handleBack = () => {
         router.back()
     }
@@ -27,8 +43,8 @@ const Notifications = () => {
                 {/* Notification List */}
                 <ScrollView showsVerticalScrollIndicator={false}>
                     <View style={{ gap: 12, paddingBottom: 20 }}>
-                        {notifications.map((notification) => (
-                            <View style={{
+                        {notificationList.map((notification) => (
+                            <TouchableOpacity onPress={() => confirmDelete(notification.id)} style={{
                                 backgroundColor: '#fff',
                                 flexDirection: 'row',
                                 padding: 16,
@@ -71,15 +87,91 @@ const Notifications = () => {
                                 </View>
 
                                 {/* Menu Option */}
-                                <TouchableOpacity>
+                                <TouchableOpacity onPress={() => confirmDelete(notification.id)}>
                                     <MaterialIcons name="more-vert" size={20} color="#8C8C8C" />
                                 </TouchableOpacity>
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 </ScrollView>
             </View>
-        </SafeAreaView>
+
+            {/* Delete Confirmation Modal */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    setModalVisible(!modalVisible);
+                }}>
+                <View style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.5)'
+                }}>
+                    <View style={{
+                        width: '80%',
+                        backgroundColor: 'white',
+                        borderRadius: 20,
+                        padding: 20,
+                        alignItems: 'center',
+                        shadowColor: '#000',
+                        shadowOffset: {
+                            width: 0,
+                            height: 2,
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 5,
+                    }}>
+                        <Text style={{
+                            marginBottom: 15,
+                            textAlign: 'center',
+                            fontSize: 18,
+                            fontWeight: '600'
+                        }}>Delete Notification</Text>
+                        <Text style={{
+                            marginBottom: 20,
+                            textAlign: 'center',
+                            color: '#666'
+                        }}>Are you sure you want to delete this notification?</Text>
+                        <View style={{ flexDirection: 'row', gap: 15 }}>
+                            <Pressable
+                                style={{
+                                    borderRadius: 10,
+                                    padding: 10,
+                                    elevation: 2,
+                                    backgroundColor: '#F0F0F0',
+                                    minWidth: 100,
+                                    alignItems: 'center'
+                                }}
+                                onPress={() => setModalVisible(false)}>
+                                <Text style={{
+                                    color: 'black',
+                                    fontWeight: '600'
+                                }}>Cancel</Text>
+                            </Pressable>
+                            <Pressable
+                                style={{
+                                    borderRadius: 10,
+                                    padding: 10,
+                                    elevation: 2,
+                                    backgroundColor: '#278687',
+                                    minWidth: 100,
+                                    alignItems: 'center'
+                                }}
+                                onPress={handleDelete}>
+                                <Text style={{
+                                    color: 'white',
+                                    fontWeight: '600'
+                                }}>Confirm</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView >
 
     )
 }
