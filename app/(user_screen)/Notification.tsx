@@ -69,7 +69,7 @@ export default function NotificationsScreen() {
             name="chevron-back"
             size={28}
             color="black"
-            onPress={() => router.back()}
+            onPress={() => router.replace("/(users)")}
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>

@@ -35,7 +35,10 @@ const VendorModal: React.FC<VendorModalProps> = ({
           <View style={styles.header}>
             <Text style={styles.title}>Enter Code</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeIcon} onPress={() => router.back()}>
+              <Text
+                style={styles.closeIcon}
+                onPress={() => router.replace("/(users)")}
+              >
                 ✕
               </Text>
             </TouchableOpacity>
