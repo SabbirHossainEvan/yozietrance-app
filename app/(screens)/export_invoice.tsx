@@ -1,9 +1,11 @@
-import { recentOrders } from '@/constants/common'
-import { MaterialIcons } from '@expo/vector-icons'
-import { router, useLocalSearchParams } from 'expo-router'
-import React from 'react'
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { recentOrders } from '@/constants/common';
+import { MaterialIcons } from '@expo/vector-icons';
+import { printToFileAsync } from 'expo-print';
+import { router, useLocalSearchParams } from 'expo-router';
+import { shareAsync } from 'expo-sharing';
+import React, { useState } from 'react';
+import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const ExportInvoice = () => {
     const { id } = useLocalSearchParams();
     const order = recentOrders.find(order => order.id === id);
@@ -16,13 +18,92 @@ const ExportInvoice = () => {
         );
     }
 
+    const [showDownloadModal, setShowDownloadModal] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+
     const handleBack = () => {
         router.back();
     };
 
     const handleDownload = () => {
-        console.log('Downloading invoice for order:', order.orderNumber);
-        // Add download functionality here
+        setShowDownloadModal(true);
+    };
+
+    const confirmDownload = async () => {
+        try {
+            setIsGenerating(true);
+            const html = `
+                <html>
+                  <head>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+                    <style>
+                        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; color: #333; }
+                        .header { display: flex; align-items: center; margin-bottom: 30px; }
+                        .avatar { width: 60px; height: 60px; border-radius: 30px; margin-right: 15px; }
+                        .customer-info h2 { margin: 0; font-size: 18px; color: #1F2937; }
+                        .customer-info p { margin: 5px 0 0; color: #6B7280; font-size: 14px; }
+                        .section-title { font-size: 16px; font-weight: bold; color: #1F2937; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+                        .item { display: flex; border: 1px solid #F3F4F6; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+                        .item img { width: 60px; height: 60px; border-radius: 4px; object-fit: cover; margin-right: 15px; }
+                        .item-details { flex: 1; }
+                        .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                        .item-name { font-weight: 600; font-size: 14px; }
+                        .item-price { font-weight: 600; }
+                        .item-desc { font-size: 12px; color: #9CA3AF; margin-bottom: 5px; }
+                        .payment-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+                        .total-row { display: flex; justify-content: space-between; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc; font-weight: bold; font-size: 16px; }
+                        .status { display: inline-block; padding: 5px 10px; background-color: #E8F5E9; color: #2E7D32; border-radius: 15px; font-size: 12px; font-weight: bold; margin-top: 20px; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="header">
+                        <img src="${order.customer.avatar}" class="avatar" />
+                        <div class="customer-info">
+                            <h2>${order.customer.name}</h2>
+                            <p>ID: ${order.customer.customerId}</p>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Order Items (#${order.orderNumber})</div>
+                    ${order.orderItems.map(item => `
+                        <div class="item">
+                            <img src="${item.image}" />
+                            <div class="item-details">
+                                <div class="item-row">
+                                    <span class="item-name">${order.orderNumber}</span>
+                                    <span class="item-price">$${item.price}</span>
+                                </div>
+                                <div class="item-desc">${item.description}</div>
+                                <div style="text-align: right; font-size: 12px; color: #6B7280;">x${item.quantity}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+
+                    <div style="margin-top: 30px;">
+                        <div class="section-title">Payment Details</div>
+                        <div class="payment-row"><span>Subtotal</span><span>$${order.payment.subtotal.toFixed(2)}</span></div>
+                        <div class="payment-row"><span>Tax (25%)</span><span>$${order.payment.tax.toFixed(2)}</span></div>
+                        <div class="payment-row"><span>Shipping</span><span>$${order.payment.shipping.toFixed(2)}</span></div>
+                        <div class="total-row"><span>Grand Total</span><span>$${order.payment.grandTotal.toFixed(2)}</span></div>
+                        
+                        <div class="status">
+                            ${order.payment.status} - ${order.payment.method}
+                        </div>
+                    </div>
+                  </body>
+                </html>
+            `;
+
+            const { uri } = await printToFileAsync({ html });
+            console.log('File has been saved to:', uri);
+            await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+            setShowDownloadModal(false);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            // Optionally handle error state here
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     return (
@@ -218,8 +299,85 @@ const ExportInvoice = () => {
                         </Text>
                     </TouchableOpacity>
                 </View>
+
             </ScrollView>
-        </SafeAreaView>
+
+            {/* Download Confirmation Modal */}
+            <Modal
+                visible={showDownloadModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowDownloadModal(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                }}>
+                    <View style={{
+                        backgroundColor: '#fff',
+                        borderRadius: 16,
+                        padding: 24,
+                        width: '100%',
+                        maxWidth: 320,
+                        alignItems: 'center',
+                    }}>
+                        <Text style={{
+                            fontSize: 20,
+                            fontWeight: '600',
+                            color: '#1F2937',
+                            marginBottom: 8,
+                        }}>
+                            Download Invoice?
+                        </Text>
+                        <Text style={{
+                            fontSize: 14,
+                            color: '#6B7280',
+                            textAlign: 'center',
+                            marginBottom: 24,
+                            lineHeight: 20,
+                        }}>
+                            Do you want to generate and download the PDF invoice for this order?
+                        </Text>
+
+                        <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+                            <TouchableOpacity
+                                onPress={() => setShowDownloadModal(false)}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 14,
+                                    borderRadius: 12,
+                                    borderWidth: 1,
+                                    borderColor: '#D1D5DB',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#374151' }}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                onPress={confirmDownload}
+                                disabled={isGenerating}
+                                style={{
+                                    flex: 1,
+                                    paddingVertical: 14,
+                                    borderRadius: 12,
+                                    backgroundColor: '#278687',
+                                    alignItems: 'center',
+                                    opacity: isGenerating ? 0.7 : 1,
+                                }}
+                            >
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                                    {isGenerating ? 'Generating...' : 'Confirm'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView >
     )
 }
 

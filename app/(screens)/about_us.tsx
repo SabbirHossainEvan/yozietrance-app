@@ -27,7 +27,7 @@ const AboutUs = () => {
         </View>
       </View>
       {/* About us content */}
-      <ScrollView style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+      <ScrollView style={{ paddingHorizontal: 20, marginTop: 10, marginBottom: 20 }}>
         <View style={{ marginBottom: 30 }}>
           <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937', marginBottom: 10 }}>
             About Us
