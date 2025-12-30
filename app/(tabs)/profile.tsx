@@ -96,7 +96,10 @@ const ProfileScreen = () => {
                     </TouchableOpacity>
 
                     {/* Settings Link */}
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
+                    <TouchableOpacity onPress={
+                        () => router.push('/(screens)/settings')
+                    }
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
                         <Ionicons name="settings-outline" size={26} color="#4B5563" />
                         <Text style={{ fontSize: 16, color: '#4B5563', marginLeft: 14, fontWeight: '500' }}>
                             Settings
