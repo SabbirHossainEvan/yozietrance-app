@@ -11,7 +11,7 @@ const ProfileScreen = () => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
             <ScrollView
                 contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 20 }}
                 showsVerticalScrollIndicator={false}
@@ -51,8 +51,8 @@ const ProfileScreen = () => {
                     {/* Personal Info Link */}
                     <TouchableOpacity onPress={
                         () => router.push('/(screens)/personal_info')
-                    } 
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
+                    }
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
                         <Ionicons name="person-outline" size={26} color="#4B5563" />
                         <Text style={{ fontSize: 16, color: '#4B5563', marginLeft: 14, fontWeight: '500' }}>
                             Personal info
@@ -85,7 +85,10 @@ const ProfileScreen = () => {
                     </Text>
 
                     {/* Permission Link */}
-                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
+                    <TouchableOpacity onPress={
+                        () => router.push('/(screens)/permission')
+                    }
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
                         <Feather name="check-circle" size={24} color="#4B5563" />
                         <Text style={{ fontSize: 16, color: '#4B5563', marginLeft: 14, fontWeight: '500' }}>
                             Permission

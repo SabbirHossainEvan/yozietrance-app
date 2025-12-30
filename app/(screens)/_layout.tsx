@@ -39,6 +39,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="permission"
+                options={{
+                    headerShown: false
+                }}
+            />
         </Stack>
     );
 }
