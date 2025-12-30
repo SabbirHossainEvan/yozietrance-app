@@ -1,11 +1,14 @@
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import React from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PersonalInfoScreen = () => {
+
     // Dynamic Data
-    const user = {
+    const [user, setUser] = useState({
         name: 'Seam Rahman',
         avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e', // Placeholder
         dob: 'May 15, 1990',
@@ -13,6 +16,38 @@ const PersonalInfoScreen = () => {
         phone: '+1 (555) 123-4567',
         idType: 'Passport',
         idNumber: 'P123456789'
+    });
+
+    // Function to handle image picker
+    const handleImagePicker = async () => {
+        // Request permissions
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (permissionResult.granted === false) {
+            Alert.alert('Permission Required', 'Please grant camera roll permissions to upload an image.');
+            return;
+        }
+
+        // Open gallery directly
+        openGallery();
+    };
+
+    // Open gallery
+    const openGallery = async () => {
+        try {
+            const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+            });
+
+            if (!result.canceled && result.assets[0]) {
+                setUser(prev => ({ ...prev, avatar: result.assets[0].uri }));
+            }
+        } catch (error) {
+            Alert.alert('Error', 'Failed to open gallery');
+        }
     };
 
     // Helper to render Info Rows
@@ -29,7 +64,7 @@ const PersonalInfoScreen = () => {
     );
 
     return (
-        <SafeAreaView style={{ flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
             {/* Header */}
             <View style={{
                 flexDirection: 'row',
@@ -38,7 +73,7 @@ const PersonalInfoScreen = () => {
                 paddingHorizontal: 20,
                 paddingVertical: 15
             }}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => router.back()}>
                     <MaterialIcons name="arrow-back-ios" size={20} color="#4B5563" />
                 </TouchableOpacity>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937' }}>Personal info</Text>
@@ -59,7 +94,7 @@ const PersonalInfoScreen = () => {
                             source={{ uri: user.avatar }}
                             style={{ width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#E5E7EB' }}
                         />
-                        <View style={{
+                        <TouchableOpacity onPress={handleImagePicker} style={{
                             position: 'absolute',
                             bottom: 5,
                             right: 5,
@@ -70,7 +105,7 @@ const PersonalInfoScreen = () => {
                             borderColor: '#fff'
                         }}>
                             <MaterialIcons name="photo-camera" size={16} color="#fff" />
-                        </View>
+                        </TouchableOpacity>
                     </View>
                     <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937', marginTop: 15 }}>
                         {user.name}
