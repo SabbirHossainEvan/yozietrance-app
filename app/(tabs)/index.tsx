@@ -177,9 +177,7 @@ export default function HomeScreen() {
                   fontSize: 16,
                   fontWeight: '500',
                 }}>Recent Orders</Text>
-                <TouchableOpacity onPress={() => {
-                  console.log('Navigate to orders tab');
-                }}>
+                <TouchableOpacity onPress={() => router.push("/(tabs)/order")}>
                   <Text style={{
                     fontSize: 12,
                     color: "#278687",

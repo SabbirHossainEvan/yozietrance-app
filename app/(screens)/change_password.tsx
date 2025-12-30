@@ -48,6 +48,8 @@ const ChangePasswordScreen = () => {
                             paddingVertical: 18,
                             fontSize: 16,
                             color: '#1F2937'
+                            , borderWidth: 1,
+                            borderColor: "#E3E6F0"
                         }}
                     />
                 </View>
@@ -69,7 +71,8 @@ const ChangePasswordScreen = () => {
                             paddingHorizontal: 15,
                             paddingVertical: 18,
                             fontSize: 16,
-                            color: '#1F2937'
+                            color: '#1F2937', borderWidth: 1,
+                            borderColor: "#E3E6F0"
                         }}
                     />
                 </View>
@@ -91,7 +94,8 @@ const ChangePasswordScreen = () => {
                             paddingHorizontal: 15,
                             paddingVertical: 18,
                             fontSize: 16,
-                            color: '#1F2937'
+                            color: '#1F2937', borderWidth: 1,
+                            borderColor: "#E3E6F0"
                         }}
                     />
                 </View>

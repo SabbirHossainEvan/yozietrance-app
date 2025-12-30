@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HelpScreen = () => {
   const [expandedItem, setExpandedItem] = useState<number | null>(null);
-  
+
   const handleBack = () => {
     router.back();
   };
@@ -66,14 +66,14 @@ const HelpScreen = () => {
           <View style={{ width: 24 }} />
         </View>
         {/* Body */}
-        <ScrollView style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+        <ScrollView>
           {faqData.map((item, index) => (
-            <View key={item.id} style={{ marginBottom: 1 }}>
+            <View key={item.id} style={{ marginVertical: 5 }}>
               <TouchableOpacity
                 onPress={() => toggleExpand(item.id)}
                 style={{
                   paddingVertical: 16,
-                  paddingHorizontal: 20,
+                  marginHorizontal: 20,
                   flexDirection: 'row',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -89,18 +89,18 @@ const HelpScreen = () => {
                     {item.question}
                   </Text>
                 </View>
-                <MaterialIcons 
-                  name="chevron-right" 
-                  size={20} 
-                  color="#6B7280" 
+                <MaterialIcons
+                  name="chevron-right"
+                  size={20}
+                  color="#6B7280"
                   style={{ transform: [{ rotate: expandedItem === item.id ? '90deg' : '0deg' }] }}
                 />
               </TouchableOpacity>
-              
+
               {expandedItem === item.id && (
                 <View style={{
                   paddingVertical: 16,
-                  paddingHorizontal: 20,
+                  marginHorizontal: 20,
                   borderBottomWidth: 1,
                   borderBottomColor: '#E5E7EB',
                 }}>
