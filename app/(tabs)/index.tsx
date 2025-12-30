@@ -8,56 +8,60 @@ import { commonData, quickActions, recentOrders } from '../constants/common';
 
 export default function HomeScreen() {
   return (
-    <ScrollView>
-      <SafeAreaView>
+
+    <SafeAreaView>
+      <View >
+        {/* THIS IS FOR HOME HEADER */}
         <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: 12,
+          paddingBottom: 12,
           paddingLeft: 20,
           paddingRight: 20,
         }}>
-          {/* THIS IS FOR HOME HEADER */}
+          <View>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'semibold',
+            }}>Hi, Rokey Mahmud</Text>
+            <Text style={{
+              fontSize: 14,
+            }}>Dec12,2025</Text>
+          </View>
           <View style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            paddingTop: 12,
-            paddingBottom: 12,
+            gap: 12,
           }}>
-            <View>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: 'semibold',
-              }}>Hi, Rokey Mahmud</Text>
-              <Text style={{
-                fontSize: 14,
-              }}>Dec12,2025</Text>
-            </View>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
+            <TouchableOpacity style={{
+              backgroundColor: 'white',
+              padding: 12,
+              borderRadius: "100%",
+              borderWidth: 0.5,
+              borderColor: "#E3E6F0",
             }}>
-              <TouchableOpacity style={{
-                backgroundColor: 'white',
-                padding: 12,
-                borderRadius: "100%",
-                borderWidth: 0.5,
-                borderColor: "#E3E6F0",
-              }}>
-                <Feather name="headphones" size={24} color="black" />
-              </TouchableOpacity>
-              <TouchableOpacity style={{
-                backgroundColor: 'white',
-                padding: 12,
-                borderRadius: "100%",
-                borderWidth: 0.5,
-                borderColor: "#E3E6F0",
-              }}>
-                <Ionicons name="notifications-outline" size={24} color="black" />
-              </TouchableOpacity>
-            </View>
+              <Feather name="headphones" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{
+              backgroundColor: 'white',
+              padding: 12,
+              borderRadius: "100%",
+              borderWidth: 0.5,
+              borderColor: "#E3E6F0",
+            }}>
+              <Ionicons name="notifications-outline" size={24} color="black" />
+            </TouchableOpacity>
           </View>
-          {/* THIS IS FOR THIS MONTHS INFO PART */}
-          <View>
+        </View>
+        {/* THIS IS FOR THIS MONTHS INFO PART */}
+        <ScrollView>
+          <View style={{
+            paddingLeft: 20,
+            paddingRight: 20,
+            paddingBottom : 140
+          }}>
             <Text style={{
               fontSize: 16,
               fontWeight: '600',
@@ -135,7 +139,7 @@ export default function HomeScreen() {
                   <View key={action.id} style={{
                     alignItems: 'center',
                   }}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={{
                         backgroundColor: "white",
                         padding: 10,
@@ -273,8 +277,8 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-        </View>
-      </SafeAreaView>
-    </ScrollView>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }
