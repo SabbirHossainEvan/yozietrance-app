@@ -2,7 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { commonData, quickActions, recentOrders } from '../constants/common';
+import { commonData, quickActions, recentOrders } from '../../constants/common';
 
 
 export default function HomeScreen() {
