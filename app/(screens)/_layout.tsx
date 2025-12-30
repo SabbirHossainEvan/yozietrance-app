@@ -81,6 +81,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="support_requests"
+                options={{
+                    headerShown: false
+                }}
+            />
 
         </Stack>
     );
