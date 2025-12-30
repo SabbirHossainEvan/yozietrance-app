@@ -42,9 +42,9 @@ export default function HomeScreen() {
               borderWidth: 0.5,
               borderColor: "#E3E6F0",
             }}>
-              <Feather name="help-circle" size={24} color="black" />
+              <Feather name="headphones" size={24} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity style={{
+            <TouchableOpacity onPress={() => router.push('/notifications')} style={{
               backgroundColor: 'white',
               padding: 12,
               borderRadius: "100%",
@@ -60,7 +60,7 @@ export default function HomeScreen() {
           <View style={{
             paddingLeft: 20,
             paddingRight: 20,
-            paddingBottom : 140
+            paddingBottom: 140
           }}>
             <Text style={{
               fontSize: 16,
@@ -75,7 +75,7 @@ export default function HomeScreen() {
               marginBottom: 12,
             }}>
               {commonData.map((item, index) => (
-                <View key={index} style={{
+                <TouchableOpacity key={index} style={{
                   backgroundColor: 'white',
                   borderRadius: 16,
                   padding: 16,
@@ -90,6 +90,7 @@ export default function HomeScreen() {
                   <Text style={{
                     fontSize: 14,
                     marginBottom: 4,
+                    fontWeight: '500',
                   }}>
                     {item.metric}
                   </Text>
@@ -120,7 +121,7 @@ export default function HomeScreen() {
                       {item.change}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
             {/* THIS IS FOR Quick Actions */}

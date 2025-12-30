@@ -22,6 +22,7 @@ export default function ScreensLayout() {
             <Stack.Screen name="change_password" />
             <Stack.Screen name="support_requests" />
             <Stack.Screen name="qr_code" />
+            <Stack.Screen name="notifications" />
         </Stack>
     );
 }

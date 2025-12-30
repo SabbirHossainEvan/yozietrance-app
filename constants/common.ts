@@ -984,3 +984,29 @@ export const supportTickets: SupportTicket[] = [
         attachments: ['bank-statement.pdf']
     }
 ];
+
+// this is notification data
+
+export const notifications = [
+    {
+        id: 'notification-001',
+        title: 'Order Shipped',
+        body: 'Your order ORD-2026 has been shipped.',
+        timestamp: new Date('2025-12-28T10:00:00'),
+        isRead: false
+    },
+    {
+        id: 'notification-002',
+        title: 'Order Delivered',
+        body: 'Your order ORD-2026 has been delivered.',
+        timestamp: new Date('2025-12-28T10:15:00'),
+        isRead: true
+    },
+    {
+        id: 'notification-003',
+        title: 'Order Shipped',
+        body: 'Your order ORD-2027 has been shipped.',
+        timestamp: new Date('2025-12-28T10:30:00'),
+        isRead: false
+    }
+];
