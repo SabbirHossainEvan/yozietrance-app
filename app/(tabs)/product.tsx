@@ -95,18 +95,22 @@ const Product = () => {
         router.back();
     };
     return (
-        <View>
-            <ScrollView style={{ paddingHorizontal: 20 }}>
-                <SafeAreaView style={{ flex: 1 }}>
-                    {/* Header */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
-                        <TouchableOpacity onPress={() => handleBack()}>
-                            <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
-                        </TouchableOpacity>
-                        <Text style={{ fontSize: 18, fontWeight: '600' }}>Products</Text>
-                        <View style={{ width: 24 }} />
-                    </View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+                {/* Header - Fixed at top */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
+                    <TouchableOpacity onPress={() => handleBack()}>
+                        <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 18, fontWeight: '600' }}>Products</Text>
+                    <View style={{ width: 24 }} />
+                </View>
 
+                {/* Scrollable Content */}
+                <ScrollView 
+                    style={{ flex: 1 }}
+                    showsVerticalScrollIndicator={false}
+                >
                     {/* Search Bar */}
                     <View style={{ marginVertical: 16 }}>
                         <TextInput
@@ -138,7 +142,6 @@ const Product = () => {
                             elevation: 2,
                         }}>
                             <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Total value</Text>
-                            {/* Fixed part: remove extra $ */}
                             <Text style={{ fontSize: 18, fontWeight: '600' }}>{totalValue}</Text>
                         </View>
 
@@ -160,11 +163,11 @@ const Product = () => {
                             <Text style={{ fontSize: 18, fontWeight: '600' }}>{lowStockCount}</Text>
                         </View>
                     </View>
+
                     {/* Filter Tabs */}
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        style={{ marginBottom: 16 }}
                     >
                         {['All', 'Active', 'Drafts', 'Low Stock'].map((filter) => {
                             const filterValue = filter.toLowerCase().replace(' ', '_');
@@ -192,8 +195,9 @@ const Product = () => {
                             );
                         })}
                     </ScrollView>
+
                     {/* Product List */}
-                    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 }}>Inventory Items</Text>
+                    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16 , marginTop : 16 }}>Inventory Items</Text>
                     <View>
                         {filteredProducts.map((product: Product) => (
                             <TouchableOpacity
@@ -269,8 +273,8 @@ const Product = () => {
                             </TouchableOpacity>
                         ))}
                     </View>
-                </SafeAreaView>
-            </ScrollView>
+                </ScrollView>
+            </View>
 
             {/* add product action Button */}
             <TouchableOpacity
@@ -294,7 +298,7 @@ const Product = () => {
             >
                 <MaterialIcons name="add" size={24} color="white" />
             </TouchableOpacity>
-        </View>
+        </SafeAreaView>
     );
 };
 
