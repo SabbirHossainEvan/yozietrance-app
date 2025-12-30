@@ -1,4 +1,4 @@
-import { recentOrders } from '@/constants/common';
+import { chatConversations, recentOrders } from '@/constants/common';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
@@ -106,17 +106,33 @@ const OrderDetails = () => {
                             </Text>
                         </View>
                     </View>
-                    <TouchableOpacity style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "#f2f8f8",
-                        padding: 12,
-                        borderRadius: 8,
-                        gap: 8,
-                        borderColor: "#E3E6F0",
-                        borderWidth: 1
-                    }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            const conversation = chatConversations.find(c =>
+                                c.participant.customerId === order.customer.customerId ||
+                                c.participant.name === order.customer.name
+                            );
+                            if (conversation) {
+                                router.push({
+                                    pathname: '/(screens)/chat_box',
+                                    params: { conversationId: conversation.id }
+                                });
+                            } else {
+                                console.log('No conversation found for this user');
+                                // Optionally handle creating a new conversation or showing an alert
+                            }
+                        }}
+                        style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "#f2f8f8",
+                            padding: 12,
+                            borderRadius: 8,
+                            gap: 8,
+                            borderColor: "#E3E6F0",
+                            borderWidth: 1
+                        }}>
                         <AntDesign name="message" size={24} color="#2B2B2B" />
                         <Text style={{ fontSize: 14, fontWeight: '500', color: '#2B2B2B' }}>Message</Text>
                     </TouchableOpacity>
