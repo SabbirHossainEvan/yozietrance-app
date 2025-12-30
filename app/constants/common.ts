@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import Product from "../(tabs)/product";
 import { images } from "./import_images";
 
@@ -29,10 +30,10 @@ export const commonData = [
 ];
 // Quick actions data
 export const quickActions = [
-    { id: 1, name: 'Add Product', icon: images.add_product },
-    { id: 2, name: 'Orders', icon: images.order_icon },
-    { id: 3, name: 'Invoices', icon: images.invoice_icon },
-    { id: 4, name: 'Analytics', icon: images.analytics_icon },
+    { id: 1, name: 'Add Product', icon: images.add_product, onPress: () => router.push('/(screens)') },
+    { id: 2, name: 'Orders', icon: images.order_icon, onPress: () => router.push('/(tabs)/order') },
+    { id: 3, name: 'Payments', icon: images.payment_icon, onPress: () => router.push('/(tabs)/order') },
+    { id: 4, name: 'My QR Code', icon: images.qr_scan, onPress: () => router.push('/(tabs)/profile') },
 ];
 export const recentOrders = [
     {

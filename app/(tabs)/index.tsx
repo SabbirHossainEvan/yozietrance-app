@@ -135,13 +135,16 @@ export default function HomeScreen() {
                   <View key={action.id} style={{
                     alignItems: 'center',
                   }}>
-                    <TouchableOpacity style={{
-                      backgroundColor: "white",
-                      padding: 10,
-                      borderRadius: "100%",
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
+                    <TouchableOpacity 
+                      style={{
+                        backgroundColor: "white",
+                        padding: 10,
+                        borderRadius: "100%",
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                      onPress={action.onPress}
+                    >
                       <Image source={action.icon} style={{ width: 24, height: 24 }} />
                     </TouchableOpacity>
                     <Text style={{
