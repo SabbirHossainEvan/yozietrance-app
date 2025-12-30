@@ -87,6 +87,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="qr_code"
+                options={{
+                    headerShown: false
+                }}
+            />
 
         </Stack>
     );
