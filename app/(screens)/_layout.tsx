@@ -33,6 +33,12 @@ export default function ScreensLayout() {
                     headerShown: false
                 }}
             />
+            <Stack.Screen
+                name="personal_info"
+                options={{
+                    headerShown: false
+                }}
+            />
         </Stack>
     );
 }
