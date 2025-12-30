@@ -1,9 +1,9 @@
+import { recentOrders } from '@/constants/common';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { recentOrders } from '../constants/common';
 
 const OrderDetails = () => {
     const { id } = useLocalSearchParams();

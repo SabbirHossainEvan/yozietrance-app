@@ -1,11 +1,10 @@
+import { sampleProducts } from '@/constants/common';
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { sampleProducts } from '../constants/common';
-
 type Product = {
     id: string;
     name: string;

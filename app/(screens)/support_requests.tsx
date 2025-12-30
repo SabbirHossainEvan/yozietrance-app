@@ -1,9 +1,9 @@
+import { images } from '@/constants/import_images'
 import { MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useState } from 'react'
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { images } from '../constants/import_images'
 
 const SupportRequests = () => {
     const [selectedIssue, setSelectedIssue] = useState('Vehicle not clean');

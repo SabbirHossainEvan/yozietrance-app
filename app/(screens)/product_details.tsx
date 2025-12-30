@@ -1,10 +1,10 @@
+import { sampleProducts } from '@/constants/common';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Feather from '@expo/vector-icons/Feather';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 import { Dimensions, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { sampleProducts } from '../constants/common';
 
 const { width } = Dimensions.get('window');
 

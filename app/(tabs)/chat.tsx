@@ -1,9 +1,9 @@
+import { chatConversations, supportTickets } from '@/constants/common';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { chatConversations, supportTickets } from '../constants/common';
 
 const ChatTabs = () => {
     const router = useRouter();
@@ -27,14 +27,14 @@ const ChatTabs = () => {
         const diff = now.getTime() - date.getTime();
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
+
         if (hours < 1) return 'Just now';
         if (hours < 24) return `${hours}h ago`;
         if (days < 7) return `${days}d ago`;
         return date.toLocaleDateString();
     };
 
-    const filteredChats = chatConversations.filter(chat => 
+    const filteredChats = chatConversations.filter(chat =>
         chat.participant.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -44,8 +44,9 @@ const ChatTabs = () => {
     );
 
     return (
-        <SafeAreaView>
-            <View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <View style={{ flex: 1 }}>
+                {/* Fixed Header */}
                 <View style={{
                     flexDirection: 'row',
                     alignItems: 'center',
@@ -57,9 +58,10 @@ const ChatTabs = () => {
                         <MaterialIcons name="arrow-back-ios-new" size={20} color="black" />
                     </TouchableOpacity>
                     <Text style={{ fontSize: 16, fontWeight: '600' }}>Chat</Text>
-                    <View></View>
+                    <View style={{ width: 20 }}></View>
                 </View>
-                {/* THIS IS FOR CHAT SEARCH */}
+
+                {/* Fixed Search Bar */}
                 <View style={{ marginVertical: 16, paddingHorizontal: 20 }}>
                     <TextInput
                         placeholder="Search by name"
@@ -75,8 +77,9 @@ const ChatTabs = () => {
                         }}
                     />
                 </View>
-                {/* THIS IS FOR CHAT AND SUPPORT PART */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20 }}>
+
+                {/* Fixed Tabs */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 16 }}>
                     <TouchableOpacity
                         onPress={() => handleTabPress('chat')}
                         style={{
@@ -86,7 +89,7 @@ const ChatTabs = () => {
                             width: '48%',
                         }}
                     >
-                        <Text style={{ color: activeTab === 'chat' ? '#fff' : '#2B2B2B' }}>Chat</Text>
+                        <Text style={{ color: activeTab === 'chat' ? '#fff' : '#2B2B2B', textAlign: 'center' }}>Chat</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => handleTabPress('support')}
@@ -97,14 +100,18 @@ const ChatTabs = () => {
                             width: '48%',
                         }}
                     >
-                        <Text style={{ color: activeTab === 'support' ? '#fff' : '#2B2B2B' }}>Support</Text>
+                        <Text style={{ color: activeTab === 'support' ? '#fff' : '#2B2B2B', textAlign: 'center' }}>Support</Text>
                     </TouchableOpacity>
                 </View>
-                {/* THIS IS FOR CHAT LIST */}
-                <View>
+
+                {/* Scrollable Content */}
+                <ScrollView
+                    style={{ flex: 1 }}
+                    contentContainerStyle={{ paddingBottom: 30 }}
+                    showsVerticalScrollIndicator={false}
+                >
                     {activeTab === 'chat' ? (
-                        <ScrollView>
-                        <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
+                        <View style={{ paddingHorizontal: 20 }}>
                             {/* Chat List Items */}
                             <View style={{ gap: 12 }}>
                                 {filteredChats.map((conversation) => (
@@ -116,6 +123,8 @@ const ChatTabs = () => {
                                             borderBottomWidth: 1,
                                             borderBottomColor: '#E3E6F0',
                                             paddingVertical: 16,
+                                            paddingHorizontal: 12,
+                                            borderRadius: 12,
                                             flexDirection: 'row',
                                             alignItems: 'center',
                                         }}
@@ -189,10 +198,8 @@ const ChatTabs = () => {
                                 ))}
                             </View>
                         </View>
-                        </ScrollView>
                     ) : (
-                        <ScrollView>
-                        <View style={{ paddingHorizontal: 20, marginTop: 20 }}>
+                        <View style={{ paddingHorizontal: 20 }}>
                             {/* Support Tickets List */}
                             <View style={{ gap: 12 }}>
                                 {filteredTickets.map((ticket) => (
@@ -220,8 +227,8 @@ const ChatTabs = () => {
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                                     <View style={{
                                                         backgroundColor: ticket.priority === 'urgent' ? '#FEE2E2' :
-                                                                       ticket.priority === 'high' ? '#FED7AA' :
-                                                                       ticket.priority === 'medium' ? '#FEF3C7' : '#E0E7FF',
+                                                            ticket.priority === 'high' ? '#FED7AA' :
+                                                                ticket.priority === 'medium' ? '#FEF3C7' : '#E0E7FF',
                                                         paddingHorizontal: 6,
                                                         paddingVertical: 2,
                                                         borderRadius: 4,
@@ -230,16 +237,16 @@ const ChatTabs = () => {
                                                             fontSize: 10,
                                                             fontWeight: '600',
                                                             color: ticket.priority === 'urgent' ? '#DC2626' :
-                                                                   ticket.priority === 'high' ? '#EA580C' :
-                                                                   ticket.priority === 'medium' ? '#D97706' : '#3730A3',
+                                                                ticket.priority === 'high' ? '#EA580C' :
+                                                                    ticket.priority === 'medium' ? '#D97706' : '#3730A3',
                                                         }}>
                                                             {ticket.priority.toUpperCase()}
                                                         </Text>
                                                     </View>
                                                     <View style={{
                                                         backgroundColor: ticket.status === 'open' ? '#DBEAFE' :
-                                                                       ticket.status === 'in_progress' ? '#FEF3C7' :
-                                                                       ticket.status === 'resolved' ? '#D1FAE5' : '#F3F4F6',
+                                                            ticket.status === 'in_progress' ? '#FEF3C7' :
+                                                                ticket.status === 'resolved' ? '#D1FAE5' : '#F3F4F6',
                                                         paddingHorizontal: 6,
                                                         paddingVertical: 2,
                                                         borderRadius: 4,
@@ -248,8 +255,8 @@ const ChatTabs = () => {
                                                             fontSize: 10,
                                                             fontWeight: '600',
                                                             color: ticket.status === 'open' ? '#1D4ED8' :
-                                                                   ticket.status === 'in_progress' ? '#D97706' :
-                                                                   ticket.status === 'resolved' ? '#065F46' : '#6B7280',
+                                                                ticket.status === 'in_progress' ? '#D97706' :
+                                                                    ticket.status === 'resolved' ? '#065F46' : '#6B7280',
                                                         }}>
                                                             {ticket.status.replace('_', ' ').toUpperCase()}
                                                         </Text>
@@ -281,9 +288,8 @@ const ChatTabs = () => {
                                 ))}
                             </View>
                         </View>
-                        </ScrollView>
                     )}
-                </View>
+                </ScrollView>
             </View>
         </SafeAreaView>
     )

@@ -1,9 +1,9 @@
+import { chatConversations, recentOrders } from '@/constants/common'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { chatConversations, recentOrders } from '../constants/common'
 
 const ChatBox = () => {
     const router = useRouter();
@@ -43,7 +43,7 @@ const ChatBox = () => {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1}}>
+        <SafeAreaView style={{ flex: 1 }}>
             {/* Header */}
             <View style={{
                 flexDirection: 'row',
@@ -262,8 +262,9 @@ const ChatBox = () => {
                         <View style={{ gap: 12, marginTop: 10 }}>
                             {recentOrders.filter((order) => order.customer.name === conversation.participant.name).length > 0 ? (
                                 recentOrders.filter((order) => order.customer.name === conversation.participant.name).map((order) => (
-                                    <View
+                                    <TouchableOpacity
                                         key={order.id}
+                                        onPress={() => router.push(`/(screens)/order_details?id=${order.id}`)}
                                         style={{
                                             backgroundColor: 'white',
                                             borderRadius: 8,
@@ -318,7 +319,7 @@ const ChatBox = () => {
                                                 {order.orderStatus.location}
                                             </Text>
                                         </View>
-                                    </View>
+                                    </TouchableOpacity>
                                 ))
                             ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 }}>
