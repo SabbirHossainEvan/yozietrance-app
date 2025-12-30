@@ -1,4 +1,4 @@
-import { FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
@@ -44,11 +44,7 @@ export default function UserSelection() {
             ]}
             onPress={() => handleSelection("user")}
           >
-            <FontAwesome5
-              name="users"
-              size={width * 0.08}
-              color={selectedRole === "user" ? "white" : "#2A8383"}
-            />
+            <Feather name="users" size={width * 0.08} color={selectedRole === "user" ? "white" : "#2A8383"} />
             <Text
               style={[
                 styles.roleText,

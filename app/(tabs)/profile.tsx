@@ -1,7 +1,7 @@
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ProfileScreen = () => {
@@ -12,8 +12,9 @@ const ProfileScreen = () => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <View
-                style={{ paddingHorizontal: 20, paddingVertical: 20 }}
+            <ScrollView
+                contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 20 }}
+                showsVerticalScrollIndicator={false}
             >
                 {/*Account Information Card*/}
                 <View style={{
@@ -126,7 +127,7 @@ const ProfileScreen = () => {
                         Log Out
                     </Text>
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 };

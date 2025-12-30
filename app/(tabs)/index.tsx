@@ -1,4 +1,4 @@
-import Feather from '@expo/vector-icons/Feather';
+import { Feather } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -42,7 +42,7 @@ export default function HomeScreen() {
               borderWidth: 0.5,
               borderColor: "#E3E6F0",
             }}>
-              <Feather name="headphones" size={24} color="black" />
+              <Feather name="help-circle" size={24} color="black" />
             </TouchableOpacity>
             <TouchableOpacity style={{
               backgroundColor: 'white',

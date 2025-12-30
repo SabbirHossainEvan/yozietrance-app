@@ -1,4 +1,5 @@
 import { images } from "@/constants/import_images";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
@@ -20,7 +21,7 @@ export default function GetStarted() {
       <StatusBar style="light" backgroundColor="#2A8B8B" translucent={false} />
 
       {/* Top Container */}
-      <View style={{ height: height * 0.65 }}>
+      <View style={{ height: height * 0.62 }}>
         <ImageBackground
           source={images.getstart_image}
           style={{ flex: 1, width: "100%", height: "120%" }}
@@ -72,6 +73,8 @@ export default function GetStarted() {
               paddingVertical: 18,
               borderRadius: 15,
               alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
               shadowColor: "#2A8B8B",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
@@ -81,17 +84,22 @@ export default function GetStarted() {
             onPress={() => router.push("/(onboarding)/location-access")}
             activeOpacity={0.8}
           >
+            <Feather name="arrow-right" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
             <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700" }}>
               Get Started
             </Text>
           </TouchableOpacity>
 
           {/* Login Link */}
-          <View style={{ flexDirection: "row", marginTop: 25 }}>
+          <View style={{ flexDirection: "row", marginTop: 25, alignItems: "center" }}>
             <Text style={{ color: "#707070", fontSize: 15 }}>
               Already have an account?{" "}
             </Text>
-            <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
+            <TouchableOpacity 
+              onPress={() => router.replace("/(auth)/login")}
+              style={{ flexDirection: "row", alignItems: "center" }}
+            >
+              <Feather name="log-in" size={16} color="#2A8B8B" style={{ marginRight: 4 }} />
               <Text
                 style={{
                   color: "#2A8B8B",
