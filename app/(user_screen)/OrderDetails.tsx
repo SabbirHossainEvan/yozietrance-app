@@ -56,12 +56,12 @@ const OrderDetails = () => {
       key: "Shipped",
     },
     {
-      label: "Out for Delivery",
+      label: "Ready For Pickup",
       date: "23 May 2025",
       location: "Mirpur 11, Dhaka",
       key: "Shipped",
     },
-    { label: "Delivered", date: "", location: "", key: "Delivered" },
+    { label: "Pickup", date: "", location: "", key: "Delivered" },
   ];
 
   const checkCompleted = (stepKey: string) => {
@@ -90,7 +90,7 @@ const OrderDetails = () => {
         <View style={styles.card}>
           <View style={styles.userInfo}>
             <Image
-              source={{ uri: "https://i.pravatar.cc/100" }}
+              source={{ uri: "https://i.@pravatar.cc/100" }}
               style={styles.avatar}
             />
             <View style={{ marginLeft: 12, flex: 1 }}>

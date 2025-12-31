@@ -1,12 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TermsCondition() {
@@ -18,14 +13,16 @@ export default function TermsCondition() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Terms & Condition</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#333" />
+            {/* <Ionicons name="close" size={24} color="#333" /> */}
           </TouchableOpacity>
         </View>
 
         <View style={styles.content}>
           <Text style={styles.welcomeText}>Welcome to Services App!</Text>
           <Text style={styles.textBody}>
-            Accessing or using our services, you agree to be bound by these Terms of Service. If you do not agree with any part of the terms, you must not use our services.
+            Accessing or using our services, you agree to be bound by these
+            Terms of Service. If you do not agree with any part of the terms,
+            you must not use our services.
           </Text>
           <Text style={styles.sectionTitle}>2. User Responsibilities</Text>
           <Text style={styles.textBody}>
@@ -37,17 +34,18 @@ export default function TermsCondition() {
           <Text style={styles.textBody}>
             • Maintain the confidentiality of your account password.
           </Text>
-          <Text style={styles.sectionTitle}>
-            3. Intellectual Property
-          </Text>
+          <Text style={styles.sectionTitle}>3. Intellectual Property</Text>
           <Text style={styles.textBody}>
-            All content, trademarks, and data on this service, including but not limited to text, graphics, logos, and images, are the property of [Your Company Name]
+            All content, trademarks, and data on this service, including but not
+            limited to text, graphics, logos, and images, are the property of
+            [Your Company Name]
           </Text>
-          <Text style={styles.sectionTitle}>
-            4. Disclaimers
-          </Text>
+          <Text style={styles.sectionTitle}>4. Disclaimers</Text>
           <Text style={styles.textBody}>
-            The service is provided on an "as is" and "as available" basis. [Your Company Name] makes no warranties, expressed or implied, regarding the operation.          </Text>
+            The service is provided on an as is and as available basis. [Your
+            Company Name] makes no warranties, expressed or implied, regarding
+            the operation.{" "}
+          </Text>
           <TouchableOpacity
             style={styles.checkboxContainer}
             onPress={() => setAccepted(!accepted)}

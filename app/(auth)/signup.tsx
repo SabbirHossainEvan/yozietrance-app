@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 
+import { router } from "expo-router";
 import { Apple, Chrome, Facebook } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -80,7 +81,12 @@ const SignUpScreen: React.FC = () => {
 
             {/* Sign Up Button */}
             <TouchableOpacity style={styles.signUpButton}>
-              <Text style={styles.signUpButtonText}>Sign Up</Text>
+              <Text
+                style={styles.signUpButtonText}
+                onPress={() => router.push("/(tabs)")}
+              >
+                Sign Up
+              </Text>
             </TouchableOpacity>
           </View>
 

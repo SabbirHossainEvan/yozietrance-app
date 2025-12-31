@@ -1,5 +1,5 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import React, { useEffect } from "react";
 import { Image, StyleSheet, View } from "react-native";
 
@@ -14,7 +14,7 @@ export default function SplashScreen() {
 
   return (
     <LinearGradient
-      colors={['#5BA5A5', '#E8F4F4', '#5BA5A5']}
+      colors={["#5BA5A5", "#E8F4F4", "#5BA5A5"]}
       locations={[0, 0.5, 1]}
       style={styles.container}
     >
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

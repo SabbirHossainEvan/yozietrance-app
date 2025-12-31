@@ -1,12 +1,329 @@
+// import { router } from "expo-router";
+// import {
+//   Bell,
+//   Package,
+//   QrCode,
+//   TrendingUp,
+//   Truck,
+//   Zap,
+// } from "lucide-react-native";
+// import React from "react";
+// import {
+//   Dimensions,
+//   Image,
+//   ScrollView,
+//   StyleSheet,
+//   Text,
+//   TouchableOpacity,
+//   View,
+// } from "react-native";
+// import { SafeAreaView } from "react-native-safe-area-context";
+
+// const { width } = Dimensions.get("window");
+
+// const Dashboard: React.FC = () => {
+//   return (
+//     <SafeAreaView style={styles.container}>
+//       <View style={styles.header}>
+//         <View style={styles.userInfo}>
+//           <TouchableOpacity
+//             onPress={() => router.push("/(user_screen)/ProfileInfoScreen")}
+//             activeOpacity={0.7}
+//           >
+//             <Image
+//               source={{
+//                 uri: "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+//               }}
+//               style={styles.avatar}
+//             />
+//           </TouchableOpacity>
+//           <View style={styles.userText}>
+//             <Text style={styles.welcomeTitle}>Welcome Back</Text>
+//             <Text style={styles.userName}>Rokey Mahmud</Text>
+//           </View>
+//         </View>
+//         <TouchableOpacity style={styles.notificationBtn}>
+//           <Bell
+//             color="#2D8C8C"
+//             size={24}
+//             onPress={() => router.replace("/(user_screen)/Notification")}
+//           />
+//         </TouchableOpacity>
+//       </View>
+
+//       <ScrollView
+//         showsVerticalScrollIndicator={false}
+//         contentContainerStyle={styles.scrollContent}
+//       >
+//         {/* Stats Grid */}
+//         <View style={styles.statsGrid}>
+//           <View style={styles.statCard}>
+//             <View
+//               style={[styles.statIconCircle, { backgroundColor: "#F0F9F9" }]}
+//             >
+//               <TrendingUp color="#2D8C8C" size={20} />
+//             </View>
+//             <Text style={styles.statNumber}>56</Text>
+//             <Text style={styles.statLabel}>Completed Order</Text>
+//           </View>
+
+//           <View style={styles.statCard}>
+//             <View
+//               style={[styles.statIconCircle, { backgroundColor: "#F0F9F9" }]}
+//             >
+//               <Zap color="#2D8C8C" size={20} />
+//             </View>
+//             <Text style={styles.statNumber}>85</Text>
+//             <Text style={styles.statLabel}>Active Orders</Text>
+//           </View>
+//         </View>
+
+//         {/* QR Scan Section */}
+//         <TouchableOpacity style={styles.qrSection}>
+//           <View style={styles.qrTextContent}>
+//             <Text style={styles.qrTitle}>Scan Vendor QR Code</Text>
+//             <Text style={styles.qrSubtitle}>
+//               Connect with local vendors instantly
+//             </Text>
+//           </View>
+//           <TouchableOpacity
+//             style={styles.qrIconBox}
+//             onPress={() => router.push("/(user_screen)/ScanQRCode")}
+//             activeOpacity={0.7}
+//           >
+//             <QrCode color="#FFFFFF" size={32} />
+//           </TouchableOpacity>
+//         </TouchableOpacity>
+
+//         {/* How It Works Section */}
+//         <View style={styles.howItWorksCard}>
+//           <Text style={styles.sectionTitleWhite}>How It Works</Text>
+//           <View style={styles.stepsList}>
+//             <Text style={styles.stepItem}>
+//               1. Scan a vendor s QR code or barcode
+//             </Text>
+//             <Text style={styles.stepItem}>
+//               2. Browse their catalog and chat directly
+//             </Text>
+//             <Text style={styles.stepItem}>
+//               3. Negotiate prices and place orders
+//             </Text>
+//             <Text style={styles.stepItem}>4. Track delivery in real-time</Text>
+//           </View>
+//         </View>
+
+//         {/* Recent Tracking Section */}
+//         <Text style={styles.sectionTitleMain}>Recent Tracking order</Text>
+//         <View style={styles.trackingCard}>
+//           <Text style={styles.orderId}>Order id : 1923838</Text>
+
+//           <View style={styles.trackingStatusRow}>
+//             <View style={styles.statusItem}>
+//               <Truck color="#2D8C8C" size={24} />
+//               <Text style={styles.statusLabel}>Pickup</Text>
+//             </View>
+//             <View style={styles.statusItem}>
+//               <Truck color="#2D8C8C" size={24} />
+//               <Text style={styles.statusLabel}>On going</Text>
+//             </View>
+//             <View style={styles.statusItem}>
+//               <Package color="#999" size={24} />
+//               <Text style={styles.statusLabel}>Delivery</Text>
+//             </View>
+//           </View>
+
+//           {/* Progress Bar */}
+//           <View style={styles.progressBarBg}>
+//             <View style={styles.progressBarFill} />
+//           </View>
+//         </View>
+//       </ScrollView>
+//     </SafeAreaView>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: "#F8FAF9",
+//   },
+//   header: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     alignItems: "center",
+//     paddingHorizontal: 20,
+//     paddingVertical: 15,
+//   },
+//   userInfo: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//   },
+//   avatar: {
+//     width: 50,
+//     height: 50,
+//     borderRadius: 25,
+//     marginRight: 12,
+//   },
+//   userText: {
+//     justifyContent: "center",
+//   },
+//   welcomeTitle: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     color: "#2D8C8C",
+//   },
+//   userName: {
+//     fontSize: 14,
+//     color: "#7C7C7C",
+//   },
+//   notificationBtn: {
+//     width: 44,
+//     height: 44,
+//     borderRadius: 22,
+//     backgroundColor: "#FFFFFF",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     elevation: 2,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.05,
+//     shadowRadius: 5,
+//   },
+//   scrollContent: {
+//     paddingHorizontal: 20,
+//     paddingBottom: 30,
+//   },
+//   statsGrid: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginVertical: 20,
+//   },
+//   statCard: {
+//     width: (width - 55) / 2,
+//     backgroundColor: "#FFFFFF",
+//     borderRadius: 16,
+//     padding: 16,
+//     elevation: 2,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.05,
+//     shadowRadius: 5,
+//   },
+//   statIconCircle: {
+//     width: 40,
+//     height: 40,
+//     borderRadius: 10,
+//     justifyContent: "center",
+//     alignItems: "center",
+//     marginBottom: 12,
+//   },
+//   statNumber: {
+//     fontSize: 24,
+//     fontWeight: "700",
+//     color: "#2D8C8C",
+//   },
+//   statLabel: {
+//     fontSize: 13,
+//     color: "#7C7C7C",
+//     marginTop: 4,
+//   },
+//   qrSection: {
+//     flexDirection: "row",
+//     backgroundColor: "#FFFFFF",
+//     borderRadius: 16,
+//     padding: 20,
+//     alignItems: "center",
+//     justifyContent: "space-between",
+//     marginBottom: 20,
+//     elevation: 2,
+//   },
+//   qrTextContent: {
+//     flex: 1,
+//   },
+//   qrTitle: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     color: "#2D8C8C",
+//   },
+//   qrSubtitle: {
+//     fontSize: 13,
+//     color: "#7C7C7C",
+//     marginTop: 5,
+//   },
+//   qrIconBox: {
+//     width: 56,
+//     height: 56,
+//     backgroundColor: "#2D8C8C",
+//     borderRadius: 12,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   howItWorksCard: {
+//     backgroundColor: "#2D8C8C",
+//     borderRadius: 16,
+//     padding: 20,
+//     marginBottom: 25,
+//   },
+//   sectionTitleWhite: {
+//     fontSize: 16,
+//     fontWeight: "700",
+//     color: "#FFFFFF",
+//     marginBottom: 15,
+//   },
+//   stepsList: {
+//     gap: 10,
+//   },
+//   stepItem: {
+//     color: "#E0F2F2",
+//     fontSize: 14,
+//     lineHeight: 20,
+//   },
+//   sectionTitleMain: {
+//     fontSize: 18,
+//     fontWeight: "700",
+//     color: "#2D8C8C",
+//     marginBottom: 15,
+//   },
+//   trackingCard: {
+//     backgroundColor: "#FFFFFF",
+//     borderRadius: 16,
+//     padding: 20,
+//     elevation: 2,
+//   },
+//   orderId: {
+//     fontSize: 14,
+//     color: "#4A4A4A",
+//     marginBottom: 20,
+//   },
+//   trackingStatusRow: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginBottom: 20,
+//   },
+//   statusItem: {
+//     alignItems: "center",
+//     gap: 8,
+//   },
+//   statusLabel: {
+//     fontSize: 12,
+//     color: "#4A4A4A",
+//   },
+//   progressBarBg: {
+//     height: 8,
+//     backgroundColor: "#E8E8E8",
+//     borderRadius: 4,
+//     width: "100%",
+//   },
+//   progressBarFill: {
+//     height: "100%",
+//     backgroundColor: "#2D8C8C",
+//     borderRadius: 4,
+//     width: "45%", // Dynamic width based on order progress
+//   },
+// });
+
+// export default Dashboard;
+
 import { router } from "expo-router";
-import {
-  Bell,
-  Package,
-  QrCode,
-  TrendingUp,
-  Truck,
-  Zap,
-} from "lucide-react-native";
+import { Bell, QrCode, Star, TrendingUp, Zap } from "lucide-react-native";
 import React from "react";
 import {
   Dimensions,
@@ -79,20 +396,21 @@ const Dashboard: React.FC = () => {
         </View>
 
         {/* QR Scan Section */}
-        <TouchableOpacity
-          style={styles.qrSection}
-          onPress={() => router.replace("/(user_screen)/ScanQRCode")}
-        >
+        <View style={styles.qrSection}>
           <View style={styles.qrTextContent}>
             <Text style={styles.qrTitle}>Scan Vendor QR Code</Text>
             <Text style={styles.qrSubtitle}>
               Connect with local vendors instantly
             </Text>
           </View>
-          <View style={styles.qrIconBox}>
+          <TouchableOpacity
+            style={styles.qrIconBox}
+            onPress={() => router.push("/(user_screen)/ScanQRCode")}
+            activeOpacity={0.7}
+          >
             <QrCode color="#FFFFFF" size={32} />
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
 
         {/* How It Works Section */}
         <View style={styles.howItWorksCard}>
@@ -111,41 +429,60 @@ const Dashboard: React.FC = () => {
           </View>
         </View>
 
-        {/* Recent Tracking Section */}
-        <Text style={styles.sectionTitleMain}>Recent Tracking order</Text>
-        <View style={styles.trackingCard}>
-          <Text style={styles.orderId}>Order id : 1923838</Text>
+        {/* Recent Order Section (Updated) */}
+        <Text style={styles.sectionTitleMain}>Recent order</Text>
 
-          <View style={styles.trackingStatusRow}>
-            <View style={styles.statusItem}>
-              <Truck color="#2D8C8C" size={24} />
-              <Text style={styles.statusLabel}>Pickup</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Truck color="#2D8C8C" size={24} />
-              <Text style={styles.statusLabel}>On going</Text>
-            </View>
-            <View style={styles.statusItem}>
-              <Package color="#999" size={24} />
-              <Text style={styles.statusLabel}>Delivery</Text>
+        <TouchableOpacity
+          style={styles.orderCard}
+          onPress={() => router.push("/(user_screen)/ResentOrder")}
+          activeOpacity={0.9}
+        >
+          <View style={styles.orderTopRow}>
+            <Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
+              }}
+              style={styles.orderImage}
+            />
+            <View style={styles.orderInfoContainer}>
+              <View style={styles.orderHeaderRow}>
+                <Text style={styles.orderIdText}>#ORD-2025</Text>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusText}>Processing</Text>
+                </View>
+              </View>
+
+              <Text style={styles.orderAddress} numberOfLines={1}>
+                6391 Elgin St. Celina, Delaware 10299
+              </Text>
+
+              <View style={styles.ratingRow}>
+                <Star color="#FFD700" size={16} fill="#FFD700" />
+                <Text style={styles.ratingText}>
+                  {" "}
+                  4.8 <Text style={styles.reviewCount}>(1.2k)</Text>
+                </Text>
+              </View>
             </View>
           </View>
 
-          {/* Progress Bar */}
-          <View style={styles.progressBarBg}>
-            <View style={styles.progressBarFill} />
+          <View style={styles.orderBottomRow}>
+            <View>
+              <Text style={styles.customerName}>Alice freeman</Text>
+              <Text style={styles.itemDetail}>
+                4 items • Wireless Headphones 3x...
+              </Text>
+            </View>
+            <Text style={styles.orderPrice}>$259.00</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAF9",
-  },
+  container: { flex: 1, backgroundColor: "#F8FAF9" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -153,28 +490,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  userText: {
-    justifyContent: "center",
-  },
-  welcomeTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2D8C8C",
-  },
-  userName: {
-    fontSize: 14,
-    color: "#7C7C7C",
-  },
+  userInfo: { flexDirection: "row", alignItems: "center" },
+  avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
+  userText: { justifyContent: "center" },
+  welcomeTitle: { fontSize: 18, fontWeight: "700", color: "#2D8C8C" },
+  userName: { fontSize: 14, color: "#7C7C7C" },
   notificationBtn: {
     width: 44,
     height: 44,
@@ -183,14 +503,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-  },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
   statsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -202,9 +516,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     elevation: 2,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
   },
   statIconCircle: {
     width: 40,
@@ -214,16 +525,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2D8C8C",
-  },
-  statLabel: {
-    fontSize: 13,
-    color: "#7C7C7C",
-    marginTop: 4,
-  },
+  statNumber: { fontSize: 24, fontWeight: "700", color: "#2D8C8C" },
+  statLabel: { fontSize: 13, color: "#7C7C7C", marginTop: 4 },
   qrSection: {
     flexDirection: "row",
     backgroundColor: "#FFFFFF",
@@ -234,19 +537,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     elevation: 2,
   },
-  qrTextContent: {
-    flex: 1,
-  },
-  qrTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2D8C8C",
-  },
-  qrSubtitle: {
-    fontSize: 13,
-    color: "#7C7C7C",
-    marginTop: 5,
-  },
+  qrTextContent: { flex: 1 },
+  qrTitle: { fontSize: 18, fontWeight: "700", color: "#2D8C8C" },
+  qrSubtitle: { fontSize: 13, color: "#7C7C7C", marginTop: 5 },
   qrIconBox: {
     width: 56,
     height: 56,
@@ -267,55 +560,100 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 15,
   },
-  stepsList: {
-    gap: 10,
-  },
-  stepItem: {
-    color: "#E0F2F2",
-    fontSize: 14,
-    lineHeight: 20,
-  },
+  stepsList: { gap: 10 },
+  stepItem: { color: "#E0F2F2", fontSize: 14, lineHeight: 20 },
   sectionTitleMain: {
     fontSize: 18,
     fontWeight: "700",
     color: "#2D8C8C",
     marginBottom: 15,
   },
-  trackingCard: {
+
+  // New Order Card Styles
+  orderCard: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    elevation: 2,
+    borderRadius: 20,
+    padding: 15,
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
   },
-  orderId: {
-    fontSize: 14,
-    color: "#4A4A4A",
-    marginBottom: 20,
+  orderTopRow: {
+    flexDirection: "row",
+    marginBottom: 15,
   },
-  trackingStatusRow: {
+  orderImage: {
+    width: 70,
+    height: 70,
+    borderRadius: 12,
+  },
+  orderInfoContainer: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: "center",
+  },
+  orderHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  statusItem: {
     alignItems: "center",
-    gap: 8,
   },
-  statusLabel: {
+  orderIdText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+  },
+  statusBadge: {
+    backgroundColor: "#E8F0FE",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    color: "#3B82F6",
+    fontWeight: "600",
+  },
+  orderAddress: {
     fontSize: 12,
-    color: "#4A4A4A",
+    color: "#888",
+    marginVertical: 4,
   },
-  progressBarBg: {
-    height: 8,
-    backgroundColor: "#E8E8E8",
-    borderRadius: 4,
-    width: "100%",
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#2D8C8C",
-    borderRadius: 4,
-    width: "45%", // Dynamic width based on order progress
+  ratingText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#333",
+  },
+  reviewCount: {
+    fontWeight: "400",
+    color: "#888",
+  },
+  orderBottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#F7FBF9",
+    padding: 12,
+    borderRadius: 12,
+  },
+  customerName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#2D8C8C",
+  },
+  itemDetail: {
+    fontSize: 11,
+    color: "#888",
+    marginTop: 2,
+  },
+  orderPrice: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2D8C8C",
   },
 });
 

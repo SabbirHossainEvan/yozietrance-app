@@ -19,7 +19,7 @@ export default function PrivacyPolicy() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Privacy & Policy</Text>
           <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#333" />
+            {/* <Ionicons name="close" size={24} color="#333" /> */}
           </TouchableOpacity>
         </View>
 
@@ -35,11 +35,11 @@ export default function PrivacyPolicy() {
             The personal information that we collect depends on the context of
             your interactions with us and the [app/service]...
           </Text>
-          <Text style={styles.sectionTitle}>
-            2.Information use collected
-          </Text>
+          <Text style={styles.sectionTitle}>2.Information use collected</Text>
           <Text style={styles.textBody}>
-            We process your personal information for these purposes in reliance on our legitimate business interests, in order to enter into or perform a contract with you,
+            We process your personal information for these purposes in reliance
+            on our legitimate business interests, in order to enter into or
+            perform a contract with you,
           </Text>
 
           <TouchableOpacity
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   checked: { backgroundColor: "#2D8C8C" },
-  checkboxText: { color: "#2D8C8C", fontWeight: "600",},
+  checkboxText: { color: "#2D8C8C", fontWeight: "600" },
   nextButton: {
     backgroundColor: "#2D8C8C",
     padding: 15,

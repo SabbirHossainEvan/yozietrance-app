@@ -297,7 +297,7 @@ const ElectronicsScreen = () => {
           <TouchableOpacity
             style={styles.card}
             activeOpacity={0.9}
-            onPress={() => router.replace("/(user_screen)/ProductDetails")}
+            onPress={() => router.push("/(user_screen)/ProductDetails")}
           >
             <View style={styles.imageBox}>
               <Image
@@ -326,7 +326,7 @@ const ElectronicsScreen = () => {
               </View>
               <TouchableOpacity
                 style={styles.viewBtn}
-                onPress={() => router.replace("/(user_screen)/ProductDetails")}
+                onPress={() => router.push("/(user_screen)/ProductDetails")}
               >
                 <Text style={styles.viewBtnText}>View</Text>
               </TouchableOpacity>

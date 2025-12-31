@@ -262,7 +262,7 @@ export default function ScanQRScreen() {
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     if (!scanned) {
       setScanned(true);
-      router.replace("/(user_screen)/ChatDetailsScreen");
+      router.push("/(user_screen)/ChatDetailsScreen");
     }
   };
 
@@ -274,7 +274,7 @@ export default function ScanQRScreen() {
           <ChevronLeft
             color="#1A1A1A"
             size={28}
-            onPress={() => router.replace("/(users)")}
+            onPress={() => router.back()}
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Scan QR Code</Text>
@@ -342,7 +342,7 @@ export default function ScanQRScreen() {
       <TouchableOpacity
         style={styles.manualButton}
         activeOpacity={0.8}
-        onPress={() => router.replace("/(user_screen)/UserModal")}
+        onPress={() => router.push("/(user_screen)/UserModal")}
       >
         <Keyboard color="#4A4A4A" size={20} />
         <Text style={styles.manualButtonText}>Enter Code Manually</Text>
