@@ -11,6 +11,4 @@ const ChatTabs = () => {
         </SafeAreaView>
     )
 }
-//
-
 export default ChatTabs
