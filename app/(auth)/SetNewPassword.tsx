@@ -26,7 +26,7 @@ const SetNewPasswordScreen: React.FC = () => {
       <View style={styles.navBar}>
         <TouchableOpacity style={styles.backButton}>
           <ChevronLeft
-            onPress={() => router.replace("/(auth)/login")}
+            onPress={() => router.push("/(auth)/login")}
             color="#1A1A1A"
             size={28}
           />

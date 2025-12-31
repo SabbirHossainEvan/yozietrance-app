@@ -189,7 +189,7 @@ const ProductDetails = () => {
           <TouchableOpacity style={styles.outlineBtn}>
             <Text
               style={styles.outlineBtnText}
-              onPress={() => router.replace("/(user_screen)/ChatDetailsScreen")}
+              onPress={() => router.push("/(user_screen)/ChatDetailsScreen")}
             >
               💬 Ask Vendor
             </Text>
@@ -197,7 +197,7 @@ const ProductDetails = () => {
 
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => router.replace("/(users)/Information")}
+            onPress={() => router.push("/(users)/Information")}
           >
             <Text style={styles.primaryBtnText}>
               Buy ${(unitPrice * quantity).toFixed(2)}

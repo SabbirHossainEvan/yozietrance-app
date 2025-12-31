@@ -56,7 +56,7 @@ export default function InformationScreen() {
           {/* Scan Button */}
           <TouchableOpacity
             style={styles.scanButton}
-            onPress={() => router.replace("/(user_screen)/ScanQRCode")}
+            onPress={() => router.push("/(user_screen)/ScanQRCode")}
           >
             <MaterialCommunityIcons name="qrcode-scan" size={20} color="#666" />
             <Text style={styles.scanButtonText}>Autofill by scanning</Text>
@@ -167,7 +167,7 @@ export default function InformationScreen() {
           {/* Continue Button */}
           <TouchableOpacity
             style={styles.continueButton}
-            onPress={() => router.replace("/(user_screen)/PaymentScreen")}
+            onPress={() => router.push("/(user_screen)/PaymentScreen")}
           >
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>

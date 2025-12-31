@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -31,28 +33,52 @@ const InfoItem = ({ icon, label, value, isLast }: InfoItemProps) => (
 );
 
 const ProfileInfoScreen = () => {
-  const userProfileImage =
-    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg";
+  const [profileImage, setProfileImage] = useState(
+    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
+  );
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "Sorry, we need camera roll permissions to make this work!"
+      );
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBtn}>
-          <MaterialCommunityIcons
-            name="chevron-left"
-            size={30}
-            color="#333"
-            onPress={() => router.back()}
-          />
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => router.back()}
+        >
+          <MaterialCommunityIcons name="chevron-left" size={30} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile Info</Text>
-        <TouchableOpacity style={styles.headerBtn}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          onPress={() => router.push("/(user_screen)/EditProfileScreen")}
+        >
           <MaterialCommunityIcons
             name="account-edit-outline"
             size={26}
             color="#333"
-            onPress={() => router.replace("/(user_screen)/EditProfileScreen")}
           />
         </TouchableOpacity>
       </View>
@@ -63,8 +89,9 @@ const ProfileInfoScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: userProfileImage }} style={styles.avatar} />
-            <TouchableOpacity style={styles.cameraBadge}>
+            <Image source={{ uri: profileImage }} style={styles.avatar} />
+
+            <TouchableOpacity style={styles.cameraBadge} onPress={pickImage}>
               <MaterialCommunityIcons
                 name="camera-outline"
                 size={16}
@@ -105,7 +132,6 @@ const ProfileInfoScreen = () => {
           />
         </View>
 
-        {/* Identification Card */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Identification</Text>
           <InfoItem

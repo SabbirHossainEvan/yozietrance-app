@@ -84,22 +84,38 @@ export default function GetStarted() {
             onPress={() => router.push("/(onboarding)/location-access")}
             activeOpacity={0.8}
           >
-            <Feather name="arrow-right" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Feather
+              name="arrow-right"
+              size={20}
+              color="#FFFFFF"
+              style={{ marginRight: 8 }}
+            />
             <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700" }}>
               Get Started
             </Text>
           </TouchableOpacity>
 
           {/* Login Link */}
-          <View style={{ flexDirection: "row", marginTop: 25, alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              marginTop: 25,
+              alignItems: "center",
+            }}
+          >
             <Text style={{ color: "#707070", fontSize: 15 }}>
               Already have an account?{" "}
             </Text>
-            <TouchableOpacity 
-              onPress={() => router.replace("/(auth)/login")}
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/login")}
               style={{ flexDirection: "row", alignItems: "center" }}
             >
-              <Feather name="log-in" size={16} color="#2A8B8B" style={{ marginRight: 4 }} />
+              <Feather
+                name="log-in"
+                size={16}
+                color="#2A8B8B"
+                style={{ marginRight: 4 }}
+              />
               <Text
                 style={{
                   color: "#2A8B8B",

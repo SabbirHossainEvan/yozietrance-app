@@ -92,7 +92,7 @@ const OTPVerification: React.FC = () => {
           <TouchableOpacity
             style={styles.verifyButton}
             activeOpacity={0.8}
-            onPress={() => router.replace("/(auth)/SetNewPassword")}
+            onPress={() => router.push("/(auth)/SetNewPassword")}
           >
             <Text style={styles.verifyButtonText}>Verify</Text>
           </TouchableOpacity>
@@ -106,7 +106,7 @@ const OTPVerification: React.FC = () => {
             </Text>
             <TouchableOpacity
               style={styles.bottomLoginBtn}
-              onPress={() => router.replace("/(auth)/login")}
+              onPress={() => router.push("/(auth)/login")}
             >
               <Text style={styles.bottomLoginText}>Back to Login</Text>
             </TouchableOpacity>
