@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+//
 const ChatTabs = () => {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat');
