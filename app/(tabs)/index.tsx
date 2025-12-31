@@ -1,5 +1,6 @@
-import Feather from '@expo/vector-icons/Feather';
+import { Feather } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { commonData, quickActions, recentOrders } from '../../constants/common';
@@ -7,56 +8,60 @@ import { commonData, quickActions, recentOrders } from '../../constants/common';
 
 export default function HomeScreen() {
   return (
-    <ScrollView>
-      <SafeAreaView>
+
+    <SafeAreaView>
+      <View >
+        {/* THIS IS FOR HOME HEADER */}
         <View style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingTop: 12,
+          paddingBottom: 12,
           paddingLeft: 20,
           paddingRight: 20,
         }}>
-          {/* THIS IS FOR HOME HEADER */}
+          <View>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'semibold',
+            }}>Hi, Rokey Mahmud</Text>
+            <Text style={{
+              fontSize: 14,
+            }}>Dec12,2025</Text>
+          </View>
           <View style={{
             flexDirection: 'row',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            paddingTop: 12,
-            paddingBottom: 12,
+            gap: 12,
           }}>
-            <View>
-              <Text style={{
-                fontSize: 18,
-                fontWeight: 'semibold',
-              }}>Hi, Rokey Mahmud</Text>
-              <Text style={{
-                fontSize: 14,
-              }}>Dec12,2025</Text>
-            </View>
-            <View style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 12,
+            <TouchableOpacity style={{
+              backgroundColor: 'white',
+              padding: 12,
+              borderRadius: "100%",
+              borderWidth: 0.5,
+              borderColor: "#E3E6F0",
             }}>
-              <View style={{
-                backgroundColor: 'white',
-                padding: 12,
-                borderRadius: "100%",
-                borderWidth: 0.5,
-                borderColor: "#E3E6F0",
-              }}>
-                <Feather name="headphones" size={24} color="black" />
-              </View>
-              <View style={{
-                backgroundColor: 'white',
-                padding: 12,
-                borderRadius: "100%",
-                borderWidth: 0.5,
-                borderColor: "#E3E6F0",
-              }}>
-                <Ionicons name="notifications-outline" size={24} color="black" />
-              </View>
-            </View>
+              <Feather name="help-circle" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity style={{
+              backgroundColor: 'white',
+              padding: 12,
+              borderRadius: "100%",
+              borderWidth: 0.5,
+              borderColor: "#E3E6F0",
+            }}>
+              <Ionicons name="notifications-outline" size={24} color="black" />
+            </TouchableOpacity>
           </View>
-          {/* THIS IS FOR THIS MONTHS INFO PART */}
-          <View>
+        </View>
+        {/* THIS IS FOR THIS MONTHS INFO PART */}
+        <ScrollView>
+          <View style={{
+            paddingLeft: 20,
+            paddingRight: 20,
+            paddingBottom : 140
+          }}>
             <Text style={{
               fontSize: 16,
               fontWeight: '600',
@@ -134,13 +139,16 @@ export default function HomeScreen() {
                   <View key={action.id} style={{
                     alignItems: 'center',
                   }}>
-                    <TouchableOpacity style={{
-                      backgroundColor: "white",
-                      padding: 10,
-                      borderRadius: "100%",
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "white",
+                        padding: 10,
+                        borderRadius: "100%",
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                      onPress={action.onPress}
+                    >
                       <Image source={action.icon} style={{ width: 24, height: 24 }} />
                     </TouchableOpacity>
                     <Text style={{
@@ -180,7 +188,11 @@ export default function HomeScreen() {
               </View>
               <View style={{ marginTop: 12, gap: 12 }}>
                 {recentOrders.slice(0, 3).map((order) => (
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push({
+                      pathname: '/(screens)/order_details',
+                      params: { id: order.id }
+                    })}
                     key={order.id}
                     style={{
                       backgroundColor: 'white',
@@ -193,11 +205,9 @@ export default function HomeScreen() {
                       elevation: 2,
                     }}
                   >
-
-
                     <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                       <Image
-                        source={{ uri: order.image }}
+                        source={{ uri: order.customer.avatar }}
                         style={{
                           width: 80,
                           height: 80,
@@ -208,12 +218,14 @@ export default function HomeScreen() {
                       />
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <Text style={{ color: "#2B2B2B", fontSize: 16 }}>#{order.id}</Text>
+                          <Text style={{ color: "#2B2B2B", fontSize: 16 }}>{order.orderNumber}</Text>
                           <View
                             style={{
-                              backgroundColor: order.status === 'Completed' ? '#E3F9E7' :
-                                order.status === 'Pending' ? '#FFF3E0' :
-                                  order.status === 'Processing' ? '#E3F2FD' : '#F3E5F5',
+                              backgroundColor: order.orderStatus.status === 'Completed' ? '#E3F9E7' :
+                                order.orderStatus.status === 'Pending' ? '#FFF3E0' :
+                                  order.orderStatus.status === 'Processing' ? '#E3F2FD' :
+                                    order.orderStatus.status === 'Delivered' ? '#F3E5F5' :
+                                      order.orderStatus.status === 'Shipped' ? '#E1F5FE' : '#F3E5F5',
                               paddingHorizontal: 8,
                               paddingVertical: 2,
                               borderRadius: 12,
@@ -221,21 +233,23 @@ export default function HomeScreen() {
                           >
                             <Text
                               style={{
-                                color: order.status === 'Completed' ? '#1B5E20' :
-                                  order.status === 'Pending' ? '#E65100' :
-                                    order.status === 'Processing' ? '#0D47A1' : '#4A148C',
+                                color: order.orderStatus.status === 'Completed' ? '#1B5E20' :
+                                  order.orderStatus.status === 'Pending' ? '#E65100' :
+                                    order.orderStatus.status === 'Processing' ? '#0D47A1' :
+                                      order.orderStatus.status === 'Delivered' ? '#4A148C' :
+                                        order.orderStatus.status === 'Shipped' ? '#01579B' : '#4A148C',
                                 fontSize: 10,
                                 fontWeight: '500',
                               }}
                             >
-                              {order.status}
+                              {order.orderStatus.status}
                             </Text>
                           </View>
                         </View>
-                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>{order.address}</Text>
+                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>{order.customer.name}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Ionicons name="star" size={12} color="#FFC107" />
-                          <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.rating}</Text>
+                          <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.customer.customerId}</Text>
                         </View>
                       </View>
                     </View>
@@ -253,18 +267,18 @@ export default function HomeScreen() {
                       marginTop: 8,
                     }}>
                       <View>
-                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687", }}>{order.customerName}</Text>
-                        <Text style={{ fontSize: 12, color: '#278687', }}>{order.items}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687", }}>{order.customer.name}</Text>
+                        <Text style={{ fontSize: 12, color: '#278687', }}>{order.customer.customerId}</Text>
                       </View>
-                      <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>{order.total}</Text>
+                      <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687", }}>${order.payment.grandTotal}</Text>
                     </View>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             </View>
           </View>
-        </View>
-      </SafeAreaView>
-    </ScrollView>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 }

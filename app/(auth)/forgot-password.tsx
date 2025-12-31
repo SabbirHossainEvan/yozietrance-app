@@ -66,7 +66,7 @@ const ForgotPasswordScreen: React.FC = () => {
 
             <TouchableOpacity
               style={styles.sendButton}
-              onPress={() => router.replace("/(auth)/OTPVerification")}
+              onPress={() => router.push("/(auth)/OTPVerification")}
             >
               <Text style={styles.sendButtonText}>Send Reset Code</Text>
             </TouchableOpacity>
@@ -77,7 +77,7 @@ const ForgotPasswordScreen: React.FC = () => {
               Remembered your password?{" "}
               <Text
                 style={styles.loginLink}
-                onPress={() => router.replace("/(auth)/login")}
+                onPress={() => router.push("/(auth)/login")}
               >
                 Login
               </Text>

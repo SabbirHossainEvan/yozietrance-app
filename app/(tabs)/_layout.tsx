@@ -1,6 +1,6 @@
 import { HapticTab } from "@/components/haptic-tab";
+import { Feather } from '@expo/vector-icons';
 import AntDesign from "@expo/vector-icons/AntDesign";
-import Feather from "@expo/vector-icons/Feather";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Tabs } from "expo-router";
 import React from "react";
@@ -15,8 +15,8 @@ export default function TabLayout() {
         tabBarStyle: {
           paddingLeft: 20,
           paddingRight: 20,
-          paddingTop: 20,
-          height: 100,
+          paddingTop: 10,
+          height: 85
         },
       }}
     >
@@ -34,7 +34,7 @@ export default function TabLayout() {
         options={{
           title: "Product",
           tabBarIcon: ({ color }: { color: string }) => (
-            <Feather name="shopping-bag" size={24} color={color} />
+            <Feather name="shopping-cart" size={24} color={color} />
           ),
         }}
       />
@@ -43,7 +43,7 @@ export default function TabLayout() {
         options={{
           title: "Order",
           tabBarIcon: ({ color }: { color: string }) => (
-            <Feather name="box" size={24} color={color} />
+            <Feather name="package" size={24} color={color} />
           ),
         }}
       />

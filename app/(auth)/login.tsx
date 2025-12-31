@@ -102,7 +102,7 @@ export default function LoginScreen() {
             <TouchableOpacity>
               <Text
                 style={styles.forgotText}
-                onPress={() => router.replace("/(auth)/forgot-password")}
+                onPress={() => router.push("/(auth)/forgot-password")}
               >
                 Forgot password?
               </Text>
@@ -112,7 +112,7 @@ export default function LoginScreen() {
           {/* Login Button */}
           <TouchableOpacity
             style={styles.loginButton}
-            onPress={() => router.replace("/(tabs)")}
+            onPress={() => router.push("/(tabs)")}
           >
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
@@ -144,7 +144,7 @@ export default function LoginScreen() {
             <TouchableOpacity>
               <Text
                 style={styles.signUpText}
-                onPress={() => router.replace("/(auth)/signup")}
+                onPress={() => router.push("/(auth)/signup")}
               >
                 Sign Up
               </Text>

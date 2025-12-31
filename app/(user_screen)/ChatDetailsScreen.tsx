@@ -84,7 +84,7 @@ export default function ChatDetailScreen() {
           style={[styles.topBtn, activeTab === "Catalog" && styles.activeBtn]}
           onPress={() => {
             setActiveTab("Catalog");
-            router.replace("/(users)/categoriesScreen");
+            router.push("/(users)/categoriesScreen");
           }}
         >
           <Text
@@ -114,7 +114,7 @@ export default function ChatDetailScreen() {
           style={[styles.topBtn, activeTab === "History" && styles.activeBtn]}
           onPress={() => {
             setActiveTab("History");
-            router.replace("/(user_screen)/OrderHistoryScreen");
+            router.push("/(user_screen)/OrderHistoryScreen");
           }}
         >
           <Text
