@@ -26,9 +26,9 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider
-      value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
-    >
+    // <ThemeProvider
+      // value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
+    // >
       <Stack>
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(users)" options={{ headerShown: false }} />
@@ -36,13 +36,16 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen
+          name="modal"
+          options={{ presentation: "modal", title: "Modal" }}
+        />
       </Stack>
-      <StatusBar
-        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
-        backgroundColor="transparent"
-        translucent
-      />
-    </ThemeProvider>
+      // <StatusBar
+      // barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+      // backgroundColor="transparent"
+      // translucent
+      // />
+    // </ThemeProvider>
   );
 }

@@ -23,6 +23,9 @@ export default function LoginScreen() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
+  const handleProvider = () => {
+    router.push("/(onboarding)/user-selection");
+  };
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
@@ -110,10 +113,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Login Button */}
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => router.push("/(tabs)")}
-          >
+          <TouchableOpacity style={styles.loginButton} onPress={handleProvider}>
             <Text style={styles.loginButtonText}>Login</Text>
           </TouchableOpacity>
         </View>

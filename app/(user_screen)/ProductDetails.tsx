@@ -1,11 +1,12 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
   Dimensions,
+  FlatList,
   Image,
   ScrollView,
   StatusBar,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,402 +16,272 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
-// Star Component for Reviews
-const StarRating = ({ rating = 5 }) => (
-  <View style={styles.starRow}>
-    {[...Array(rating)].map((_, i) => (
-      <Text key={i} style={styles.star}>
-        ★
-      </Text>
-    ))}
-  </View>
-);
-
 const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("Blue");
+  const [selectedColor, setSelectedColor] = useState("Teal");
+  const [coupon, setCoupon] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  const productData: { [key: string]: { image: any; bg: string } } = {
-    Black: {
-      image: {
-        uri: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
-      },
-      bg: "#F2F2F2",
-    },
-    White: {
-      image: {
-        uri: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500",
-      },
-      bg: "#FFFFFF",
-    },
-    Blue: {
-      image: { uri: "https://i.ibb.co/Vp6Yj7v/headphones.png" },
-      bg: "#E8F3F2",
-    },
-  };
-
-  const unitPrice = 3.44;
+  const productImages = [
+    "https://i.ibb.co/Vp6Yj7v/headphones.png",
+    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500",
+    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500"
+  ];
 
   const specs = [
     { label: "Brand", value: "JBL" },
     { label: "Model", value: "Tune 720BT" },
     { label: "Connectivity", value: "Bluetooth | Charging cable" },
     { label: "Bluetooth", value: "5.3" },
+    { label: "Colors", value: "2 Options", isColor: true },
     { label: "Weight", value: "220g" },
     { label: "Size", value: "40mm" },
     { label: "Charging time", value: "2 hours from empty" },
     { label: "Playtime", value: "Up to 76 hours" },
   ];
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+  const handleScroll = (event: any) => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const cardWidth = width - 40;
+    const newIndex = Math.round(scrollPosition / cardWidth);
+    setActiveIndex(newIndex);
+  };
 
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F8FBF9" }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
+      {/* Floating Chat Button */}
+      <TouchableOpacity onPress={() => router.push("/(screens)/chat_box")} style={{ position: 'absolute', bottom: 30, zIndex: 9999, right: 15, backgroundColor: "#FFF", width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", elevation: 4, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, borderWidth: 1, borderColor: "#2D8C8C" }}>
+        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#2D8C8C" />
+      </TouchableOpacity>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 10 }}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backArrow}>‹</Text>
+          <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Details</Text>
+        <Text style={{ fontSize: 16, fontWeight: "600", color: "#333" }}>Details</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.container}>
-          <View
-            style={[
-              styles.imageContainer,
-              { backgroundColor: productData[selectedColor].bg },
-            ]}
-          >
-            <Image
-              source={productData[selectedColor].image}
-              style={styles.productImg}
-              resizeMode="contain"
-            />
-            <View style={styles.pagination}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        {/* Product Image Carousel */}
+        <View style={{ backgroundColor: "#ADD8D6", borderRadius: 20, height: 250, justifyContent: "center", alignItems: "center", marginBottom: 20, position: "relative" }}>
+          <FlatList
+            data={productImages}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View style={{ width: width - 40, height: 250, justifyContent: 'center', alignItems: 'center' }}>
+                <Image
+                  source={{ uri: item }}
+                  style={{ width: "70%", height: "70%" }}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+          />
+
+          {/* Pagination Dots */}
+          <View style={{ flexDirection: "row", position: "absolute", bottom: 15 }}>
+            {productImages.map((_, index) => (
               <View
+                key={index}
                 style={[
-                  styles.dot,
-                  selectedColor === "Blue" ? styles.activeDot : null,
+                  { width: 8, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.5)", marginHorizontal: 3 },
+                  activeIndex === index && { backgroundColor: "#2D8C8C" }
                 ]}
               />
-              <View style={styles.dot} />
-              <View style={styles.dot} />
-            </View>
+            ))}
           </View>
+        </View>
 
-          <View style={styles.titleSection}>
-            <View style={styles.titleRow}>
-              <Text style={styles.mainTitle}>
-                Wireless Noise-Canceling{"\n"}Headphones
-              </Text>
-              <View style={styles.stockBadge}>
-                <Text style={styles.stockText}>● IN STOCK</Text>
-              </View>
-            </View>
-            <Text style={styles.skuText}>SKU: EC-100</Text>
-            <Text style={styles.priceText}>${unitPrice.toFixed(2)}</Text>
+        {/* Title & Rating */}
+        <Text style={{ fontSize: 18, fontWeight: "700", color: "#333", marginBottom: 8 }}>Wireless Noise-Canceling Headphones</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+          <View style={{ flexDirection: "row", marginRight: 8 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <Ionicons key={i} name="star" size={14} color="#FFD700" />
+            ))}
+            <Ionicons name="star-half" size={14} color="#FFD700" />
           </View>
+          <Text style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}>
+            4.8 <Text style={{ fontWeight: "400", color: "#777", textDecorationLine: "underline" }}>(5,387 reviews)</Text>
+          </Text>
+        </View>
+        <Text style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Sku: EC-100</Text>
 
-          {/* Description Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Description</Text>
-            <Text style={styles.descriptionText}>
-              Industry-leading noise-canceling with Dual Noise Sensor
-              technology. Next-level music with Edge-AI, co-developed with Sony
-              Music Studios Tokyo. Up to 30-hour battery life with quick
-              charging (10 min charge for 5 hours of playback).
-            </Text>
-          </View>
+        {/* Price */}
+        <Text style={{ fontSize: 22, fontWeight: "bold", color: "#2D8C8C", marginBottom: 10 }}>$3.44</Text>
 
-          {/* Specification Card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Specification</Text>
+        {/* Description */}
+        <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 6 }}>Description</Text>
+        <Text style={{ fontSize: 13, color: "#666", lineHeight: 20, marginBottom: 20 }}>
+          Industry-leading noise canceling with Dual Noise Sensor technology. Next-
+          level music with Edge-AI, co-developed with Sony Music Studios Tokyo. Up to
+          30-hour battery life with quick charging (10 min charge for 5 hours of
+          playback).
+        </Text>
+
+        {/* Specification Card */}
+        <View style={{ marginBottom: 25, position: 'relative', marginTop: 10 }}>
+          <View style={{ backgroundColor: "#FFF", borderRadius: 16, padding: 16, elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 15, color: "#333" }}>Specification</Text>
             {specs.map((item, index) => (
-              <View key={index} style={styles.specRow}>
-                <Text style={styles.specLabel}>{item.label}</Text>
-                <Text style={styles.specValueText}>{item.value}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Quantity Section */}
-          <Text style={styles.sectionLabel}>Quantity</Text>
-          <View style={styles.quantityRow}>
-            <View style={styles.stepper}>
-              <TouchableOpacity
-                onPress={() => setQuantity(Math.max(1, quantity - 1))}
-              >
-                <Text style={styles.stepBtn}>—</Text>
-              </TouchableOpacity>
-              <Text style={styles.qtyText}>{quantity}</Text>
-              <TouchableOpacity onPress={() => setQuantity(quantity + 1)}>
-                <Text style={styles.stepBtn}>+</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.couponBox}>
-              <TextInput
-                placeholder="Add Coupon"
-                style={styles.couponInput}
-                placeholderTextColor="#999"
-              />
-              <TouchableOpacity style={styles.applyBtn}>
-                <Text style={styles.applyText}>Apply</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Color Selection */}
-          <Text style={styles.sectionLabel}>Color</Text>
-          <View style={styles.colorOptions}>
-            {["Black", "White", "Blue"].map((c) => (
-              <TouchableOpacity
-                key={c}
-                onPress={() => setSelectedColor(c)}
-                style={[
-                  styles.colorChip,
-                  selectedColor === c && styles.activeChip,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedColor === c && styles.activeChipText,
-                  ]}
-                >
-                  {c}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Action Buttons */}
-          <TouchableOpacity style={styles.outlineBtn}>
-            <Text
-              style={styles.outlineBtnText}
-              onPress={() => router.push("/(user_screen)/ChatDetailsScreen")}
-            >
-              💬 Ask Vendor
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => router.push("/(users)/Information")}
-          >
-            <Text style={styles.primaryBtnText}>
-              Buy ${(unitPrice * quantity).toFixed(2)}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Reviews Section */}
-          <View style={styles.reviewList}>
-            <Text style={styles.cardTitle}>Reviews</Text>
-            {[
-              {
-                name: "Darrell Steward",
-                date: "12/04/21",
-                comment:
-                  "His music helped me prepare for my math exams, long sessions were easy. Her techniques and practice sessions are very effective.",
-              },
-              {
-                name: "Albert Flores",
-                date: "10/04/21",
-                comment:
-                  "The always found math boring and hard, but she made it fun with games, and visual explanations.",
-              },
-              {
-                name: "Ronald Richards",
-                date: "10/04/21",
-                comment:
-                  "I used to struggle so much with Algebra, but after just a few sessions with Sarah, everything started making sense.",
-              },
-            ].map((review, i) => (
-              <View key={i} style={styles.reviewItem}>
-                <View style={styles.reviewerHeader}>
-                  <View style={styles.avatar} />
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.titleRow}>
-                      <Text style={styles.reviewerName}>{review.name}</Text>
-                      <Text style={styles.reviewDate}>{review.date}</Text>
-                    </View>
-                    <StarRating />
+              <View key={index} style={[
+                { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F0F0F0", alignItems: "center" },
+                index === specs.length - 1 && { borderBottomWidth: 0 }
+              ]}>
+                <Text style={{ fontSize: 13, color: "#555", flex: 1 }}>{item.label}</Text>
+                {item.isColor ? (
+                  <View style={{ flexDirection: "row", alignItems: 'center' }}>
+                    <View style={{ width: 12, height: 12, borderRadius: 6, marginLeft: 6, backgroundColor: "#2D8C8C" }} />
+                    <View style={{ width: 12, height: 12, borderRadius: 6, marginLeft: 6, backgroundColor: "#FFF", borderWidth: 1, borderColor: "#DDD" }} />
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}> {item.value}</Text>
                   </View>
-                </View>
-                <Text style={styles.reviewComment}>{review.comment}</Text>
+                ) : (
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}>{item.value}</Text>
+                )}
               </View>
             ))}
           </View>
         </View>
+
+        {/* Color Selection */}
+        <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>Color</Text>
+        <View style={{ flexDirection: "row", marginBottom: 20, gap: 12 }}>
+          <TouchableOpacity
+            onPress={() => setSelectedColor("Black")}
+            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "black" }, selectedColor === "Black" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+          />
+          <TouchableOpacity
+            onPress={() => setSelectedColor("Teal")}
+            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "#6FA4A4" }, selectedColor === "Teal" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+          />
+          <TouchableOpacity
+            onPress={() => setSelectedColor("White")}
+            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "white" }, selectedColor === "White" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+          />
+        </View>
+
+        {/* Quantity */}
+        <View style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+
+          <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 30 }}>Quantity</Text>
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#EFF4F4", width: 120, borderRadius: 8, justifyContent: "space-between", padding: 4 }}>
+              <TouchableOpacity onPress={() => setQuantity(Math.max(1, quantity - 1))} style={{ width: 32, height: 32, justifyContent: "center", alignItems: "center", backgroundColor: "#FFF", borderRadius: 6, shadowColor: "#000", shadowOpacity: 0.05, elevation: 1 }}>
+                <Text style={{ fontSize: 18, color: "#2D8C8C", fontWeight: "bold" }}>—</Text>
+              </TouchableOpacity>
+              <Text style={{ fontSize: 14, fontWeight: "bold", color: "#2D8C8C" }}>{quantity}</Text>
+              <TouchableOpacity onPress={() => setQuantity(quantity + 1)} style={{ width: 32, height: 32, justifyContent: "center", alignItems: "center", backgroundColor: "#FFF", borderRadius: 6, shadowColor: "#000", shadowOpacity: 0.05, elevation: 1 }}>
+                <Text style={{ fontSize: 18, color: "#2D8C8C", fontWeight: "bold" }}>+</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={{ fontSize: 10, color: "#FF6B6B", marginTop: 6 }}>Minimum order quantity: 10</Text>
+          </View>
+        </View>
+
+        {/* Coupon */}
+        <View style={{ flexDirection: "row", marginBottom: 20, gap: 10 }}>
+          <TextInput
+            placeholder="Add Coupon"
+            value={coupon}
+            onChangeText={setCoupon}
+            style={{ flex: 1, backgroundColor: "#FFF", borderWidth: 1, borderColor: "#E0E0E0", borderRadius: 8, paddingHorizontal: 15, height: 44 }}
+          />
+          <TouchableOpacity style={{ backgroundColor: "#2D8C8C", borderRadius: 8, paddingHorizontal: 20, justifyContent: "center", alignItems: "center", height: 44 }}>
+            <Text style={{ color: "#FFF", fontWeight: "600", fontSize: 14 }}>Apply</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action Buttons */}
+        <TouchableOpacity
+          onPress={() => router.push("/cart")}
+          style={{ borderWidth: 1.5, borderColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}>
+          <Text style={{ color: "#2D8C8C", fontWeight: "700", fontSize: 16 }}>Add To Cart</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={{ backgroundColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 30 }}>
+          <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>Buy $3.44</Text>
+        </TouchableOpacity>
+
+        {/* Reviews */}
+        <View style={{ marginBottom: 20 }}>
+          {/* Review 1 */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", marginBottom: 8 }}>
+              <Image source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Darrell Steward</Text>
+                  <Text style={{ fontSize: 12, color: "#999" }}>12/04/25</Text>
+                </View>
+                <View style={{ flexDirection: "row", marginRight: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
+                  ))}
+                </View>
+              </View>
+            </View>
+            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
+              Ms. Sarah helped me prepare for my IB math exams, I improved from a 4 to a 6! Her techniques and practice sessions are very effective.
+            </Text>
+          </View>
+
+          {/* Review 2 */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", marginBottom: 8 }}>
+              <Image source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Albert Flores</Text>
+                  <Text style={{ fontSize: 12, color: "#999" }}>10/04/25</Text>
+                </View>
+                <View style={{ flexDirection: "row", marginRight: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
+                  ))}
+                </View>
+              </View>
+            </View>
+            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
+              I've always found math boring and hard, but she made it fun with games, and visual explanations.
+            </Text>
+          </View>
+
+          {/* Review 3 */}
+          <View style={{ marginBottom: 20 }}>
+            <View style={{ flexDirection: "row", marginBottom: 8 }}>
+              <Image source={{ uri: "https://randomuser.me/api/portraits/men/45.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Ronald Richards</Text>
+                  <Text style={{ fontSize: 12, color: "#999" }}>10/04/25</Text>
+                </View>
+                <View style={{ flexDirection: "row", marginRight: 8 }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
+                  ))}
+                </View>
+              </View>
+            </View>
+            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
+              I used to struggle so much with algebra, but after just a few sessions with Sarah, everything started making sense.
+            </Text>
+          </View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    height: 50,
-  },
-  backArrow: { fontSize: 35, color: "#444" },
-  headerTitle: { fontSize: 18, fontWeight: "700", color: "#333" },
-  container: { padding: 16 },
-  imageContainer: {
-    borderRadius: 24,
-    height: 280,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  productImg: { width: "85%", height: "85%" },
-  pagination: { flexDirection: "row", position: "absolute", bottom: 15 },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#C4C4C4",
-    marginHorizontal: 4,
-  },
-  activeDot: { backgroundColor: "#349488", width: 22 },
-  titleSection: { marginBottom: 20 },
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  mainTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    lineHeight: 26,
-  },
-  stockBadge: {
-    backgroundColor: "#E8F5F3",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-  },
-  stockText: { color: "#349488", fontSize: 10, fontWeight: "800" },
-  skuText: { color: "#999", fontSize: 14, marginTop: 5 },
-  priceText: {
-    color: "#349488",
-    fontSize: 26,
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 10,
-    color: "#333",
-  },
-  descriptionText: { fontSize: 14, color: "#666", lineHeight: 22 },
-  specRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F9F9F9",
-  },
-  specLabel: { color: "#888", fontSize: 14 },
-  specValueText: { color: "#333", fontWeight: "600", fontSize: 14 },
-  sectionLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
-    marginTop: 10,
-  },
-  quantityRow: { flexDirection: "row", marginBottom: 20 },
-  stepper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F9FA",
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: "#EEE",
-  },
-  stepBtn: { fontSize: 18, color: "#349488", padding: 10 },
-  qtyText: { marginHorizontal: 15, fontWeight: "bold" },
-  couponBox: {
-    flex: 1,
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: "#EEE",
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  couponInput: { flex: 1, paddingHorizontal: 15, fontSize: 14 },
-  applyBtn: {
-    backgroundColor: "#349488",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  applyText: { color: "#FFF", fontWeight: "bold" },
-  colorOptions: { flexDirection: "row", gap: 12, marginBottom: 25 },
-  colorChip: {
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#EEE",
-  },
-  activeChip: { borderColor: "#349488", backgroundColor: "#E8F3F2" },
-  chipText: { color: "#666" },
-  activeChipText: { color: "#349488", fontWeight: "bold" },
-  outlineBtn: {
-    padding: 16,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: "#349488",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  outlineBtnText: { color: "#349488", fontWeight: "bold", fontSize: 16 },
-  primaryBtn: {
-    padding: 18,
-    borderRadius: 15,
-    backgroundColor: "#349488",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  primaryBtnText: { color: "#FFF", fontWeight: "bold", fontSize: 18 },
-  reviewItem: { marginBottom: 25 },
-  reviewerHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  avatar: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
-    backgroundColor: "#E0E0E0",
-    marginRight: 12,
-  },
-  reviewList: {
-    marginTop: 10,
-    marginBottom: 30,
-  },
-
-  reviewerName: { fontWeight: "bold", fontSize: 15 },
-  reviewDate: { color: "#AAA", fontSize: 11 },
-  reviewComment: { color: "#666", fontSize: 14, lineHeight: 20 },
-  starRow: { flexDirection: "row", marginTop: 2 },
-  star: { color: "#FFB100", fontSize: 14 },
-});
 
 export default ProductDetails;

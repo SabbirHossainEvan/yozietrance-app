@@ -83,7 +83,7 @@ const SignUpScreen: React.FC = () => {
             <TouchableOpacity style={styles.signUpButton}>
               <Text
                 style={styles.signUpButtonText}
-                onPress={() => router.push("/(tabs)")}
+                onPress={() => router.push("/user-selection")}
               >
                 Sign Up
               </Text>

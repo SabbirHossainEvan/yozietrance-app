@@ -1,5 +1,6 @@
 {
   "expo": {
+    "jsEngine": "hermes",
     "name": "yozietrance-App",
     "slug": "yozietrance-App",
     "version": "1.0.0",
@@ -8,6 +9,9 @@
     "scheme": "yozietranceapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+   "developmentClient": {
+      "silentLaunch": true
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -46,6 +50,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5b80bbe7-3d1a-4611-ba23-9c81db657275"
+      }
     }
   }
 }

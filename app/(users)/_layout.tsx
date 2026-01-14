@@ -1,5 +1,11 @@
 import { Tabs } from "expo-router";
-import { Home, MessageCircle, Package, User } from "lucide-react-native";
+import {
+  Home,
+  MessageCircle,
+  Package,
+  ShoppingBag,
+  User,
+} from "lucide-react-native";
 import React from "react";
 
 export default function UsersLayout() {
@@ -45,6 +51,13 @@ export default function UsersLayout() {
         options={{
           title: "Order",
           tabBarIcon: ({ color }) => <Package size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="cart"
+        options={{
+          title: "Cart",
+          tabBarIcon: ({ color }) => <ShoppingBag size={24} color={color} />,
         }}
       />
       <Tabs.Screen

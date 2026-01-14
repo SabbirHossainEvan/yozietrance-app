@@ -107,17 +107,6 @@ const OrderDetailScreen = () => {
             <Text style={styles.totalValue}>$259.00</Text>
           </View>
         </View>
-
-        {/* Action Button */}
-        <TouchableOpacity style={styles.trackButton}>
-          <MaterialCommunityIcons
-            name="map-marker-distance"
-            size={20}
-            color="#FFF"
-            style={{ marginRight: 8 }}
-          />
-          <Text style={styles.trackButtonText}>Track Live Location</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

@@ -186,7 +186,7 @@ const CardDetailsScreen: React.FC = () => {
 
           <TouchableOpacity
             style={styles.confirmBtn}
-            onPress={() => alert(`Paying with ${activeTab}`)}
+            onPress={() => router.replace("/(user_screen)/OrderAcceptedScreen")}
           >
             <Text style={styles.confirmBtnText}>Confirm</Text>
           </TouchableOpacity>

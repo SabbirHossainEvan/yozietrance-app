@@ -1,5 +1,4 @@
-import { HapticTab } from "@/components/haptic-tab";
-import { Feather } from '@expo/vector-icons';
+import { Feather } from "@expo/vector-icons";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Tabs } from "expo-router";
@@ -9,13 +8,24 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#278687",
-        headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarActiveTintColor: "#2A8383",
+        tabBarInactiveTintColor: "#999",
         tabBarStyle: {
+          paddingLeft: 20,
+          paddingRight: 20,
           paddingTop: 10,
-          height: 80
+          height: 85,
+          borderTopWidth: 0,
+          elevation: 10,
+          shadowColor: "#000",
+          shadowOpacity: 0.1,
+          shadowRadius: 10,
         },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
+        headerShown: false,
       }}
     >
       <Tabs.Screen
@@ -61,6 +71,20 @@ export default function TabLayout() {
           tabBarIcon: ({ color }: { color: string }) => (
             <FontAwesome5 name="user-circle" size={24} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="electronics-products"
+        options={{
+          title: "Electronics",
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
+          tabBarStyle: {
+            height: 65,
+            paddingBottom: 10,
+            paddingTop: 10,
+            display: "flex",
+          },
         }}
       />
     </Tabs>

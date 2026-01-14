@@ -1,305 +1,208 @@
-import { sampleProducts } from '@/constants/common';
-import { Ionicons } from '@expo/vector-icons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-type Product = {
-    id: string;
-    name: string;
-    sku: string;
-    price: string;
-    stock: number;
-    status: 'active' | 'draft' | 'low_stock';
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+import {
+  Dimensions,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-    images: string[];
+const { width } = Dimensions.get("window");
+const COLUMN_WIDTH = (width - 48) / 2;
 
-    rating: number;
-    reviewsCount: number;
+// Dummy Data
+const categories = [
+  {
+    id: "1",
+    name: "Electronics",
+    image:
+      "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=500",
+  },
+  {
+    id: "2",
+    name: "Clothing",
+    image:
+      "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=500",
+  },
+  {
+    id: "3",
+    name: "Accessories",
+    image:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=500",
+  },
+  {
+    id: "4",
+    name: "Footwear",
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=500",
+  },
+  {
+    id: "5",
+    name: "Groceries",
+    image:
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500",
+  },
+  {
+    id: "6",
+    name: "Gadgets",
+    image:
+      "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=500",
+  },
+];
 
-    stats: {
-        onStock: number;
-        processing: number;
-        totalSold: number;
-    };
+const ProductScreen = () => {
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
 
-    description: string;
+      {/* Header Section */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.iconBtn}>
+          <Ionicons name="chevron-back" size={24} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Product</Text>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => router.push("/(screens)/addCategory")}
+        >
+          <Ionicons name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
+      </View>
 
-    specification: {
-        brand: string;
-        model: string;
-        connectivity: string;
-        bluetooth: string;
-        colors: string[];
-        weight: string;
-        size: string;
-        chargingTime: string;
-        playtime: string;
-    };
-};
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Feather
+          name="search"
+          size={20}
+          color="#999"
+          style={styles.searchIcon}
+        />
+        <TextInput
+          placeholder="Search by Category"
+          placeholderTextColor="#999"
+          style={styles.searchInput}
+        />
+      </View>
 
-
-const Product = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState('all');
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>(sampleProducts);
-    useEffect(() => {
-        let result = [...sampleProducts];
-
-        if (searchQuery) {
-            result = result.filter(product =>
-                product.name.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
-
-        if (activeFilter !== 'all') {
-            result = result.filter(product =>
-                activeFilter === 'low_stock'
-                    ? product.status === 'low_stock' || product.stock < 10
-                    : product.status === activeFilter
-            );
-        }
-
-        setFilteredProducts(result);
-    }, [searchQuery, activeFilter]);
-
-    const totalValue = sampleProducts
-        .reduce((sum, product) => sum + parseFloat(product.price.replace('$', '').replace(',', '')) * product.stock, 0)
-        .toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-
-    const lowStockCount = sampleProducts.filter(p => p.status === 'low_stock' || p.stock < 10).length;
-
-    const renderStockStatus = (product: Product) => {
-        if (product.status === 'draft') {
-            return (
-                <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#FFF3E0', borderRadius: 4 }}>
-                    <Text style={{ fontSize: 12, color: '#E65100', fontWeight: '500' }}>Unpublish</Text>
-                </View>
-            );
-        }
-
-        const isLowStock = product.stock < 10;
-        return (
-            <Text style={{ fontSize: 12, color: isLowStock ? '#D32F2F' : '#1B5E20', fontWeight: '500' }}>
-                {product.stock} in stock
-            </Text>
-        );
-    };
-    // this is for handle add product
-    const handleAddProduct = () => {
-        router.push('/(screens)');
-    };
-    const handleBack = () => {
-        router.back();
-    };
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
-                {/* Header - Fixed at top */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
-                    <TouchableOpacity onPress={() => handleBack()}>
-                        <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
-                    </TouchableOpacity>
-                    <Text style={{ fontSize: 18, fontWeight: '600' }}>Products</Text>
-                    <View style={{ width: 24 }} />
-                </View>
-
-                {/* Scrollable Content */}
-                <ScrollView
-                    style={{ flex: 1 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Search Bar */}
-                    <View style={{ marginVertical: 16 }}>
-                        <TextInput
-                            placeholder="Search by name"
-                            style={{
-                                borderWidth: 1,
-                                borderColor: '#E3E6F0',
-                                borderRadius: 12,
-                                padding: 16,
-                                backgroundColor: '#FFF',
-                                fontSize: 14
-                            }}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                    </View>
-
-                    {/*Cards */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 }}>
-                        <View style={{
-                            backgroundColor: 'white',
-                            borderRadius: 12,
-                            padding: 16,
-                            width: '48%',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 4,
-                            elevation: 2,
-                        }}>
-                            <Text style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>Total value</Text>
-                            <Text style={{ fontSize: 18, fontWeight: '600' }}>{totalValue}</Text>
-                        </View>
-
-                        <View style={{
-                            backgroundColor: 'white',
-                            borderRadius: 12,
-                            padding: 16,
-                            width: '48%',
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.1,
-                            shadowRadius: 4,
-                            elevation: 2,
-                        }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Text style={{ fontSize: 12, color: '#666' }}>Low stock items</Text>
-                                <Ionicons name="warning-outline" size={16} color="red" />
-                            </View>
-                            <Text style={{ fontSize: 18, fontWeight: '600' }}>{lowStockCount}</Text>
-                        </View>
-                    </View>
-
-                    {/* Filter Tabs */}
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                    >
-                        {['All', 'Active', 'Drafts', 'Low Stock'].map((filter) => {
-                            const filterValue = filter.toLowerCase().replace(' ', '_');
-                            const isActive = activeFilter === (filterValue === 'low_stock' ? 'low_stock' : filterValue);
-
-                            return (
-                                <TouchableOpacity
-                                    key={filter}
-                                    style={{
-                                        paddingVertical: 8,
-                                        paddingHorizontal: 16,
-                                        borderRadius: 8,
-                                        marginRight: 8,
-                                        backgroundColor: isActive ? '#278687' : '#deede8',
-                                    }}
-                                    onPress={() => setActiveFilter(filterValue === 'all' ? 'all' : filterValue as any)}
-                                >
-                                    <Text style={{
-                                        color: isActive ? 'white' : '#2B2B2B',
-                                        fontSize: 14
-                                    }}>
-                                        {filter}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-
-                    {/* Product List */}
-                    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 16, marginTop: 16 }}>Inventory Items</Text>
-                    <View>
-                        {filteredProducts.map((product: Product) => (
-                            <TouchableOpacity
-                                onPress={() => router.push({
-                                    pathname: '/(screens)/product_details',
-                                    params: { id: product.id }
-                                })}
-                                key={product.id}
-                                style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: 12,
-                                    padding: 12,
-                                    marginHorizontal: 1,
-                                    marginBottom: 12,
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.1,
-                                    shadowRadius: 2,
-                                    elevation: 1,
-                                }}
-                            >
-                                <Image
-                                    source={{ uri: product.images[0] }}
-                                    style={{
-                                        width: 60,
-                                        height: 60,
-                                        borderRadius: 8,
-                                        marginRight: 12,
-                                    }}
-                                />
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{
-                                        fontSize: 16,
-                                        fontWeight: '600',
-                                        marginBottom: 4
-                                    }}>
-                                        {product.name}
-                                    </Text>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                        <Text style={{
-                                            fontSize: 14,
-                                            color: '#6B7280',
-                                            marginRight: 8
-                                        }}>
-                                            {product.sku}
-                                        </Text>
-                                        <View style={{
-                                            paddingHorizontal: 8,
-                                            paddingVertical: 2,
-                                            borderRadius: 12,
-                                            backgroundColor: product.status === 'active' ? '#D1FAE5' :
-                                                product.status === 'low_stock' ? '#FEF3C7' : '#E5E7EB',
-                                        }}>
-                                            <Text style={{
-                                                fontSize: 10,
-                                                color: product.status === 'active' ? '#065F46' :
-                                                    product.status === 'low_stock' ? '#92400E' : '#4B5563',
-                                                fontWeight: '500'
-                                            }}>
-                                                {product.status}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '700',
-                                    color: '#111827'
-                                }}>
-                                    ${product.price}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </ScrollView>
+      {/* Categories Grid */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.grid}>
+          {categories.map((item) => (
+            <View key={item.id} style={styles.card}>
+              <View style={styles.imageContainer}>
+                <Image source={{ uri: item.image }} style={styles.catImage} />
+              </View>
+              <TouchableOpacity
+                style={styles.nameBadge}
+                onPress={() => router.replace("/(tabs)/electronics-products")}
+              >
+                <Text style={styles.catName}>{item.name}</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* add product action Button */}
-            <TouchableOpacity
-                style={{
-                    position: 'absolute',
-                    right: 24,
-                    bottom: 24,
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: '#278687',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    elevation: 4,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 3.84,
-                }}
-                onPress={() => handleAddProduct()}
-            >
-                <MaterialIcons name="add" size={24} color="white" />
-            </TouchableOpacity>
-        </SafeAreaView>
-    );
+          ))}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
 };
 
-export default Product;
+// Sub-component for Bottom Tab
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F8FBFB" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    height: 60,
+  },
+  headerTitle: { fontSize: 22, fontWeight: "bold", color: "#333" },
+  iconBtn: { padding: 5 },
+  addBtn: {
+    backgroundColor: "#349488",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 3,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF",
+    marginHorizontal: 20,
+    marginVertical: 15,
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    height: 55,
+    borderWidth: 1,
+    borderColor: "#E8F3F2",
+  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16, color: "#333" },
+  scrollContent: { paddingBottom: 100 },
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+  },
+  card: {
+    width: COLUMN_WIDTH,
+    marginBottom: 20,
+  },
+  imageContainer: {
+    width: "100%",
+    height: 120,
+    borderRadius: 15,
+    overflow: "hidden",
+    backgroundColor: "#EEE",
+  },
+  catImage: { width: "100%", height: "100%", resizeMode: "cover" },
+  nameBadge: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#349488",
+    borderRadius: 8,
+    paddingVertical: 8,
+    alignItems: "center",
+    backgroundColor: "#F0F9F8",
+  },
+  catName: { color: "#349488", fontWeight: "600", fontSize: 14 },
+  bottomTab: {
+    flexDirection: "row",
+    backgroundColor: "#FFF",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    justifyContent: "space-around",
+    paddingBottom: 25, // For iPhone home indicator
+  },
+  tabItem: { alignItems: "center" },
+  tabLabel: { fontSize: 12, color: "#666", marginTop: 4 },
+  activeTabLabel: { color: "#349488", fontWeight: "bold" },
+  activeIndicator: {
+    width: 25,
+    height: 3,
+    backgroundColor: "#349488",
+    marginTop: 4,
+    borderRadius: 2,
+  },
+});
+
+export default ProductScreen;

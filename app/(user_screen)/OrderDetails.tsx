@@ -74,12 +74,28 @@ const OrderDetails = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Orders #ORD-2025</Text>
         <View style={{ width: 24 }} />
+      </View> */}
+
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={28} color="#181725" />
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>Orders #ORD-2025</Text>
+
+        {/* Added Download Button */}
+        <TouchableOpacity
+          style={styles.downloadButton}
+          onPress={() => router.push("/(user_screen)/ExportInvoiceScreen")}
+        >
+          <Ionicons name="download-outline" size={20} color="#FFF" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -284,9 +300,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#F7FAF9",
   },
-  headerTitle: { fontSize: 18, fontWeight: "700" },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#181725",
+  },
   scrollContent: { padding: 16 },
   card: {
     backgroundColor: "#FFF",
@@ -429,6 +451,14 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginTop: 20,
+    alignItems: "center",
+  },
+  downloadButton: {
+    backgroundColor: "#3B8C8C", // The teal color from your UI
+    width: 45,
+    height: 45,
+    borderRadius: 22.5, // Makes it a perfect circle
+    justifyContent: "center",
     alignItems: "center",
   },
   doneBtnText: { color: "#FFF", fontWeight: "bold" },

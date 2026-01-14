@@ -22,10 +22,9 @@ export default function UserSelection() {
     setSelectedRole(role);
 
     if (role === "user") {
-      console.log(role);
-      router.push("/(users)");
+      router.push("/(user_screen)/CompleteProfileScreen");
     } else {
-      router.push("/login");
+      router.push("/(screens)/CompleteProfileScreen");
     }
   };
 
@@ -44,7 +43,11 @@ export default function UserSelection() {
             ]}
             onPress={() => handleSelection("user")}
           >
-            <Feather name="users" size={width * 0.08} color={selectedRole === "user" ? "white" : "#2A8383"} />
+            <Feather
+              name="users"
+              size={width * 0.08}
+              color={selectedRole === "user" ? "white" : "#2A8383"}
+            />
             <Text
               style={[
                 styles.roleText,

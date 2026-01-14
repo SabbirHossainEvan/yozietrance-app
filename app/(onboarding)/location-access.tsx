@@ -37,7 +37,7 @@ export default function LocationAccess() {
         <TouchableOpacity
           style={styles.button}
           activeOpacity={0.8}
-          onPress={() => router.push("/user-selection")}
+          onPress={() => router.push("/(auth)/login")}
         >
           <Text style={styles.buttonText}>Allow location access</Text>
         </TouchableOpacity>

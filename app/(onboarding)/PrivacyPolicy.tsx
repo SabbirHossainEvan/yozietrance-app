@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
             <View style={[styles.checkbox, accepted && styles.checked]}>
               {accepted && <Ionicons name="checkmark" size={14} color="#FFF" />}
             </View>
-            <Text style={styles.checkboxText}>Accept terms & conditions</Text>
+            <Text style={styles.checkboxText}>Accept Privacy & Policy</Text>
           </TouchableOpacity>
         </ScrollView>
 

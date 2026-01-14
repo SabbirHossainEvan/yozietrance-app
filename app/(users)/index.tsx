@@ -335,6 +335,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { DUMMY_ORDERS } from "./order";
 
 const { width } = Dimensions.get("window");
 
@@ -432,50 +433,66 @@ const Dashboard: React.FC = () => {
         {/* Recent Order Section (Updated) */}
         <Text style={styles.sectionTitleMain}>Recent order</Text>
 
-        <TouchableOpacity
-          style={styles.orderCard}
-          onPress={() => router.push("/(user_screen)/ResentOrder")}
-          activeOpacity={0.9}
-        >
-          <View style={styles.orderTopRow}>
-            <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-              }}
-              style={styles.orderImage}
-            />
-            <View style={styles.orderInfoContainer}>
-              <View style={styles.orderHeaderRow}>
-                <Text style={styles.orderIdText}>#ORD-2025</Text>
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>Processing</Text>
+        <View style={{ gap: 15 }}>
+          {DUMMY_ORDERS.slice(0, 3).map((order) => (
+            <TouchableOpacity
+              key={order.id}
+              style={styles.orderCard}
+              onPress={() =>
+                router.push({
+                  pathname: "/(user_screen)/OrderDetails",
+                  params: { status: order.status, id: order.id },
+                })
+              }
+              activeOpacity={0.9}
+            >
+              <View style={styles.orderTopRow}>
+                <Image
+                  source={{
+                    uri: order.image,
+                  }}
+                  style={styles.orderImage}
+                />
+                <View style={styles.orderInfoContainer}>
+                  <View style={styles.orderHeaderRow}>
+                    <Text style={styles.orderIdText}>{order.orderNo}</Text>
+                    <View style={styles.statusBadge}>
+                      <Text style={styles.statusText}>{order.status}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.orderAddress} numberOfLines={1}>
+                    {order.address}
+                  </Text>
+
+                  <View style={styles.ratingRow}>
+                    <Star color="#FFD700" size={16} fill="#FFD700" />
+                    <Text style={styles.ratingText}>
+                      {" "}
+                      {order.rating
+                        .split(" ")[0]
+                        .replace("(", "")
+                        .replace(")", "")}{" "}
+                      <Text style={styles.reviewCount}>
+                        ({order.rating.split(" ")[1] || "1.2k"})
+                      </Text>
+                    </Text>
+                  </View>
                 </View>
               </View>
 
-              <Text style={styles.orderAddress} numberOfLines={1}>
-                6391 Elgin St. Celina, Delaware 10299
-              </Text>
-
-              <View style={styles.ratingRow}>
-                <Star color="#FFD700" size={16} fill="#FFD700" />
-                <Text style={styles.ratingText}>
-                  {" "}
-                  4.8 <Text style={styles.reviewCount}>(1.2k)</Text>
-                </Text>
+              <View style={styles.orderBottomRow}>
+                <View>
+                  <Text style={styles.customerName}>{order.customer}</Text>
+                  <Text style={styles.itemDetail}>
+                    {order.itemSummary || "Items info..."}
+                  </Text>
+                </View>
+                <Text style={styles.orderPrice}>${order.price.toFixed(2)}</Text>
               </View>
-            </View>
-          </View>
-
-          <View style={styles.orderBottomRow}>
-            <View>
-              <Text style={styles.customerName}>Alice freeman</Text>
-              <Text style={styles.itemDetail}>
-                4 items • Wireless Headphones 3x...
-              </Text>
-            </View>
-            <Text style={styles.orderPrice}>$259.00</Text>
-          </View>
-        </TouchableOpacity>
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

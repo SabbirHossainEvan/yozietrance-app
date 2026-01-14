@@ -1,200 +1,7 @@
-// import { Ionicons } from "@expo/vector-icons";
-// import { router } from "expo-router";
-// import React from "react";
-// import {
-//   Dimensions,
-//   FlatList,
-//   Image,
-//   StyleSheet,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   View,
-// } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-
-// const { width } = Dimensions.get("window");
-// const CARD_WIDTH = (width - 48) / 2;
-
-// const PRODUCTS = [
-//   {
-//     id: "1",
-//     title: "Optical Mouse",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group.png"),
-//   },
-//   {
-//     id: "2",
-//     title: "USB Keyboard",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group (1).png"),
-//   },
-//   {
-//     id: "3",
-//     title: "Wireless Earbuds",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group (2).png"),
-//   },
-//   {
-//     id: "4",
-//     title: "Power Bank",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group (3).png"),
-//   },
-//   {
-//     id: "5",
-//     title: "Wireless Earbuds",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group (2).png"),
-//   },
-//   {
-//     id: "6",
-//     title: "Power Bank",
-//     price: "$3.44",
-//     rating: 4.4,
-//     reviews: "1,256",
-//     image: require("../../assets/users/Mask group (3).png"),
-//   },
-// ];
-
-// const ElectronicsScreen = () => {
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <View style={styles.header}>
-//         <TouchableOpacity onPress={() => router.back()}>
-//           <Ionicons name="chevron-back" size={24} color="#333" />
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>Electronics</Text>
-//         <View style={{ width: 24 }} />
-//       </View>
-
-//       <View style={styles.searchBar}>
-//         <Ionicons
-//           name="search-outline"
-//           size={20}
-//           color="#888"
-//           style={{ marginTop: 10 }}
-//         />
-//         <TextInput
-//           placeholder="Search Product.."
-//           style={{ flex: 1, marginLeft: 10 }}
-//         />
-//       </View>
-
-//       <FlatList
-//         data={PRODUCTS}
-
-//         numColumns={2}
-//         keyExtractor={(item, index) => `${item.id}-${index}`}
-//         columnWrapperStyle={{ justifyContent: "space-between" }}
-//         contentContainerStyle={{ padding: 16 }}
-//         renderItem={({ item }) => (
-//           <View style={styles.card} >
-//             <View style={styles.imageBox}>
-//               <Image
-//                 source={item.image}
-//                 style={styles.img}
-//                 resizeMode="contain"
-//               />
-//             </View>
-//             <Text style={styles.title}>{item.title}</Text>
-//             <View style={styles.ratingRow}>
-//               <Ionicons name="star" size={14} color="#FFB800" />
-//               <Text style={styles.ratingText}>{item.rating}</Text>
-//               <Text style={styles.reviews}>({item.reviews})</Text>
-//             </View>
-//             <View style={styles.footer}>
-//               <View style={styles.priceTag}>
-//                 <Text style={styles.price}>{item.price}</Text>
-//               </View>
-//               <TouchableOpacity
-//                 style={styles.viewBtn}
-
-//               >
-//                 <Text style={{ color: "#FFF", fontSize: 12 }}>View</Text>
-//               </TouchableOpacity>
-//             </View>
-//           </View>
-//         )}
-//       />
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: "#F7FAF8" },
-//   header: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-//     padding: 16,
-//   },
-//   headerTitle: { fontSize: 18, fontWeight: "bold" },
-//   searchBar: {
-//     flexDirection: "row",
-//     backgroundColor: "#FFF",
-//     margin: 16,
-//     padding: 8,
-//     borderRadius: 25,
-//     elevation: 2,
-//   },
-//   card: {
-//     width: CARD_WIDTH,
-//     backgroundColor: "#FFF",
-//     borderRadius: 20,
-//     padding: 10,
-//     marginBottom: 16,
-//     elevation: 2,
-//   },
-//   imageBox: {
-//     height: 110,
-
-//     borderRadius: 15,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   img: { width: "100%", height: "100%" },
-//   title: { fontWeight: "bold", marginTop: 10 },
-//   ratingRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
-//   ratingText: { fontSize: 12, fontWeight: "bold", marginLeft: 4 },
-//   reviews: { fontSize: 10, color: "#AAA", marginLeft: 2 },
-//   footer: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     marginTop: 10,
-//   },
-//   priceTag: {
-//     borderWidth: 1,
-//     borderColor: "#4FB0A8",
-//     borderRadius: 12,
-//     paddingHorizontal: 22,
-//     paddingVertical: 3,
-//   },
-//   price: { color: "#4FB0A8", fontWeight: "bold" },
-//   viewBtn: {
-//     backgroundColor: "#4FB0A8",
-//     borderRadius: 12,
-//     paddingHorizontal: 26,
-//     paddingVertical: 6,
-//   },
-// });
-
-// export default ElectronicsScreen;
-
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router"; // router import update
-import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -208,14 +15,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
-// Card width responsive calculations
 const CARD_WIDTH = (width - 48) / 2;
 
 const PRODUCTS = [
   {
     id: "1",
     title: "Optical Mouse",
-    price: "$3.44",
+    price: "$20.00",
     rating: 4.4,
     reviews: "1,256",
     image: require("../../assets/users/Mask group.png"),
@@ -223,7 +29,7 @@ const PRODUCTS = [
   {
     id: "2",
     title: "USB Keyboard",
-    price: "$3.44",
+    price: "$20.00",
     rating: 4.4,
     reviews: "1,256",
     image: require("../../assets/users/Mask group (1).png"),
@@ -231,7 +37,7 @@ const PRODUCTS = [
   {
     id: "3",
     title: "Wireless Earbuds",
-    price: "$3.44",
+    price: "$20.00",
     rating: 4.4,
     reviews: "1,256",
     image: require("../../assets/users/Mask group (2).png"),
@@ -239,23 +45,7 @@ const PRODUCTS = [
   {
     id: "4",
     title: "Power Bank",
-    price: "$3.44",
-    rating: 4.4,
-    reviews: "1,256",
-    image: require("../../assets/users/Mask group (3).png"),
-  },
-  {
-    id: "5",
-    title: "Wireless Earbuds",
-    price: "$3.44",
-    rating: 4.4,
-    reviews: "1,256",
-    image: require("../../assets/users/Mask group (2).png"),
-  },
-  {
-    id: "6",
-    title: "Power Bank",
-    price: "$3.44",
+    price: "$20.00",
     rating: 4.4,
     reviews: "1,256",
     image: require("../../assets/users/Mask group (3).png"),
@@ -264,10 +54,73 @@ const PRODUCTS = [
 
 const ElectronicsScreen = () => {
   const router = useRouter();
+  const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
+
+  const loadAddedItems = async () => {
+    try {
+      const cartData = await AsyncStorage.getItem("userCart");
+      if (cartData) {
+        const cartItems = JSON.parse(cartData);
+        const addedMap: { [key: string]: boolean } = {};
+        cartItems.forEach((item: any) => {
+          addedMap[item.id] = true;
+        });
+        setAddedItems(addedMap);
+      }
+    } catch (error) {
+      console.log("Error loading cart for UI sync:", error);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadAddedItems();
+    }, [])
+  );
+
+  const addToCart = async (product: any) => {
+    try {
+      // 1. Get existing cart
+      const existingCart = await AsyncStorage.getItem("userCart");
+      let cart = existingCart ? JSON.parse(existingCart) : [];
+
+      // 2. Check if item exists
+      const existingItemIndex = cart.findIndex((item: any) => item.id === product.id);
+
+      if (existingItemIndex > -1) {
+        // Item exists, just ensure it's marked as added (optional: increment qty?)
+        // For this specific 'add' button, usually implies first add. 
+        // We'll just update UI. If we want to support multiple adds via this button we could increment.
+        // Let's increment if it exists, or just do nothing if we only want 'added' state.
+        // As per user request "tik mark isgn", it implies state toggle or persistent 'added' state.
+        // Let's assume we just add it if not present, OR increment if present?
+        // User said: "this card added in the cart... and listing... with localstore"
+        // Let's increment qty + 1.
+        cart[existingItemIndex].quantity += 1;
+      } else {
+        // New Item
+        cart.push({
+          id: product.id,
+          name: product.title,
+          price: parseFloat(product.price.replace("$", "")), // Clean price string
+          quantity: 1,
+          image: Image.resolveAssetSource(product.image).uri, // Handle require() images
+        });
+      }
+
+      // 3. Save back to storage
+      await AsyncStorage.setItem("userCart", JSON.stringify(cart));
+
+      // 4. Update UI state
+      setAddedItems((prev) => ({ ...prev, [product.id]: true }));
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Header Section */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
@@ -276,7 +129,7 @@ const ElectronicsScreen = () => {
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Search Bar */}
+      {/* Search Bar Section */}
       <View style={styles.searchBar}>
         <Ionicons name="search-outline" size={20} color="#888" />
         <TextInput
@@ -286,7 +139,7 @@ const ElectronicsScreen = () => {
         />
       </View>
 
-      {/* Product List */}
+      {/* Product Grid List */}
       <FlatList
         data={PRODUCTS}
         numColumns={2}
@@ -296,9 +149,10 @@ const ElectronicsScreen = () => {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            activeOpacity={0.9}
+            activeOpacity={0.8}
             onPress={() => router.push("/(user_screen)/ProductDetails")}
           >
+            {/* Light Blue Image Container */}
             <View style={styles.imageBox}>
               <Image
                 source={item.image}
@@ -307,28 +161,36 @@ const ElectronicsScreen = () => {
               />
             </View>
 
+            {/* Product Title */}
             <Text style={styles.title} numberOfLines={1}>
               {item.title}
             </Text>
 
+            {/* Rating Section */}
             <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color="#FFB800" />
+              <Ionicons name="star" size={16} color="#FFB800" />
               <Text style={styles.ratingText}>{item.rating}</Text>
-              <Text style={styles.reviews}>({item.reviews})</Text>
+              <Text style={styles.reviews}>({item.reviews} reviews)</Text>
             </View>
 
-            {/* Footer buttons with responsive Flexbox */}
-            <View style={styles.footer}>
-              <View style={styles.priceTag}>
-                <Text style={styles.price} numberOfLines={1}>
+            {/* Price and Circular Add Button */}
+            <View style={styles.cardBottom}>
+              <View>
+                <Text style={styles.priceText}>
                   {item.price}
+                  <Text style={styles.unitText}> /unit</Text>
                 </Text>
               </View>
+
               <TouchableOpacity
-                style={styles.viewBtn}
-                onPress={() => router.push("/(user_screen)/ProductDetails")}
+                style={[styles.addButton, addedItems[item.id] && { backgroundColor: "#E0F2F1" }]}
+                onPress={() => addToCart(item)}
               >
-                <Text style={styles.viewBtnText}>View</Text>
+                {addedItems[item.id] ? (
+                  <Ionicons name="checkmark" size={24} color="#2A8383" />
+                ) : (
+                  <Ionicons name="add" size={24} color="#333" />
+                )}
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -361,54 +223,72 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, marginLeft: 10, fontSize: 14 },
   listPadding: { padding: 16 },
   columnWrapper: { justifyContent: "space-between" },
+
   card: {
     width: CARD_WIDTH,
     backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 10,
+    borderRadius: 25,
+    padding: 12,
     marginBottom: 16,
     elevation: 3,
     shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
   },
   imageBox: {
-    height: 110,
-    borderRadius: 15,
+    height: 130,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F9F9F9",
   },
   img: { width: "100%", height: "100%" },
-  title: { fontWeight: "bold", marginTop: 10, fontSize: 14, color: "#333" },
-  ratingRow: { flexDirection: "row", alignItems: "center", marginTop: 5 },
-  ratingText: { fontSize: 12, fontWeight: "bold", marginLeft: 4 },
-  reviews: { fontSize: 10, color: "#AAA", marginLeft: 2 },
-  footer: {
+  title: {
+    fontWeight: "bold",
+    marginTop: 12,
+    fontSize: 16,
+    color: "#2D3E33",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  ratingText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 5,
+    color: "#333",
+  },
+  reviews: {
+    fontSize: 13,
+    color: "#999",
+    marginLeft: 4,
+  },
+  cardBottom: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
-    gap: 4,
+    marginTop: 15,
   },
-  priceTag: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#4FB0A8",
-    borderRadius: 8,
-    paddingVertical: 5,
+  priceText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  unitText: {
+    fontSize: 12,
+    color: "#888",
+    fontWeight: "normal",
+  },
+  addButton: {
+    backgroundColor: "#F2F2F2",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
     alignItems: "center",
-    marginRight: 4,
   },
-  price: { color: "#4FB0A8", fontWeight: "bold", fontSize: 11 },
-  viewBtn: {
-    flex: 1,
-    backgroundColor: "#4FB0A8",
-    borderRadius: 8,
-    paddingVertical: 6,
-    alignItems: "center",
-  },
-  viewBtnText: { color: "#FFF", fontSize: 11, fontWeight: "600" },
 });
 
 export default ElectronicsScreen;
