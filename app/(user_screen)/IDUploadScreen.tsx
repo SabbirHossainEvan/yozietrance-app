@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: "#7C7C7C",
-    borderStyle: "dashed", // Dashed border as per design
+    borderStyle: "dashed",
     backgroundColor: "transparent",
     overflow: "hidden",
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   nextButton: {
-    backgroundColor: "#3B8C8C", // Theme teal color
+    backgroundColor: "#3B8C8C",
     height: 55,
     borderRadius: 15,
     justifyContent: "center",

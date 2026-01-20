@@ -75,7 +75,7 @@ const ElectronicsScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadAddedItems();
-    }, [])
+    }, []),
   );
 
   const addToCart = async (product: any) => {
@@ -85,26 +85,20 @@ const ElectronicsScreen = () => {
       let cart = existingCart ? JSON.parse(existingCart) : [];
 
       // 2. Check if item exists
-      const existingItemIndex = cart.findIndex((item: any) => item.id === product.id);
+      const existingItemIndex = cart.findIndex(
+        (item: any) => item.id === product.id,
+      );
 
       if (existingItemIndex > -1) {
-        // Item exists, just ensure it's marked as added (optional: increment qty?)
-        // For this specific 'add' button, usually implies first add. 
-        // We'll just update UI. If we want to support multiple adds via this button we could increment.
-        // Let's increment if it exists, or just do nothing if we only want 'added' state.
-        // As per user request "tik mark isgn", it implies state toggle or persistent 'added' state.
-        // Let's assume we just add it if not present, OR increment if present?
-        // User said: "this card added in the cart... and listing... with localstore"
-        // Let's increment qty + 1.
         cart[existingItemIndex].quantity += 1;
       } else {
         // New Item
         cart.push({
           id: product.id,
           name: product.title,
-          price: parseFloat(product.price.replace("$", "")), // Clean price string
+          price: parseFloat(product.price.replace("$", "")),
           quantity: 1,
-          image: Image.resolveAssetSource(product.image).uri, // Handle require() images
+          image: Image.resolveAssetSource(product.image).uri,
         });
       }
 
@@ -183,7 +177,10 @@ const ElectronicsScreen = () => {
               </View>
 
               <TouchableOpacity
-                style={[styles.addButton, addedItems[item.id] && { backgroundColor: "#E0F2F1" }]}
+                style={[
+                  styles.addButton,
+                  addedItems[item.id] && { backgroundColor: "#E0F2F1" },
+                ]}
                 onPress={() => addToCart(item)}
               >
                 {addedItems[item.id] ? (
