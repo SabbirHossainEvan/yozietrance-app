@@ -2,6 +2,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -14,9 +15,16 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { useRegisterVendorMutation } from "../../store/api/apiSlice";
+import { updateVendorRegistration } from "../../store/slices/registrationSlice";
+import { RootState } from "../../store/store";
 
 const BusinessIdUploadScreen: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const vendorData = useSelector((state: RootState) => state.registration.vendor);
+  const [registerVendor, { isLoading }] = useRegisterVendorMutation();
 
   // States
   const [businessId, setBusinessId] = useState<string>("");
@@ -50,11 +58,84 @@ const BusinessIdUploadScreen: React.FC = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Business ID:", businessId);
-    console.log("Selected Image:", selectedImage);
+  const handleSubmit = async () => {
+    if (!businessId || !selectedImage) {
+      Alert.alert("Required", "Please provide Business ID and upload an image.");
+      return;
+    }
 
-    router.push("/(tabs)");
+    try {
+      // FIX: Merging current states with Redux data to avoid stale selector values
+      const latestData = {
+        ...vendorData,
+        businessId: selectedImage,
+        bussinessRegNumber: businessId,
+      };
+
+      dispatch(updateVendorRegistration({
+        businessId: selectedImage,
+        bussinessRegNumber: businessId,
+      }));
+
+      // Use FormData for multipart/form-data request
+      const formData = new FormData();
+
+      // Append text fields from latestData
+      // NOTE: Backend error literally says 'fulllName' (3 'l's). Following typo.
+      if (latestData.fullName) formData.append('fulllName', latestData.fullName);
+      if (latestData.phone) formData.append('phone', latestData.phone);
+      if (latestData.address) formData.append('address', latestData.address);
+      if (latestData.storename) formData.append('storename', latestData.storename);
+      if (latestData.storeDescription) formData.append('storeDescription', latestData.storeDescription);
+      if (latestData.nationalIdNumber) formData.append('nationalIdNumber', latestData.nationalIdNumber);
+      if (latestData.bussinessRegNumber) formData.append('bussinessRegNumber', latestData.bussinessRegNumber);
+      if (latestData.gender) formData.append('gender', latestData.gender || 'Other'); // Fallback if missing
+
+      // Append files from latestData
+      if (latestData.logo) {
+        formData.append('logo', {
+          uri: latestData.logo,
+          name: 'logo.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (latestData.nidFront) {
+        formData.append('nidFront', {
+          uri: latestData.nidFront,
+          name: 'nid_front.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (latestData.nidBack) {
+        formData.append('nidBack', {
+          uri: latestData.nidBack,
+          name: 'nid_back.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (selectedImage) {
+        formData.append('businessId', {
+          uri: selectedImage,
+          name: 'business_id.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      console.log('Registering Vendor with Latest Data (FormData)');
+
+      await registerVendor(formData).unwrap();
+
+      Alert.alert("Success", "Vendor registration successful!", [
+        { text: "OK", onPress: () => router.push("/(tabs)") }
+      ]);
+
+    } catch (error: any) {
+      console.error("Vendor registration failed:", error);
+      Alert.alert("Error", error?.data?.message || "Registration failed");
+    }
   };
 
   return (
@@ -113,8 +194,13 @@ const BusinessIdUploadScreen: React.FC = () => {
             style={styles.submitButton}
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={isLoading}
           >
-            <Text style={styles.submitButtonText}>Submit</Text>
+            {isLoading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

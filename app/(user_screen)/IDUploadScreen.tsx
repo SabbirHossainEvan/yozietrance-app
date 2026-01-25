@@ -15,11 +15,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useDispatch } from "react-redux";
+import { updateBuyerRegistration } from "../../store/slices/registrationSlice";
+
 const IDUploadScreen = () => {
-  // State variables with types
-  const [idNumber, setIdNumber] = useState<string>("");
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
+  const dispatch = useDispatch();
+  const [nidNumber, setIdNumber] = useState<string>("");
+  const [nidFontPhotoUrl, setFrontImage] = useState<string | null>(null);
+  const [nidBackPhotoUrl, setBackImage] = useState<string | null>(null);
 
   // Type-safe pickImage function
   const pickImage = async (type: "front" | "back") => {
@@ -56,7 +59,7 @@ const IDUploadScreen = () => {
               style={styles.input}
               placeholder="3264 35465 341654"
               placeholderTextColor="#C7C7CD"
-              value={idNumber}
+              value={nidNumber}
               onChangeText={setIdNumber}
               keyboardType="numeric"
             />
@@ -72,9 +75,9 @@ const IDUploadScreen = () => {
               onPress={() => pickImage("front")}
               activeOpacity={0.7}
             >
-              {frontImage ? (
+              {nidFontPhotoUrl ? (
                 <Image
-                  source={{ uri: frontImage }}
+                  source={{ uri: nidFontPhotoUrl }}
                   style={styles.previewImage}
                 />
               ) : (
@@ -96,9 +99,9 @@ const IDUploadScreen = () => {
               onPress={() => pickImage("back")}
               activeOpacity={0.7}
             >
-              {backImage ? (
+              {nidBackPhotoUrl ? (
                 <Image
-                  source={{ uri: backImage }}
+                  source={{ uri: nidBackPhotoUrl }}
                   style={styles.previewImage}
                 />
               ) : (
@@ -112,9 +115,18 @@ const IDUploadScreen = () => {
 
           {/* Next Button */}
           <TouchableOpacity
-            style={[styles.nextButton, !idNumber && styles.disabledButton]}
-            disabled={!idNumber}
-            onPress={() => router.push("/(user_screen)/UploadPictureScreen")}
+            style={[styles.nextButton, !nidNumber && styles.disabledButton]}
+            disabled={!nidNumber}
+            onPress={() => {
+              dispatch(
+                updateBuyerRegistration({
+                  nidNumber,
+                  nidFrontPhotoUrl: nidFontPhotoUrl || undefined,
+                  nidBackPhotoUrl: nidBackPhotoUrl || undefined,
+                })
+              );
+              router.push("/(user_screen)/UploadPictureScreen");
+            }}
           >
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>

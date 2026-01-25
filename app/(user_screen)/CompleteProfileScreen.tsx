@@ -14,7 +14,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useDispatch } from "react-redux";
+import { updateBuyerRegistration } from "../../store/slices/registrationSlice";
+
 const CompleteProfileScreen = () => {
+  const dispatch = useDispatch();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -27,6 +34,18 @@ const CompleteProfileScreen = () => {
   const selectGender = (value: string) => {
     setGender(value);
     setIsModalVisible(false);
+  };
+
+  const handleNext = () => {
+    dispatch(
+      updateBuyerRegistration({
+        fullName,
+        email,
+        phone,
+        gender,
+      })
+    );
+    router.push("/(user_screen)/IDUploadScreen");
   };
 
   return (
@@ -56,6 +75,8 @@ const CompleteProfileScreen = () => {
                 style={styles.input}
                 placeholder="Enter your full name"
                 placeholderTextColor="#C7C7CD"
+                value={fullName}
+                onChangeText={setFullName}
               />
             </View>
 
@@ -67,6 +88,8 @@ const CompleteProfileScreen = () => {
                 placeholder="Enter email address"
                 placeholderTextColor="#C7C7CD"
                 keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
               />
             </View>
 
@@ -78,6 +101,8 @@ const CompleteProfileScreen = () => {
                 placeholder="Enter phone number"
                 placeholderTextColor="#C7C7CD"
                 keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhoneNumber}
               />
             </View>
 
@@ -112,7 +137,7 @@ const CompleteProfileScreen = () => {
           {/* Next Button */}
           <TouchableOpacity
             style={styles.nextButton}
-            onPress={() => router.push("/(user_screen)/IDUploadScreen")}
+            onPress={handleNext}
           >
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>

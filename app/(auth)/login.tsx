@@ -1,8 +1,13 @@
+
+
+
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -13,112 +18,114 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useLoginMutation } from "@/store/api/authApiSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { setCredentials } from "@/store/slices/authSlice";
+
 const { width } = Dimensions.get("window");
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const dispatch = useAppDispatch();
+  const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleProvider = () => {
-    router.push("/(onboarding)/user-selection");
+  const [login, { isLoading }] = useLoginMutation();
+
+  const handleLogin = async () => {
+    console.log('Attempting login with:', emailOrPhone);
+    try {
+      const userData = await login({ email: emailOrPhone, password }).unwrap();
+      console.log('Login successful, response:', JSON.stringify(userData, null, 2));
+
+      const { data } = userData;
+
+      if (!data || !data.accessToken) {
+        console.error('Login response missing accessToken!', userData);
+        alert("Login failed: Invalid server response");
+        return;
+      }
+
+      // Save to AsyncStorage
+      await AsyncStorage.setItem('accessToken', data.accessToken);
+      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      if (data.user) {
+        await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
+      console.log('Dispatched setCredentials. Redirecting to user-selection...');
+      router.replace("/(onboarding)/user-selection");
+    } catch (err) {
+      console.error('Login error full object:', JSON.stringify(err, null, 2));
+      alert("Login failed: " + ((err as any)?.data?.message || "Check your credentials"));
+    }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header Section */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={28} color="#333" />
+      </TouchableOpacity>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.welcomeText}>Welcome Back</Text>
           <Text style={styles.subText}>Login to your account</Text>
         </View>
 
-        {/* Input Fields */}
         <View style={styles.form}>
-          <Text style={styles.label}>Enter Your E-mail</Text>
+          <Text style={styles.label}>Enter Your E-mail Or Number</Text>
           <TextInput
             style={styles.input}
-            placeholder="E-mail address"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-          />
-
-          <Text style={styles.label}>Enter Your Number</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="phone number"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
+            placeholder="E-mail address or number"
+            placeholderTextColor="#999"
+            value={emailOrPhone}
+            onChangeText={setEmailOrPhone}
+            autoCapitalize="none"
           />
 
           <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordContainer}>
-            <View style={styles.passwordInputWrapper}>
+          <View style={styles.passwordInputWrapper}>
+            <Ionicons name="lock-closed-outline" size={20} color="#ccc" style={styles.lockIcon} />
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="********"
+              placeholderTextColor="#ccc"
+              secureTextEntry={!isPasswordVisible}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setIsPasswordVisible(!isPasswordVisible)}>
               <Ionicons
-                name="lock-closed-outline"
-                size={20}
+                name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
+                size={22}
                 color="#ccc"
-                style={styles.lockIcon}
               />
-              <TextInput
-                style={styles.passwordInput}
-                placeholder="********"
-                secureTextEntry={!isPasswordVisible}
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-              >
-                <Ionicons
-                  name={isPasswordVisible ? "eye-outline" : "eye-off-outline"}
-                  size={20}
-                  color="#ccc"
-                />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Remember Me & Forgot Password */}
           <View style={styles.optionsRow}>
-            <TouchableOpacity
-              style={styles.checkboxContainer}
-              onPress={() => setRememberMe(!rememberMe)}
-            >
-              <View
-                style={[styles.checkbox, rememberMe && styles.checkboxActive]}
-              >
-                {rememberMe && (
-                  <Ionicons name="checkmark" size={12} color="white" />
-                )}
+            <TouchableOpacity style={styles.checkboxContainer} onPress={() => setRememberMe(!rememberMe)}>
+              <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>
+                {rememberMe && <View style={styles.checkboxInner} />}
               </View>
               <Text style={styles.optionText}>Remember me</Text>
             </TouchableOpacity>
-            <TouchableOpacity>
-              <Text
-                style={styles.forgotText}
-                onPress={() => router.push("/(auth)/forgot-password")}
-              >
-                Forgot password?
-              </Text>
+
+            <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+              <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Login Button */}
-          <TouchableOpacity style={styles.loginButton} onPress={handleProvider}>
-            <Text style={styles.loginButtonText}>Login</Text>
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={isLoading}>
+            {isLoading ? <ActivityIndicator color="#FFF" /> : <Text style={styles.loginButtonText}>Login</Text>}
           </TouchableOpacity>
         </View>
 
-        {/* Social Media Login */}
         <View style={styles.socialSection}>
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
@@ -127,27 +134,15 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.socialIconsRow}>
-            <TouchableOpacity style={styles.socialIconCircle}>
-              <FontAwesome name="google" size={24} color="#DB4437" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialIconCircle}>
-              <FontAwesome name="apple" size={24} color="black" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.socialIconCircle}>
-              <FontAwesome name="facebook" size={24} color="#4267B2" />
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialIconCircle}><FontAwesome name="google" size={24} color="#DB4437" /></TouchableOpacity>
+            <TouchableOpacity style={styles.socialIconCircle}><FontAwesome name="apple" size={24} color="black" /></TouchableOpacity>
+            <TouchableOpacity style={styles.socialIconCircle}><FontAwesome name="facebook" size={24} color="#4267B2" /></TouchableOpacity>
           </View>
 
-          {/* Sign Up Link */}
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>Don t have an account? </Text>
-            <TouchableOpacity>
-              <Text
-                style={styles.signUpText}
-                onPress={() => router.push("/(auth)/signup")}
-              >
-                Sign Up
-              </Text>
+            <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
+              <Text style={styles.signUpText}>Sign Up</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -157,87 +152,71 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FBFCFC" },
-  scrollContent: { paddingHorizontal: 25, paddingTop: 40, paddingBottom: 20 },
-  header: { marginBottom: 30 },
-  welcomeText: { fontSize: 28, fontWeight: "bold", color: "#333" },
-  subText: { fontSize: 16, color: "#777", marginTop: 5 },
+  container: { flex: 1, backgroundColor: "#F9FBFB" },
+  backButton: { paddingHorizontal: 20, paddingTop: 10 },
+  scrollContent: { paddingHorizontal: 25, paddingBottom: 20 },
+  header: { marginTop: 20, marginBottom: 30 },
+  welcomeText: { fontSize: 28, fontWeight: "bold", color: "#1A1A1A" },
+  subText: { fontSize: 16, color: "#7C7C7C", marginTop: 5 },
   form: { width: "100%" },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#444",
-    marginBottom: 8,
-    marginTop: 15,
-  },
+  label: { fontSize: 15, fontWeight: "500", color: "#444", marginBottom: 10, marginTop: 15 },
   input: {
+    height: 58,
     backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#F0F0F0",
-    borderRadius: 10,
-    padding: 15,
+    borderColor: "#EAEAEA",
+    borderRadius: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
-    elevation: 1,
+    color: "#333",
   },
-  passwordContainer: { marginTop: 5 },
   passwordInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFF",
     borderWidth: 1,
-    borderColor: "#F0F0F0",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    height: 55,
-    elevation: 1,
+    borderColor: "#EAEAEA",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 58,
   },
-  lockIcon: { marginRight: 10 },
-  passwordInput: { flex: 1, fontSize: 16 },
-  optionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 15,
-  },
+  lockIcon: { marginRight: 12 },
+  passwordInput: { flex: 1, height: "100%", fontSize: 16 },
+  optionsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 15 },
   checkboxContainer: { flexDirection: "row", alignItems: "center" },
   checkbox: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
     borderWidth: 2,
-    borderColor: "#ccc",
-    borderRadius: 10,
+    borderColor: "#D1D1D1",
+    borderRadius: 10, // Circular checkbox
     marginRight: 8,
     justifyContent: "center",
     alignItems: "center",
   },
-  checkboxActive: { backgroundColor: "#2A8383", borderColor: "#2A8383" },
-  optionText: { color: "#777", fontSize: 13 },
-  forgotText: { color: "#FF7F7F", fontSize: 13 },
+  checkboxActive: { borderColor: "#2D8C8C" },
+  checkboxInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#2D8C8C" },
+  optionText: { color: "#7C7C7C", fontSize: 14 },
+  forgotText: { color: "#FF7070", fontSize: 14, fontWeight: "500" }, // Red text
   loginButton: {
-    backgroundColor: "#2A8383",
-    paddingVertical: 15,
-    borderRadius: 10,
+    backgroundColor: "#3A8B8B", // Teal color from image
+    height: 58,
+    borderRadius: 12,
+    justifyContent: "center",
     alignItems: "center",
     marginTop: 30,
   },
   loginButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
   socialSection: { marginTop: 40, alignItems: "center" },
-  dividerRow: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#EEE" },
-  dividerText: { paddingHorizontal: 10, color: "#777", fontSize: 13 },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#E0E0E0" },
+  dividerText: { paddingHorizontal: 15, color: "#7C7C7C", fontSize: 13 },
   socialIconsRow: { flexDirection: "row", gap: 20 },
   socialIconCircle: {
-    width: 55,
-    height: 55,
-    borderRadius: 30,
-    backgroundColor: "#FFF",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: "#F0F0F0",
+    width: 55, height: 55, borderRadius: 28, backgroundColor: "#FFF",
+    justifyContent: "center", alignItems: "center", borderWidth: 1, borderColor: "#EAEAEA",
   },
-  footerRow: { flexDirection: "row", marginTop: 30 },
-  footerText: { color: "#777" },
-  signUpText: { color: "#333", fontWeight: "bold" },
+  footerRow: { flexDirection: "row", marginTop: 35 },
+  footerText: { color: "#7C7C7C", fontSize: 15 },
+  signUpText: { color: "#1A1A1A", fontWeight: "bold", fontSize: 15 },
 });

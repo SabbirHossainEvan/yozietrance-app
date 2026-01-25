@@ -1,13 +1,15 @@
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
-  DarkTheme,
   DefaultTheme,
-  Theme,
-  ThemeProvider,
+  Theme
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
-import { StatusBar } from "react-native";
+import React from 'react';
 import "react-native-reanimated";
+import { Provider } from 'react-redux';
+import { setCredentials } from '../store/slices/authSlice';
+import { store } from '../store/store';
 import "./global.css";
 
 const CustomLightTheme: Theme = {
@@ -18,17 +20,41 @@ const CustomLightTheme: Theme = {
   },
 };
 
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
-
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  // Auto-login logic
+  React.useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const accessToken = await AsyncStorage.getItem('accessToken');
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        const userString = await AsyncStorage.getItem('user');
+
+        if (accessToken && userString) {
+          const user = JSON.parse(userString);
+          console.log('Auto-login: Restoring session');
+          store.dispatch(setCredentials({
+            user,
+            accessToken,
+            refreshToken: refreshToken || ''
+          }));
+          // Optional: Navigate to home if needed, but router might not be ready here.
+          // Usually better to render different layout or let the screens redirect.
+        }
+      } catch (e) {
+        console.error('Auto-login failed:', e);
+      }
+    };
+
+    checkLogin();
+  }, []);
+
   return (
-    // <ThemeProvider
-      // value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
-    // >
+    <Provider store={store}>
+      {/* <ThemeProvider
+        value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
+      > */}
       <Stack>
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(users)" options={{ headerShown: false }} />
@@ -41,11 +67,12 @@ export default function RootLayout() {
           options={{ presentation: "modal", title: "Modal" }}
         />
       </Stack>
-      // <StatusBar
-      // barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
-      // backgroundColor="transparent"
-      // translucent
-      // />
-    // </ThemeProvider>
+      {/* <StatusBar
+        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+        backgroundColor="transparent"
+        translucent
+        /> */}
+      {/* </ThemeProvider> */}
+    </Provider>
   );
 }

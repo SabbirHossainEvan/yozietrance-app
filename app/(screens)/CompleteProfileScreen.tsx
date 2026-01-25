@@ -1,8 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  Alert,
   Dimensions,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StatusBar,
@@ -13,37 +16,57 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
+import { updateVendorRegistration } from "../../store/slices/registrationSlice";
 
 const { width } = Dimensions.get("window");
 
 interface ProfileFormData {
   fullName: string;
-  phoneNumber: string;
-  emailAddress: string;
+  phone: string;
+  email: string;
   address: string;
-  storeName: string;
-  aboutStore: string;
+  storename: string;
+  storeDescription: string;
+  gender: string;
 }
 
 const CompleteProfileScreen: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const [formData, setFormData] = useState<ProfileFormData>({
     fullName: "",
-    phoneNumber: "",
-    emailAddress: "",
+    phone: "",
+    email: "",
     address: "",
-    storeName: "",
-    aboutStore: "",
+    storename: "",
+    storeDescription: "",
+    gender: "",
   });
+
+  const genderOptions = [
+    { label: "Male", value: "Male" },
+    { label: "Female", value: "Female" },
+    { label: "Other", value: "Other" },
+  ];
+
+  const selectGender = (value: string) => {
+    setFormData(prev => ({ ...prev, gender: value }));
+    setIsModalVisible(false);
+  };
 
   const handleInputChange = (key: keyof ProfileFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    console.log("Form Submitted:", formData);
-
+    if (!formData.gender) {
+      Alert.alert("Required", "Please select your gender.");
+      return;
+    }
+    dispatch(updateVendorRegistration(formData));
     router.push("/(screens)/LogoUploadScreen");
   };
 
@@ -93,14 +116,14 @@ const CompleteProfileScreen: React.FC = () => {
             {renderField(
               "Enter Your Phone Number",
               "Enter phone number",
-              "phoneNumber",
+              "phone",
               false,
               "phone-pad"
             )}
             {renderField(
               "Enter Email Address",
               "Enter email address",
-              "emailAddress",
+              "email",
               false,
               "email-address"
             )}
@@ -112,14 +135,29 @@ const CompleteProfileScreen: React.FC = () => {
             {renderField(
               "Enter Your Store Name",
               "Enter Your Store Name",
-              "storeName"
+              "storename"
             )}
             {renderField(
               "About Your Store",
               "Briefly describe your products or services",
-              "aboutStore",
+              "storeDescription",
               true
             )}
+
+            {/* Gender Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Enter Your Gender</Text>
+              <TouchableOpacity
+                style={styles.dropdown}
+                onPress={() => setIsModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.dropdownText, formData.gender && { color: "#111" }]}>
+                  {formData.gender || "Select Gender"}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#666" />
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.submitButton}
@@ -131,6 +169,48 @@ const CompleteProfileScreen: React.FC = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={isModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Gender</Text>
+              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#181725" />
+              </TouchableOpacity>
+            </View>
+
+            {genderOptions.map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={styles.optionItem}
+                onPress={() => selectGender(item.value)}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    formData.gender === item.value && styles.selectedOptionText,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+                {formData.gender === item.value && (
+                  <Ionicons name="checkmark-circle" size={20} color="#3B8C8C" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -202,6 +282,60 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  dropdown: {
+    backgroundColor: "#F9FAFB",
+    height: 55,
+    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  dropdownText: {
+    color: "#999",
+    fontSize: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 25,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  optionItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  selectedOptionText: {
+    color: "#3B8C8C",
     fontWeight: "bold",
   },
 });

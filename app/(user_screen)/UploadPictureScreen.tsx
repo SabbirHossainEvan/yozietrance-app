@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   StyleSheet,
@@ -11,9 +12,75 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { useRegisterBuyerMutation } from "../../store/api/apiSlice";
+import { updateBuyerRegistration } from "../../store/slices/registrationSlice";
+import { RootState } from "../../store/store";
 
 const UploadPictureScreen = () => {
+  const dispatch = useDispatch();
+  const buyerData = useSelector((state: RootState) => state.registration.buyer);
+  const [registerBuyer, { isLoading }] = useRegisterBuyerMutation();
   const [image, setImage] = useState<string | null>(null);
+
+  const handleSubmit = async () => {
+    if (!image) {
+      Alert.alert("Required", "Please upload a profile picture.");
+      return;
+    }
+
+    try {
+      // Update slice with final image
+      dispatch(updateBuyerRegistration({ profilePhotoUrl: image }));
+
+      // Use FormData for multipart/form-data request (required for file uploads)
+      const formData = new FormData();
+
+      // Append text fields (Exclude email as backend rejects it)
+      if (buyerData.fullName) formData.append('fullName', buyerData.fullName);
+      if (buyerData.phone) formData.append('phone', buyerData.phone);
+      if (buyerData.gender) formData.append('gender', buyerData.gender);
+      if (buyerData.nidNumber) formData.append('nidNumber', buyerData.nidNumber);
+
+      // Append files
+      // NOTE: Backend error literally said 'nidFontPhotoUrl' (missing 'r'). 
+      // We will follow the backend's requested key name.
+      if (image) {
+        formData.append('profilePhotoUrl', {
+          uri: image,
+          name: 'profile.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (buyerData.nidFrontPhotoUrl) {
+        formData.append('nidFontPhotoUrl', {
+          uri: buyerData.nidFrontPhotoUrl,
+          name: 'nid_front.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (buyerData.nidBackPhotoUrl) {
+        formData.append('nidBackPhotoUrl', {
+          uri: buyerData.nidBackPhotoUrl,
+          name: 'nid_back.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      console.log('Registering Buyer with FormData');
+
+      await registerBuyer(formData).unwrap();
+
+      Alert.alert("Success", "Registration successful!", [
+        { text: "OK", onPress: () => router.push("/(users)") }
+      ]);
+    } catch (error: any) {
+      console.error("Registration validation failed:", error);
+      Alert.alert("Error", error?.data?.message || "Registration failed");
+    }
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -62,9 +129,14 @@ const UploadPictureScreen = () => {
         {/* Submit Button */}
         <TouchableOpacity
           style={styles.submitButton}
-          onPress={() => router.push("/(users)")}
+          onPress={handleSubmit}
+          disabled={isLoading}
         >
-          <Text style={styles.submitButtonText}>Submit</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>Submit</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
