@@ -19,7 +19,7 @@ const COLUMN_WIDTH = (width - 48) / 2;
 
 import { ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { useSelector } from "react-redux";
-import { useDeleteCategoryMutation, useGetCategoriesByVendorQuery } from "../../store/api/categoryApiSlice";
+import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from "../../store/api/categoryApiSlice";
 import { RootState } from "../../store/store";
 
 const ProductScreen = () => {
@@ -29,9 +29,14 @@ const ProductScreen = () => {
 
   console.log('ProductScreen - vendorId:', vendorId);
 
-  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetCategoriesByVendorQuery(vendorId, {
-    skip: !vendorId,
-  });
+  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetAllCategoriesQuery(undefined);
+
+  console.log('ProductScreen - categoryResponse:', categoryResponse);
+
+
+
+  console.log('ProductScreen - categoryResponse:', JSON.stringify(categoryResponse));
+
 
   console.log('ProductScreen - error:', JSON.stringify(error));
 
@@ -56,10 +61,13 @@ const ProductScreen = () => {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            console.log('ProductScreen - Deleting category ID:', id);
             try {
-              await deleteCategory(id).unwrap();
+              const res = await deleteCategory(id).unwrap();
+              console.log('ProductScreen - Delete response:', JSON.stringify(res));
               Alert.alert("Success", "Category deleted successfully");
             } catch (err: any) {
+              console.error('ProductScreen - Delete ERROR:', JSON.stringify(err));
               Alert.alert("Error", err?.data?.message || "Failed to delete category");
             }
           }
@@ -134,7 +142,7 @@ const ProductScreen = () => {
             {filteredCategories.map((item: any) => (
               <View key={item.id} style={styles.card}>
                 <View style={styles.imageContainer}>
-                  <Image source={{ uri: item.catImage }} style={styles.catImage} />
+                  <Image source={{ uri: item.thumbnail }} style={styles.catImage} />
 
                   {/* Action Overlay */}
                   <View style={styles.actionOverlay}>
@@ -146,7 +154,7 @@ const ProductScreen = () => {
                           id: item.id,
                           name: item.name,
                           description: item.description,
-                          catImage: item.catImage,
+                          catImage: item.thumbnail,
                           displayOrder: item.displayOrder?.toString()
                         }
                       })}

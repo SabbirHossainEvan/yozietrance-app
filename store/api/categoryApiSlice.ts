@@ -8,15 +8,19 @@ export const categoryApiSlice = apiSlice.injectEndpoints({
                 method: 'POST',
                 body: formData,
             }),
-            invalidatesTags: ['Category'],
+            invalidatesTags: [{ type: 'Category', id: 'LIST' }],
         }),
         getCategories: builder.query({
             query: () => '/categories',
-            providesTags: ['Category'],
+            providesTags: [{ type: 'Category', id: 'LIST' }],
         }),
         getCategoriesByVendor: builder.query({
             query: (vendorId) => `/categories/vendor/${vendorId}`,
-            providesTags: ['Category'],
+            providesTags: [{ type: 'Category', id: 'LIST' }],
+        }),
+        getAllCategories: builder.query({
+            query: () => '/categories/all',
+            providesTags: [{ type: 'Category', id: 'LIST' }],
         }),
         updateCategory: builder.mutation({
             query: ({ id, formData }) => ({
@@ -24,14 +28,14 @@ export const categoryApiSlice = apiSlice.injectEndpoints({
                 method: 'PATCH',
                 body: formData,
             }),
-            invalidatesTags: ['Category'],
+            invalidatesTags: [{ type: 'Category', id: 'LIST' }],
         }),
         deleteCategory: builder.mutation({
             query: (id) => ({
                 url: `/categories/${id}`,
                 method: 'DELETE',
             }),
-            invalidatesTags: ['Category'],
+            invalidatesTags: [{ type: 'Category', id: 'LIST' }],
         }),
     }),
 });
@@ -40,6 +44,7 @@ export const {
     useAddCategoryMutation,
     useGetCategoriesQuery,
     useGetCategoriesByVendorQuery,
+    useGetAllCategoriesQuery,
     useUpdateCategoryMutation,
     useDeleteCategoryMutation
 } = categoryApiSlice;

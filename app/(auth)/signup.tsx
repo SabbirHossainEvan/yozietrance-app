@@ -314,7 +314,7 @@ const SignUpScreen: React.FC = () => {
       const { data } = response;
       if (data && data.accessToken) {
         dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
-        router.push("/(onboarding)/user-selection");
+        router.replace("/(onboarding)/user-selection");
       } else {
         // Fallback or error handling if structure is different, though likely same
         console.error("Signup response missing data/token", response);
