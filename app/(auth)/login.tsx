@@ -56,8 +56,21 @@ export default function LoginScreen() {
       }
 
       dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
-      console.log('Dispatched setCredentials. Redirecting to user-selection...');
-      router.replace("/(onboarding)/user-selection");
+
+      // Auto-navigate based on userType
+      const userType = data.user?.userType;
+      console.log('User type detected:', userType);
+
+      if (userType === 'vendor') {
+        console.log('Redirecting vendor to (tabs)...');
+        router.replace("/(tabs)");
+      } else if (userType === 'buyer') {
+        console.log('Redirecting buyer to (users)...');
+        router.replace("/(users)");
+      } else {
+        console.log('Unknown userType, redirecting to user-selection...');
+        router.replace("/(onboarding)/user-selection");
+      }
     } catch (err) {
       console.error('Login error full object:', JSON.stringify(err, null, 2));
       alert("Login failed: " + ((err as any)?.data?.message || "Check your credentials"));
