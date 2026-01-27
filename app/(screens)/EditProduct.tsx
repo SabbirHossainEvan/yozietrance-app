@@ -1,12 +1,14 @@
+import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
 import { useCreateProductMutation, useGetProductByIdQuery, useUpdateProductMutation } from "@/store/api/productApiSlice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker"; // Image Picker import
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator, Alert, Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,7 +16,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -33,17 +35,20 @@ const EditProduct: React.FC = () => {
   const [stockQuantity, setStockQuantity] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [specifications, setSpecifications] = useState([
-    { label: "Brand", value: "" },
-    { label: "Model", value: "" },
-    { label: "Connectivity", value: "" },
-    { label: "Bluetooth", value: "" },
-    { label: "Colors", value: "" },
-    { label: "Weight", value: "" },
-    { label: "Size", value: "" },
-    { label: "Charging time", value: "" },
-    { label: "Playtime", value: "" },
-  ]);
+  const [specifications, setSpecifications] = useState<{ label: string; value: string }[]>([]);
+
+  // Category selection states
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
+  const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
+
+  const { data: categoriesData } = useGetCategoriesByVendorQuery(user?.id, { skip: !user?.id });
+  const categories = categoriesData?.data || (Array.isArray(categoriesData) ? categoriesData : []);
+
+  // Modal states
+  const [isSpecModalVisible, setIsSpecModalVisible] = useState(false);
+  const [newSpecLabel, setNewSpecLabel] = useState("");
+  const [newSpecValue, setNewSpecValue] = useState("");
 
   useEffect(() => {
     if (productData) {
@@ -55,20 +60,35 @@ const EditProduct: React.FC = () => {
       setSelectedImages(productData.images || (productData.imageUrl ? [productData.imageUrl] : []));
 
       if (productData.specification) {
-        setSpecifications([
-          { label: "Brand", value: productData.specification.brand || "" },
-          { label: "Model", value: productData.specification.model || "" },
-          { label: "Connectivity", value: productData.specification.connectivity || "" },
-          { label: "Bluetooth", value: productData.specification.bluetooth || "" },
-          { label: "Colors", value: productData.specification.colors?.join(", ") || "" },
-          { label: "Weight", value: productData.specification.weight || "" },
-          { label: "Size", value: productData.specification.size || "" },
-          { label: "Charging time", value: productData.specification.chargingTime || "" },
-          { label: "Playtime", value: productData.specification.playtime || "" },
-        ]);
+        const specs = Object.entries(productData.specification).map(([key, value]) => ({
+          label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+          value: Array.isArray(value) ? value.join(", ") : String(value),
+        }));
+        setSpecifications(specs);
       }
     }
   }, [productData]);
+
+  useEffect(() => {
+    if (productData?.categoryId) {
+      setSelectedCategoryId(productData.categoryId);
+      const cat = categories.find((c: any) => c.id === productData.categoryId);
+      if (cat) setSelectedCategoryName(cat.name);
+    } else if (categoryIdFromParams) {
+      setSelectedCategoryId(categoryIdFromParams as string);
+      const cat = categories.find((c: any) => c.id === categoryIdFromParams);
+      if (cat) setSelectedCategoryName(cat.name);
+    }
+  }, [productData, categoryIdFromParams, categories]);
+
+  const handleAddSpec = () => {
+    if (newSpecLabel && newSpecValue) {
+      setSpecifications([...specifications, { label: newSpecLabel, value: newSpecValue }]);
+      setNewSpecLabel("");
+      setNewSpecValue("");
+      setIsSpecModalVisible(false);
+    }
+  };
 
   // 2. Image pick korar function
   const pickImage = async () => {
@@ -108,12 +128,12 @@ const EditProduct: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!name || !price || !stockQuantity) {
-      Alert.alert("Error", "Please fill in all required fields.");
+    if (!name || !price || !stockQuantity || !selectedCategoryId) {
+      Alert.alert("Error", "Please fill in all required fields, including category.");
       return;
     }
 
-    const finalCategoryId = (categoryIdFromParams as string) || (productData?.categoryId) || "df336259-5279-407c-9467-cd4c5cda409d";
+    const finalCategoryId = selectedCategoryId;
 
     const formData = new FormData();
     formData.append("name", name);
@@ -129,7 +149,6 @@ const EditProduct: React.FC = () => {
     }
 
     selectedImages.forEach((uri, index) => {
-      // Check if it's already a URL (from edit) or a local URI (from picker)
       if (uri.startsWith('http')) {
         formData.append("imageUrl", uri);
       } else {
@@ -140,6 +159,15 @@ const EditProduct: React.FC = () => {
         } as any);
       }
     });
+
+    // Temporarily removing specification as the backend returns "property specification should not exist"
+    // const specObj = specifications.reduce((acc: any, spec) => {
+    //   const key = spec.label.split(' ').map((word, i) => i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1)).join('');
+    //   acc[key] = spec.value;
+    //   return acc;
+    // }, {});
+
+    // formData.append("specification", JSON.stringify(specObj));
 
     try {
       if (id) {
@@ -184,7 +212,7 @@ const EditProduct: React.FC = () => {
         {/* Media Section */}
         <View style={styles.card}>
           <View style={styles.rowBetween}>
-            <Text style={styles.label}>Media</Text>
+            <Text style={styles.sectionTitle}>Media</Text>
             <Text style={styles.mediaCount}>{selectedImages.length}/5</Text>
           </View>
 
@@ -195,11 +223,9 @@ const EditProduct: React.FC = () => {
           >
             {/* Upload Button */}
             <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
-              <MaterialCommunityIcons
-                name="camera-outline"
-                size={30}
-                color="#349488"
-              />
+              <View style={styles.uploadIconCircle}>
+                <Ionicons name="camera" size={24} color="#FFF" />
+              </View>
             </TouchableOpacity>
 
             {/* Selected Images List */}
@@ -220,33 +246,14 @@ const EditProduct: React.FC = () => {
         {/* Product Details Section */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Product details</Text>
-          <Text style={styles.inputLabel}>Product Name *</Text>
+
+          <Text style={styles.inputLabel}>Product Name</Text>
           <TextInput
             style={styles.input}
             placeholder="e.g. Headphones"
             placeholderTextColor="#999"
             value={name}
             onChangeText={setName}
-          />
-
-          <Text style={styles.inputLabel}>Price *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. 99.99"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            value={price}
-            onChangeText={setPrice}
-          />
-
-          <Text style={styles.inputLabel}>Stock Quantity *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. 100"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            value={stockQuantity}
-            onChangeText={setStockQuantity}
           />
 
           <Text style={styles.inputLabel}>Description</Text>
@@ -258,36 +265,62 @@ const EditProduct: React.FC = () => {
             value={description}
             onChangeText={setDescription}
           />
+
+          <Text style={styles.inputLabel}>Category</Text>
+          <TouchableOpacity
+            style={[styles.input, { justifyContent: "center" }]}
+            onPress={() => setIsCategoryModalVisible(true)}
+          >
+            <Text style={{ color: selectedCategoryName ? "#333" : "#999" }}>
+              {selectedCategoryName || "Select Category"}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={styles.inputLabel}>Quantity</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="123"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={stockQuantity}
+            onChangeText={setStockQuantity}
+          />
+        </View>
+
+        {/* Pricing Section */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Pricing</Text>
+          <Text style={styles.inputLabel}>Price</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. $20"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={price}
+            onChangeText={(text) => setPrice(text.replace("$", ""))}
+          />
         </View>
 
         {/* Specification Section */}
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>Specification</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsSpecModalVisible(true)}>
               <Text style={styles.addSpecText}>Add Specification</Text>
             </TouchableOpacity>
           </View>
           {specifications.map((spec, index) => (
-            <View key={index} style={styles.specItem}>
+            <View key={index} style={styles.specCard}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
-                <TextInput
-                  style={styles.specInput}
-                  value={spec.value}
-                  onChangeText={(text) => {
-                    const newSpecs = [...specifications];
-                    newSpecs[index].value = text;
-                    setSpecifications(newSpecs);
-                  }}
-                  placeholder={`Enter ${spec.label}`}
-                />
+                <Text style={styles.specValueText}>{spec.value}</Text>
               </View>
+              <Ionicons name="chevron-forward" size={20} color="#CCC" />
             </View>
           ))}
         </View>
 
-        {/* Settings & Footer (Agertai thakbe) */}
+        {/* Settings Section */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.rowBetween}>
@@ -324,6 +357,102 @@ const EditProduct: React.FC = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Add Specification Modal */}
+      <Modal
+        visible={isSpecModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsSpecModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Specification</Text>
+              <TouchableOpacity onPress={() => setIsSpecModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#003D4D" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.modalBody}>
+              <View style={styles.modalInputRow}>
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. Brand"
+                  placeholderTextColor="#AAA"
+                  value={newSpecLabel}
+                  onChangeText={setNewSpecLabel}
+                />
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="e.g. JBL"
+                  placeholderTextColor="#AAA"
+                  value={newSpecValue}
+                  onChangeText={setNewSpecValue}
+                />
+              </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={styles.modalCancelBtn}
+                  onPress={() => setIsSpecModalVisible(false)}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalSaveBtn}
+                  onPress={handleAddSpec}
+                >
+                  <Text style={styles.modalSaveText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Category Selection Modal */}
+      <Modal
+        visible={isCategoryModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsCategoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Category</Text>
+              <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#003D4D" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 400 }}>
+              {categories.map((cat: any) => (
+                <TouchableOpacity
+                  key={cat.id}
+                  style={styles.categoryItem}
+                  onPress={() => {
+                    setSelectedCategoryId(cat.id);
+                    setSelectedCategoryName(cat.name);
+                    setIsCategoryModalVisible(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.categoryItemText,
+                    selectedCategoryId === cat.id && styles.selectedCategoryText
+                  ]}>
+                    {cat.name}
+                  </Text>
+                  {selectedCategoryId === cat.id && (
+                    <Ionicons name="checkmark-circle" size={20} color="#349488" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -397,31 +526,24 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", alignItems: "center" },
   addSpecText: { color: "#349488", fontSize: 13, fontWeight: "600" },
-  specItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  uploadIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#349488",
+    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+  },
+  specCard: {
+    backgroundColor: "#F4F7F7",
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
   },
   specLabel: { fontSize: 12, color: "#999", marginBottom: 2 },
-  specInput: {
-    backgroundColor: "#F4F7F7",
-    borderRadius: 8,
-    height: 40,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    color: "#333",
-  },
-  specValue: { fontSize: 14, color: "#333", fontWeight: "500" },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#349488",
-    marginRight: 6,
-  },
+  specValueText: { fontSize: 14, color: "#333", fontWeight: "600" },
   activeStatusText: { fontSize: 15, fontWeight: "600", color: "#333" },
   statusSubText: { fontSize: 12, color: "#999", marginTop: 2 },
   footerRow: {
@@ -450,6 +572,102 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveBtnText: { color: "#FFF", fontWeight: "bold" },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#FFF",
+    borderRadius: 20,
+    width: "100%",
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#003D4D",
+  },
+  modalBody: {},
+  modalInputRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  modalInput: {
+    flex: 1,
+    backgroundColor: "#FFF",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    height: 50,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    color: "#333",
+    marginHorizontal: 5,
+  },
+  modalFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "#349488",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  modalCancelText: {
+    color: "#349488",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalSaveBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#349488",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalSaveText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  categoryItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F0F0F0",
+  },
+  categoryItemText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  selectedCategoryText: {
+    color: "#349488",
+    fontWeight: "bold",
+  },
 });
 
 export default EditProduct;
