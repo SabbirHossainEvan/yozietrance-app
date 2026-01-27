@@ -1,9 +1,11 @@
-import { sampleProducts } from "@/constants/common";
-import { Ionicons } from "@expo/vector-icons";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { router } from "expo-router";
+import { useGetProductsByVendorQuery } from "@/store/api/productApiSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
@@ -47,12 +49,23 @@ type Product = {
 };
 
 const Product = () => {
+  const { categoryId: paramCategoryId, categoryName } = useLocalSearchParams();
+  const user = useAppSelector(selectCurrentUser);
+  const vendorId = user?.id;
+  const categoryId = (paramCategoryId as string) || "df336259-5279-407c-9467-cd4c5cda409d";
+
+  const { data: productsData, isLoading, isError } = useGetProductsByVendorQuery(
+    { vendorId: vendorId || "", categoryId },
+    { skip: !vendorId }
+  );
+
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-  const [filteredProducts, setFilteredProducts] =
-    useState<Product[]>(sampleProducts);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+
   useEffect(() => {
-    let result = [...sampleProducts];
+    const products = Array.isArray(productsData) ? productsData : (productsData as any)?.data || (productsData as any)?.products || [];
+    let result = [...products];
 
     if (searchQuery) {
       result = result.filter((product) =>
@@ -61,22 +74,24 @@ const Product = () => {
     }
 
     if (activeFilter !== "all") {
-      result = result.filter((product) =>
-        activeFilter === "low_stock"
-          ? product.status === "low_stock" || product.stock < 10
-          : product.status === activeFilter
-      );
+      result = result.filter((product) => {
+        const isLowStock = product.stockQuantity < 10;
+        if (activeFilter === "low_stock") return isLowStock;
+        if (activeFilter === "active") return product.isAvailable;
+        if (activeFilter === "drafts") return !product.isAvailable;
+        return true;
+      });
     }
 
     setFilteredProducts(result);
-  }, [searchQuery, activeFilter]);
+  }, [searchQuery, activeFilter, productsData]);
 
-  const totalValue = sampleProducts
+  const rawProducts = Array.isArray(productsData) ? productsData : (productsData as any)?.data || (productsData as any)?.products || [];
+
+  const totalValue = rawProducts
     .reduce(
-      (sum, product) =>
-        sum +
-        parseFloat(product.price.replace("$", "").replace(",", "")) *
-          product.stock,
+      (sum: number, product: any) =>
+        sum + (product.price || 0) * (product.stockQuantity || 0),
       0
     )
     .toLocaleString("en-US", {
@@ -85,12 +100,12 @@ const Product = () => {
       minimumFractionDigits: 2,
     });
 
-  const lowStockCount = sampleProducts.filter(
-    (p) => p.status === "low_stock" || p.stock < 10
+  const lowStockCount = rawProducts.filter(
+    (p: any) => (p.stockQuantity || 0) < 10
   ).length;
 
-  const renderStockStatus = (product: Product) => {
-    if (product.status === "draft") {
+  const renderStockStatus = (product: any) => {
+    if (!product.isAvailable) {
       return (
         <View
           style={{
@@ -108,7 +123,7 @@ const Product = () => {
       );
     }
 
-    const isLowStock = product.stock < 10;
+    const isLowStock = product.stockQuantity < 10;
     return (
       <Text
         style={{
@@ -117,13 +132,16 @@ const Product = () => {
           fontWeight: "500",
         }}
       >
-        {product.stock} in stock
+        {product.stockQuantity} in stock
       </Text>
     );
   };
   // this is for handle add product
   const handleAddProduct = () => {
-    router.push("/(screens)");
+    router.push({
+      pathname: "/(screens)/EditProduct",
+      params: { categoryId }
+    });
   };
   const handleBack = () => {
     router.back();
@@ -143,7 +161,9 @@ const Product = () => {
           <TouchableOpacity onPress={() => handleBack()}>
             <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={{ fontSize: 18, fontWeight: "600" }}>Electronics</Text>
+          <Text style={{ fontSize: 18, fontWeight: "600" }}>
+            {(categoryName as string) || "Electronics"}
+          </Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -276,100 +296,104 @@ const Product = () => {
             Inventory Items
           </Text>
           <View>
-            {filteredProducts.map((product: Product) => (
-              <TouchableOpacity
-                onPress={() =>
-                  router.push({
-                    pathname: "/(screens)/product_details",
-                    params: { id: product.id },
-                  })
-                }
-                key={product.id}
-                style={{
-                  backgroundColor: "white",
-                  borderRadius: 12,
-                  padding: 12,
-                  marginHorizontal: 1,
-                  marginBottom: 12,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 1 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 2,
-                  elevation: 1,
-                }}
-              >
-                <Image
-                  source={{ uri: product.images[0] }}
+            {isLoading ? (
+              <ActivityIndicator size="large" color="#278687" style={{ marginTop: 20 }} />
+            ) : filteredProducts.length === 0 ? (
+              <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>No products found</Text>
+            ) : (
+              filteredProducts.map((product: any) => (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(screens)/product_details",
+                      params: { id: product.id },
+                    })
+                  }
+                  key={product.id}
                   style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 8,
-                    marginRight: 12,
+                    backgroundColor: "white",
+                    borderRadius: 12,
+                    padding: 12,
+                    marginHorizontal: 1,
+                    marginBottom: 12,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 2,
+                    elevation: 1,
                   }}
-                />
-                <View style={{ flex: 1 }}>
+                >
+                  <Image
+                    source={{ uri: product.imageUrl || (product.images && product.images[0]) || "https://via.placeholder.com/150" }}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 8,
+                      marginRight: 12,
+                    }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "600",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {product.name}
+                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          color: "#6B7280",
+                          marginRight: 8,
+                        }}
+                      >
+                        {product.sku || 'N/A'}
+                      </Text>
+                      <View
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: 12,
+                          backgroundColor:
+                            product.isAvailable
+                              ? (product.stockQuantity < 10 ? "#FEF3C7" : "#D1FAE5")
+                              : "#E5E7EB",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            color:
+                              product.isAvailable
+                                ? (product.stockQuantity < 10 ? "#92400E" : "#065F46")
+                                : "#4B5563",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {product.isAvailable
+                            ? (product.stockQuantity < 10 ? "low stock" : "active")
+                            : "draft"}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "600",
-                      marginBottom: 4,
+                      fontWeight: "700",
+                      color: "#111827",
                     }}
                   >
-                    {product.name}
+                    ${product.price}
                   </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: "#6B7280",
-                        marginRight: 8,
-                      }}
-                    >
-                      {product.sku}
-                    </Text>
-                    <View
-                      style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 12,
-                        backgroundColor:
-                          product.status === "active"
-                            ? "#D1FAE5"
-                            : product.status === "low_stock"
-                              ? "#FEF3C7"
-                              : "#E5E7EB",
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          color:
-                            product.status === "active"
-                              ? "#065F46"
-                              : product.status === "low_stock"
-                                ? "#92400E"
-                                : "#4B5563",
-                          fontWeight: "500",
-                        }}
-                      >
-                        {product.status}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "700",
-                    color: "#111827",
-                  }}
-                >
-                  ${product.price}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))
+            )}
           </View>
         </ScrollView>
       </View>

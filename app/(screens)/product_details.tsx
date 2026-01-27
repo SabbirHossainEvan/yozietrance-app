@@ -1,15 +1,15 @@
-import { sampleProducts } from "@/constants/common";
+import { useDeleteProductMutation, useGetProductByIdQuery } from "@/store/api/productApiSlice";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
-  Dimensions,
+  ActivityIndicator, Alert, Dimensions,
   Image,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -17,9 +17,40 @@ const { width } = Dimensions.get("window");
 
 const ProductDetails = () => {
   const { id } = useLocalSearchParams();
-  const product = sampleProducts.find((p) => p.id === id);
+  const { data: product, isLoading, isError } = useGetProductByIdQuery(id as string, { skip: !id });
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
-  if (!product) {
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Product",
+      "Are you sure you want to delete this product?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteProduct(id as string).unwrap();
+              router.back();
+            } catch (error) {
+              Alert.alert("Error", "Failed to delete product");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#278687" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!product || isError) {
     return (
       <SafeAreaView
         style={{
@@ -30,6 +61,9 @@ const ProductDetails = () => {
         }}
       >
         <Text>Product not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: "#278687" }}>Go Back</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -83,7 +117,7 @@ const ProductDetails = () => {
             </TouchableOpacity>
           </View>
           <Image
-            source={{ uri: product.images[0] }}
+            source={{ uri: product.imageUrl || (product.images && product.images[0]) || "https://via.placeholder.com/150" }}
             style={{
               width: "100%",
               height: 217,
@@ -131,23 +165,19 @@ const ProductDetails = () => {
                 top: 12,
                 right: 12,
                 backgroundColor:
-                  product.status === "active"
-                    ? "#D1FAE5"
-                    : product.status === "low_stock"
-                      ? "#FEF3C7"
-                      : "#E5E7EB",
+                  product.isAvailable
+                    ? (product.stockQuantity < 10 ? "#FEF3C7" : "#D1FAE5")
+                    : "#E5E7EB",
               }}
             >
               <Text style={{ fontSize: 12, fontWeight: "500" }}>
-                {product.status === "active"
-                  ? "Active"
-                  : product.status === "low_stock"
-                    ? "Low Stock"
-                    : "Draft"}
+                {product.isAvailable
+                  ? (product.stockQuantity < 10 ? "Low Stock" : "Active")
+                  : "Draft"}
               </Text>
             </View>
             <Text style={{ fontSize: 14, color: "#6B7280", marginBottom: 8 }}>
-              {product.sku}
+              {product.sku || 'N/A'}
             </Text>
             <Text
               style={{
@@ -182,7 +212,7 @@ const ProductDetails = () => {
               <Text
                 style={{ fontSize: 20, fontWeight: "600", color: "#111827" }}
               >
-                {product.stats.onStock}
+                {product.stockQuantity || 0}
               </Text>
             </View>
             <View
@@ -198,7 +228,7 @@ const ProductDetails = () => {
               <Text
                 style={{ fontSize: 20, fontWeight: "600", color: "#111827" }}
               >
-                {product.stats.processing}
+                {product.stats?.processing || 0}
               </Text>
             </View>
             <View
@@ -214,7 +244,7 @@ const ProductDetails = () => {
               <Text
                 style={{ fontSize: 20, fontWeight: "600", color: "#111827" }}
               >
-                {product.stats.totalSold}
+                {product.stats?.totalSold || 0}
               </Text>
             </View>
           </View>
@@ -276,7 +306,7 @@ const ProductDetails = () => {
                 <Text
                   style={{ fontSize: 14, color: "#111827", fontWeight: "500" }}
                 >
-                  {product.specification.brand}
+                  {product.specification?.brand || 'N/A'}
                 </Text>
               </View>
               <View
@@ -292,7 +322,7 @@ const ProductDetails = () => {
                 <Text
                   style={{ fontSize: 14, color: "#111827", fontWeight: "500" }}
                 >
-                  {product.specification.model}
+                  {product.specification?.model || 'N/A'}
                 </Text>
               </View>
               <View
@@ -310,7 +340,7 @@ const ProductDetails = () => {
                 <Text
                   style={{ fontSize: 14, color: "#111827", fontWeight: "500" }}
                 >
-                  {product.specification.connectivity}
+                  {product.specification?.connectivity || 'N/A'}
                 </Text>
               </View>
               <View
@@ -328,7 +358,7 @@ const ProductDetails = () => {
                 <Text
                   style={{ fontSize: 14, color: "#111827", fontWeight: "500" }}
                 >
-                  {product.specification.bluetooth}
+                  {product.specification?.bluetooth || 'N/A'}
                 </Text>
               </View>
               <View
@@ -342,7 +372,7 @@ const ProductDetails = () => {
                 <Text
                   style={{ fontSize: 14, color: "#111827", fontWeight: "500" }}
                 >
-                  {product.specification.colors.join(", ")}
+                  {product.specification?.colors?.join(", ") || 'N/A'}
                 </Text>
               </View>
             </View>
@@ -356,6 +386,8 @@ const ProductDetails = () => {
           }}
         >
           <TouchableOpacity
+            disabled={isDeleting}
+            onPress={handleDelete}
             style={{
               flex: 1,
               flexDirection: "row",
@@ -367,15 +399,16 @@ const ProductDetails = () => {
               backgroundColor: "#f5d8d5",
               borderWidth: 1,
               borderColor: "#f5d8d5",
+              opacity: isDeleting ? 0.7 : 1,
             }}
           >
             <Ionicons name="trash" size={24} color="#fe5c5d" />
             <Text style={{ color: "#fe5c5d", fontWeight: "600", fontSize: 16 }}>
-              Delete
+              {isDeleting ? "Deleting..." : "Delete"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.replace("/(screens)/EditProduct")}
+            onPress={() => router.replace({ pathname: "/(screens)/EditProduct", params: { id } })}
             style={{
               flex: 1,
               flexDirection: "row",

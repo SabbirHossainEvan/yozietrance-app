@@ -1,10 +1,12 @@
+import { useCreateProductMutation, useGetProductByIdQuery, useUpdateProductMutation } from "@/store/api/productApiSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker"; // Image Picker import
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  Image,
+  ActivityIndicator, Alert, Image,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,18 +14,61 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const EditProduct: React.FC = () => {
   const router = useRouter();
-  const [isActive, setIsActive] = useState(true);
+  const { id, categoryId: categoryIdFromParams } = useLocalSearchParams();
+  const user = useAppSelector(selectCurrentUser);
 
-  // 1. Image state: Ekhane selected images gulo thakbe
-  const [selectedImages, setSelectedImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200",
+  const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(id as string, { skip: !id });
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [stockQuantity, setStockQuantity] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [specifications, setSpecifications] = useState([
+    { label: "Brand", value: "" },
+    { label: "Model", value: "" },
+    { label: "Connectivity", value: "" },
+    { label: "Bluetooth", value: "" },
+    { label: "Colors", value: "" },
+    { label: "Weight", value: "" },
+    { label: "Size", value: "" },
+    { label: "Charging time", value: "" },
+    { label: "Playtime", value: "" },
   ]);
+
+  useEffect(() => {
+    if (productData) {
+      setName(productData.name || "");
+      setDescription(productData.description || "");
+      setPrice(productData.price?.toString() || "");
+      setStockQuantity(productData.stockQuantity?.toString() || "");
+      setIsActive(productData.isAvailable ?? true);
+      setSelectedImages(productData.images || (productData.imageUrl ? [productData.imageUrl] : []));
+
+      if (productData.specification) {
+        setSpecifications([
+          { label: "Brand", value: productData.specification.brand || "" },
+          { label: "Model", value: productData.specification.model || "" },
+          { label: "Connectivity", value: productData.specification.connectivity || "" },
+          { label: "Bluetooth", value: productData.specification.bluetooth || "" },
+          { label: "Colors", value: productData.specification.colors?.join(", ") || "" },
+          { label: "Weight", value: productData.specification.weight || "" },
+          { label: "Size", value: productData.specification.size || "" },
+          { label: "Charging time", value: productData.specification.chargingTime || "" },
+          { label: "Playtime", value: productData.specification.playtime || "" },
+        ]);
+      }
+    }
+  }, [productData]);
 
   // 2. Image pick korar function
   const pickImage = async () => {
@@ -62,17 +107,62 @@ const EditProduct: React.FC = () => {
     setSelectedImages(newList);
   };
 
-  const specifications = [
-    { label: "Brand", value: "JBL" },
-    { label: "Model", value: "Tune 720BT" },
-    { label: "Connectivity", value: "Bluetooth | Charging cable" },
-    { label: "Bluetooth", value: "5.3" },
-    { label: "Colors", value: "2 Options", isColor: true },
-    { label: "Weight", value: "220g" },
-    { label: "Size", value: "40mm" },
-    { label: "Charging time", value: "2 hours from empty" },
-    { label: "Playtime", value: "Up to 76 hours" },
-  ];
+  const handleSave = async () => {
+    if (!name || !price || !stockQuantity) {
+      Alert.alert("Error", "Please fill in all required fields.");
+      return;
+    }
+
+    const finalCategoryId = (categoryIdFromParams as string) || (productData?.categoryId) || "df336259-5279-407c-9467-cd4c5cda409d";
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("stockQuantity", stockQuantity);
+    formData.append("isAvailable", String(isActive));
+    formData.append("categoryId", finalCategoryId);
+
+    if (selectedImages.length === 0) {
+      Alert.alert("Error", "At least one product image is required.");
+      return;
+    }
+
+    selectedImages.forEach((uri, index) => {
+      // Check if it's already a URL (from edit) or a local URI (from picker)
+      if (uri.startsWith('http')) {
+        formData.append("imageUrl", uri);
+      } else {
+        formData.append("images", {
+          uri: uri,
+          name: `product_${index}.jpg`,
+          type: "image/jpeg",
+        } as any);
+      }
+    });
+
+    try {
+      if (id) {
+        await updateProduct({ id, formData }).unwrap();
+        Alert.alert("Success", "Product updated successfully!");
+      } else {
+        await createProduct(formData).unwrap();
+        Alert.alert("Success", "Product created successfully!");
+      }
+      router.back();
+    } catch (error) {
+      console.error("Save Error:", error);
+      Alert.alert("Error", "Failed to save product");
+    }
+  };
+
+  if (id && isLoadingProduct) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#349488" style={{ marginTop: 50 }} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -130,11 +220,33 @@ const EditProduct: React.FC = () => {
         {/* Product Details Section */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Product details</Text>
-          <Text style={styles.inputLabel}>Product Name</Text>
+          <Text style={styles.inputLabel}>Product Name *</Text>
           <TextInput
             style={styles.input}
             placeholder="e.g. Headphones"
             placeholderTextColor="#999"
+            value={name}
+            onChangeText={setName}
+          />
+
+          <Text style={styles.inputLabel}>Price *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 99.99"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={price}
+            onChangeText={setPrice}
+          />
+
+          <Text style={styles.inputLabel}>Stock Quantity *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 100"
+            placeholderTextColor="#999"
+            keyboardType="numeric"
+            value={stockQuantity}
+            onChangeText={setStockQuantity}
           />
 
           <Text style={styles.inputLabel}>Description</Text>
@@ -143,6 +255,8 @@ const EditProduct: React.FC = () => {
             placeholder="Describe your product..."
             multiline
             placeholderTextColor="#999"
+            value={description}
+            onChangeText={setDescription}
           />
         </View>
 
@@ -155,16 +269,21 @@ const EditProduct: React.FC = () => {
             </TouchableOpacity>
           </View>
           {specifications.map((spec, index) => (
-            <TouchableOpacity key={index} style={styles.specItem}>
-              <View>
+            <View key={index} style={styles.specItem}>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
-                <View style={styles.row}>
-                  {spec.isColor && <View style={styles.colorDot} />}
-                  <Text style={styles.specValue}>{spec.value}</Text>
-                </View>
+                <TextInput
+                  style={styles.specInput}
+                  value={spec.value}
+                  onChangeText={(text) => {
+                    const newSpecs = [...specifications];
+                    newSpecs[index].value = text;
+                    setSpecifications(newSpecs);
+                  }}
+                  placeholder={`Enter ${spec.label}`}
+                />
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#999" />
-            </TouchableOpacity>
+            </View>
           ))}
         </View>
 
@@ -194,8 +313,14 @@ const EditProduct: React.FC = () => {
           >
             <Text style={styles.cancelBtnText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveBtn}>
-            <Text style={styles.saveBtnText}>Save</Text>
+          <TouchableOpacity
+            style={styles.saveBtn}
+            onPress={handleSave}
+            disabled={isUpdating || isCreating}
+          >
+            <Text style={styles.saveBtnText}>
+              {isUpdating || isCreating ? "Saving..." : "Save"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -281,6 +406,14 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F0F0F0",
   },
   specLabel: { fontSize: 12, color: "#999", marginBottom: 2 },
+  specInput: {
+    backgroundColor: "#F4F7F7",
+    borderRadius: 8,
+    height: 40,
+    paddingHorizontal: 12,
+    fontSize: 14,
+    color: "#333",
+  },
   specValue: { fontSize: 14, color: "#333", fontWeight: "500" },
   colorDot: {
     width: 12,

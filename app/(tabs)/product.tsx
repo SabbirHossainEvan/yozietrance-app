@@ -19,7 +19,7 @@ const COLUMN_WIDTH = (width - 48) / 2;
 
 import { ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { useSelector } from "react-redux";
-import { useDeleteCategoryMutation, useGetAllCategoriesQuery } from "../../store/api/categoryApiSlice";
+import { useDeleteCategoryMutation, useGetCategoriesByVendorQuery } from "../../store/api/categoryApiSlice";
 import { RootState } from "../../store/store";
 
 const ProductScreen = () => {
@@ -29,7 +29,7 @@ const ProductScreen = () => {
 
   console.log('ProductScreen - vendorId:', vendorId);
 
-  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetAllCategoriesQuery(undefined);
+  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetCategoriesByVendorQuery(vendorId);
 
   console.log('ProductScreen - categoryResponse:', categoryResponse);
 

@@ -18,10 +18,7 @@ export const categoryApiSlice = apiSlice.injectEndpoints({
             query: (vendorId) => `/categories/vendor/${vendorId}`,
             providesTags: [{ type: 'Category', id: 'LIST' }],
         }),
-        getAllCategories: builder.query({
-            query: () => '/categories/all',
-            providesTags: [{ type: 'Category', id: 'LIST' }],
-        }),
+
         updateCategory: builder.mutation({
             query: ({ id, formData }) => ({
                 url: `/categories/${id}`,
@@ -44,7 +41,7 @@ export const {
     useAddCategoryMutation,
     useGetCategoriesQuery,
     useGetCategoriesByVendorQuery,
-    useGetAllCategoriesQuery,
+
     useUpdateCategoryMutation,
     useDeleteCategoryMutation
 } = categoryApiSlice;
