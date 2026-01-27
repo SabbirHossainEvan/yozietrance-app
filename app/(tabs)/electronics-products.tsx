@@ -1,4 +1,4 @@
-import { useGetProductsByVendorQuery } from "@/store/api/productApiSlice";
+import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -7,6 +7,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -51,20 +52,31 @@ type Product = {
 const Product = () => {
   const { categoryId: paramCategoryId, categoryName } = useLocalSearchParams();
   const user = useAppSelector(selectCurrentUser);
-  const vendorId = user?.id;
+  const vendorId = user?.id || (user as any)?._id;
   const categoryId = (paramCategoryId as string) || "df336259-5279-407c-9467-cd4c5cda409d";
 
-  const { data: productsData, isLoading, isError } = useGetProductsByVendorQuery(
+  const { data: productsData, isLoading, isError, refetch, isFetching } = useGetProductsByVendorQuery(
     { vendorId: vendorId || "", categoryId },
     { skip: !vendorId }
   );
+
+
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
 
+  const extractProducts = (data: any) => {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data.products)) return data.products;
+    if (data.data && Array.isArray(data.data.products)) return data.data.products;
+    return [];
+  };
+
   useEffect(() => {
-    const products = Array.isArray(productsData) ? productsData : (productsData as any)?.data || (productsData as any)?.products || [];
+    const products = extractProducts(productsData);
     let result = [...products];
 
     if (searchQuery) {
@@ -86,7 +98,7 @@ const Product = () => {
     setFilteredProducts(result);
   }, [searchQuery, activeFilter, productsData]);
 
-  const rawProducts = Array.isArray(productsData) ? productsData : (productsData as any)?.data || (productsData as any)?.products || [];
+  const rawProducts = extractProducts(productsData);
 
   const totalValue = rawProducts
     .reduce(
@@ -168,7 +180,13 @@ const Product = () => {
         </View>
 
         {/* Scrollable Content */}
-        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+          }
+        >
           {/* Search Bar */}
           <View style={{ marginVertical: 16 }}>
             <TextInput
@@ -298,6 +316,8 @@ const Product = () => {
           <View>
             {isLoading ? (
               <ActivityIndicator size="large" color="#278687" style={{ marginTop: 20 }} />
+            ) : isError ? (
+              <Text style={{ textAlign: 'center', marginTop: 20, color: '#FF6B6B' }}>Error loading products</Text>
             ) : filteredProducts.length === 0 ? (
               <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>No products found</Text>
             ) : (
@@ -306,10 +326,10 @@ const Product = () => {
                   onPress={() =>
                     router.push({
                       pathname: "/(screens)/product_details",
-                      params: { id: product.id },
+                      params: { id: product.id || product._id },
                     })
                   }
-                  key={product.id}
+                  key={product.id || product._id}
                   style={{
                     backgroundColor: "white",
                     borderRadius: 12,
@@ -382,15 +402,21 @@ const Product = () => {
                       </View>
                     </View>
                   </View>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: "700",
-                      color: "#111827",
-                    }}
-                  >
-                    ${product.price}
-                  </Text>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#278687",
+                        marginBottom: 4,
+                      }}
+                    >
+                      ${product.price}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: "#6B7280" }}>
+                      {product.stockQuantity} in stock
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               ))
             )}

@@ -1,5 +1,9 @@
 import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
-import { useCreateProductMutation, useGetProductByIdQuery, useUpdateProductMutation } from "@/store/api/productApiSlice";
+import {
+  useCreateProductMutation,
+  useGetProductByIdQuery,
+  useUpdateProductMutation,
+} from "@/store/api/product_api_slice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Ionicons } from "@expo/vector-icons";

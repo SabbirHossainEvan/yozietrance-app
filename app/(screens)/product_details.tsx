@@ -1,4 +1,7 @@
-import { useDeleteProductMutation, useGetProductByIdQuery } from "@/store/api/productApiSlice";
+import {
+  useDeleteProductMutation,
+  useGetProductByIdQuery,
+} from "@/store/api/product_api_slice";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import { router, useLocalSearchParams } from "expo-router";
