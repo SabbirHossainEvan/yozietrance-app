@@ -38,15 +38,17 @@ export default function LoginScreen() {
     console.log('Attempting login with:', emailOrPhone);
     try {
       const userData = await login({ email: emailOrPhone, password }).unwrap();
-      console.log('Login successful, response:', JSON.stringify(userData, null, 2));
+      console.log('Login successful, complete response:', JSON.stringify(userData, null, 2));
 
       const { data } = userData;
 
       if (!data || !data.accessToken) {
-        console.error('Login response missing accessToken!', userData);
+        console.error('Login response missing data or accessToken!', userData);
         alert("Login failed: Invalid server response");
         return;
       }
+
+      console.log('User data from response:', JSON.stringify(data.user, null, 2));
 
       // Save to AsyncStorage
       await AsyncStorage.setItem('accessToken', data.accessToken);

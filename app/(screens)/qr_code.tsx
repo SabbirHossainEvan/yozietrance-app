@@ -15,7 +15,8 @@ const { width } = Dimensions.get('window');
 
 const AbcdStoreCard = () => {
     const user = useAppSelector(selectCurrentUser);
-    const vendorCode = (user as any)?.vendorCode || "N/A";
+    const vendorCode = (user as any)?.vendorCode || (user as any)?.vendor_code || (user as any)?.vendorID || (user as any)?.code || "N/A";
+    const businessName = user?.businessName || user?.storename || "Your Store";
     const storeUrl = `ABCD.store/v/${vendorCode}`;
 
     const copyToClipboard = async () => {
@@ -78,7 +79,7 @@ const AbcdStoreCard = () => {
                     </View>
 
                     <Text style={{ fontSize: 20, fontWeight: '700', color: '#1A1A1A', marginBottom: 12 }}>
-                        {user?.businessName || "Your Store"}
+                        {businessName}
                     </Text>
 
                     <Text style={{ fontSize: 24, fontWeight: '600', color: '#328888', marginBottom: 24 }}>

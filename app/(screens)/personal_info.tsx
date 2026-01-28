@@ -1,3 +1,5 @@
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -13,16 +15,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PersonalInfoScreen = () => {
-  // Dynamic Data
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  // Initialize state with Redux data or defaults
   const [user, setUser] = useState({
-    name: "Seam Rahman",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e", // Placeholder
-    dob: "May 15, 1990",
-    email: "alice@example.com",
-    phone: "+1 (555) 123-4567",
-    idType: "Passport",
-    idNumber: "P123456789",
+    name: currentUser?.name || currentUser?.fullName || "User",
+    avatar: currentUser?.logo || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    dob: (currentUser as any)?.dob || "N/A",
+    email: currentUser?.email || "N/A",
+    phone: currentUser?.phone || "N/A",
+    idType: (currentUser as any)?.idType || "N/A",
+    idNumber: (currentUser as any)?.idNumber || "N/A",
   });
+
 
   // Function to handle image picker
   const handleImagePicker = async () => {

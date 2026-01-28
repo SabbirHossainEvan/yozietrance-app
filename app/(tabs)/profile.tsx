@@ -1,3 +1,5 @@
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { logOut, selectCurrentUser } from "@/store/slices/authSlice";
 import {
   AntDesign,
   Feather,
@@ -5,6 +7,7 @@ import {
   MaterialCommunityIcons,
   MaterialIcons,
 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -19,13 +22,30 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ProfileScreen = () => {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectCurrentUser);
   const [isBusinessProfile, setIsBusinessProfile] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const onLogout = () => {
+  const onLogout = async () => {
     setShowLogoutModal(false);
-    router.replace("/(auth)/login");
+    try {
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('user');
+
+      // Clear Redux state
+      dispatch(logOut());
+
+      // Navigate to login
+      router.replace("/(auth)/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Fallback navigation
+      router.replace("/(auth)/login");
+    }
   };
 
   const toggleSwitch = () => {
@@ -119,8 +139,8 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: "Abcd.LTD",
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: user?.name || user?.fullName || user?.businessName || user?.storename || "User",
+    avatar: user?.logo || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

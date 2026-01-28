@@ -1,3 +1,5 @@
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Feather } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -6,6 +8,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { commonData, quickActions, recentOrders } from "../../constants/common";
 
 export default function HomeScreen() {
+  const user = useAppSelector(selectCurrentUser);
+  const userName = user?.name || user?.fullName || "User";
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
   return (
     <SafeAreaView style={{ backgroundColor: "white" }}>
       <View>
@@ -25,17 +31,17 @@ export default function HomeScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontWeight: "semibold",
+                fontWeight: "600",
               }}
             >
-              Hi, Rokey Mahmud
+              Hi, {userName}
             </Text>
             <Text
               style={{
                 fontSize: 14,
               }}
             >
-              Dec12,2025
+              {today}
             </Text>
           </View>
           <View
@@ -317,13 +323,13 @@ export default function HomeScreen() {
                                     : order.orderStatus.status === "Pending"
                                       ? "#E65100"
                                       : order.orderStatus.status ===
-                                          "Processing"
+                                        "Processing"
                                         ? "#0D47A1"
                                         : order.orderStatus.status ===
-                                            "Delivered"
+                                          "Delivered"
                                           ? "#4A148C"
                                           : order.orderStatus.status ===
-                                              "Shipped"
+                                            "Shipped"
                                             ? "#01579B"
                                             : "#4A148C",
                                 fontSize: 10,

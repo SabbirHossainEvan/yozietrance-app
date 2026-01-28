@@ -1,4 +1,6 @@
 import { images } from "@/constants/import_images";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
@@ -9,6 +11,8 @@ import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const VerificationCard = () => {
+  const currentUser = useAppSelector(selectCurrentUser);
+
   // handle back
   const handleBack = () => {
     router.back();
@@ -74,7 +78,7 @@ const VerificationCard = () => {
                   height: 120,
                   borderRadius: 50,
                 }}
-                source={images.welcome_image}
+                source={currentUser?.logo ? { uri: currentUser.logo } : images.welcome_image}
               />
             </View>
             {/* Personal Information Section */}
@@ -121,7 +125,7 @@ const VerificationCard = () => {
                       color: "#000000",
                     }}
                   >
-                    TechBadgets Inc.
+                    {currentUser?.businessName || currentUser?.storename || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -180,7 +184,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    alice@example.com
+                    {currentUser?.email || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -218,7 +222,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    +1 (555) 123-4567
+                    {currentUser?.phone || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -261,7 +265,7 @@ const VerificationCard = () => {
                       lineHeight: 22,
                     }}
                   >
-                    2715 Ash Dr. San Jose, South Dakota{"\n"}83475
+                    {currentUser?.address || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -320,7 +324,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    3264 35465
+                    {currentUser?.vendorCode || (currentUser as any)?.businessID || "N/A"}
                   </Text>
                 </View>
               </View>

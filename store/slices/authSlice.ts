@@ -4,10 +4,16 @@ interface AuthState {
     user: {
         id: string;
         name?: string;
+        fullName?: string;
         email: string;
+        phone?: string;
         userType: string;
         vendorCode?: string;
         businessName?: string;
+        storename?: string;
+        address?: string;
+        aboutStore?: string;
+        logo?: string;
     } | null;
     accessToken: string | null;
     refreshToken: string | null;
