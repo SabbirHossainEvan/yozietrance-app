@@ -70,7 +70,8 @@ const CategoriesScreen: React.FC = () => {
     { skip: !activeVendorId }
   );
 
-  const filteredCategories = (Array.isArray(categoriesData) ? categoriesData : []).filter((item: any) => {
+  const categories = categoriesData?.data || (Array.isArray(categoriesData) ? categoriesData : []);
+  const filteredCategories = categories.filter((item: any) => {
     const title = item.title || item.name || "";
     return title.toLowerCase().includes(search.toLowerCase());
   });
@@ -78,7 +79,10 @@ const CategoriesScreen: React.FC = () => {
   const handleCategoryPress = (category: any) => {
     router.push({
       pathname: "/(user_screen)/ElectronicsScreen",
-      params: { categoryId: category._id || category.id }
+      params: {
+        categoryId: category._id || category.id,
+        categoryName: category.name || category.title
+      }
     });
   };
 
@@ -86,12 +90,17 @@ const CategoriesScreen: React.FC = () => {
     <View style={styles.cardContainer}>
       <TouchableOpacity activeOpacity={0.8} onPress={() => handleCategoryPress(item)}>
         <Image
-          source={item.image ? { uri: item.image } : require("../../assets/users/Mask group.png")}
+          source={
+            item.catImage ? { uri: item.catImage } :
+              item.thumbnail ? { uri: item.thumbnail } :
+                (item.image ? (typeof item.image === 'string' ? { uri: item.image } : item.image) :
+                  require("../../assets/users/Mask group.png"))
+          }
           style={styles.categoryImage}
           resizeMode="cover"
         />
         <View style={styles.categoryButton}>
-          <Text style={styles.categoryText}>{item.title || item.name}</Text>
+          <Text style={styles.categoryText}>{item.name || item.title}</Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -133,7 +142,7 @@ const CategoriesScreen: React.FC = () => {
       <FlatList
         data={filteredCategories}
         renderItem={renderCategory}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id || item._id}
         numColumns={2}
         contentContainerStyle={styles.listPadding}
         columnWrapperStyle={styles.columnWrapper}

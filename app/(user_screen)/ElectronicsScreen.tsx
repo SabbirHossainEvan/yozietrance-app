@@ -57,7 +57,7 @@ const PRODUCTS = [
 
 const ElectronicsScreen = () => {
   const router = useRouter();
-  const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
+  const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
   const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
 
   const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
@@ -131,7 +131,7 @@ const ElectronicsScreen = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Electronics</Text>
+        <Text style={styles.headerTitle}>{categoryName || "Electronics"}</Text>
         <View style={{ width: 24 }} />
       </View>
 

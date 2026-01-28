@@ -28,18 +28,6 @@ const ProductDetails = () => {
   const [coupon, setCoupon] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const specs = [
-    { label: "Brand", value: "JBL" },
-    { label: "Model", value: "Tune 720BT" },
-    { label: "Connectivity", value: "Bluetooth | Charging cable" },
-    { label: "Bluetooth", value: "5.3" },
-    { label: "Colors", value: "2 Options", isColor: true },
-    { label: "Weight", value: "220g" },
-    { label: "Size", value: "40mm" },
-    { label: "Charging time", value: "2 hours from empty" },
-    { label: "Playtime", value: "Up to 76 hours" },
-  ];
-
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FBF9' }}>
@@ -60,6 +48,14 @@ const ProductDetails = () => {
   }
 
   const productImages = product.images?.length > 0 ? product.images : ["https://i.ibb.co/Vp6Yj7v/headphones.png"];
+
+  const specs = product.specification ? Object.entries(product.specification).map(([key, value]) => ({
+    label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+    value: Array.isArray(value) ? value.join(", ") : String(value),
+  })) : [
+    { label: "Brand", value: "N/A" },
+    { label: "Model", value: "N/A" },
+  ];
 
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -153,15 +149,7 @@ const ProductDetails = () => {
                 index === specs.length - 1 && { borderBottomWidth: 0 }
               ]}>
                 <Text style={{ fontSize: 13, color: "#555", flex: 1 }}>{item.label}</Text>
-                {item.isColor ? (
-                  <View style={{ flexDirection: "row", alignItems: 'center' }}>
-                    <View style={{ width: 12, height: 12, borderRadius: 6, marginLeft: 6, backgroundColor: "#2D8C8C" }} />
-                    <View style={{ width: 12, height: 12, borderRadius: 6, marginLeft: 6, backgroundColor: "#FFF", borderWidth: 1, borderColor: "#DDD" }} />
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}> {item.value}</Text>
-                  </View>
-                ) : (
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}>{item.value}</Text>
-                )}
+                <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}>{item.value}</Text>
               </View>
             ))}
           </View>
