@@ -1,8 +1,11 @@
+import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
+import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -54,7 +57,16 @@ const PRODUCTS = [
 
 const ElectronicsScreen = () => {
   const router = useRouter();
+  const { categoryId } = useLocalSearchParams<{ categoryId: string }>();
   const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
+
+  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
+
+  const { data: products, isLoading: isProductsLoading } = useGetProductsByVendorQuery(
+    { vendorId: activeVendorId, categoryId },
+    { skip: !activeVendorId }
+  );
 
   const loadAddedItems = async () => {
     try {
@@ -134,65 +146,78 @@ const ElectronicsScreen = () => {
       </View>
 
       {/* Product Grid List */}
-      <FlatList
-        data={PRODUCTS}
-        numColumns={2}
-        keyExtractor={(item) => item.id}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.listPadding}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.8}
-            onPress={() => router.push("/(user_screen)/ProductDetails")}
-          >
-            {/* Light Blue Image Container */}
-            <View style={styles.imageBox}>
-              <Image
-                source={item.image}
-                style={styles.img}
-                resizeMode="contain"
-              />
-            </View>
-
-            {/* Product Title */}
-            <Text style={styles.title} numberOfLines={1}>
-              {item.title}
-            </Text>
-
-            {/* Rating Section */}
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={16} color="#FFB800" />
-              <Text style={styles.ratingText}>{item.rating}</Text>
-              <Text style={styles.reviews}>({item.reviews} reviews)</Text>
-            </View>
-
-            {/* Price and Circular Add Button */}
-            <View style={styles.cardBottom}>
-              <View>
-                <Text style={styles.priceText}>
-                  {item.price}
-                  <Text style={styles.unitText}> /unit</Text>
-                </Text>
+      {isConnectionsLoading || isProductsLoading ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#2A8383" />
+        </View>
+      ) : (
+        <FlatList
+          data={products}
+          numColumns={2}
+          keyExtractor={(item) => item.id || item._id}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listPadding}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: "/(user_screen)/ProductDetails",
+                  params: { productId: item.id || item._id },
+                })
+              }
+            >
+              {/* Light Blue Image Container */}
+              <View style={styles.imageBox}>
+                <Image
+                  source={item.images?.[0] ? { uri: item.images[0] } : item.image}
+                  style={styles.img}
+                  resizeMode="contain"
+                />
               </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  addedItems[item.id] && { backgroundColor: "#E0F2F1" },
-                ]}
-                onPress={() => addToCart(item)}
-              >
-                {addedItems[item.id] ? (
-                  <Ionicons name="checkmark" size={24} color="#2A8383" />
-                ) : (
-                  <Ionicons name="add" size={24} color="#333" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+              {/* Product Title */}
+              <Text style={styles.title} numberOfLines={1}>
+                {item.title || item.name}
+              </Text>
+
+              {/* Rating Section */}
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={16} color="#FFB800" />
+                <Text style={styles.ratingText}>{item.rating || "0.0"}</Text>
+                <Text style={styles.reviews}>({item.reviews || 0} reviews)</Text>
+              </View>
+
+              {/* Price and Circular Add Button */}
+              <View style={styles.cardBottom}>
+                <View>
+                  <Text style={styles.priceText}>
+                    ${item.price}
+                    <Text style={styles.unitText}> /unit</Text>
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.addButton,
+                    addedItems[item.id || item._id] && {
+                      backgroundColor: "#E0F2F1",
+                    },
+                  ]}
+                  onPress={() => addToCart(item)}
+                >
+                  {addedItems[item.id || item._id] ? (
+                    <Ionicons name="checkmark" size={24} color="#2A8383" />
+                  ) : (
+                    <Ionicons name="add" size={24} color="#333" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 };

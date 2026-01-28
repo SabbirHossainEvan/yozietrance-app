@@ -1,7 +1,9 @@
+import { useGetProductByIdQuery } from "@/store/api/product_api_slice";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -17,16 +19,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 
 const ProductDetails = () => {
+  const router = useRouter();
+  const { productId } = useLocalSearchParams<{ productId: string }>();
+  const { data: product, isLoading } = useGetProductByIdQuery(productId as string, { skip: !productId });
+
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("Teal");
   const [coupon, setCoupon] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-
-  const productImages = [
-    "https://i.ibb.co/Vp6Yj7v/headphones.png",
-    "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500",
-    "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500"
-  ];
 
   const specs = [
     { label: "Brand", value: "JBL" },
@@ -39,6 +39,27 @@ const ProductDetails = () => {
     { label: "Charging time", value: "2 hours from empty" },
     { label: "Playtime", value: "Up to 76 hours" },
   ];
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FBF9' }}>
+        <ActivityIndicator size="large" color="#2D8C8C" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!product) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FBF9' }}>
+        <Text>Product not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 20 }}>
+          <Text style={{ color: '#2D8C8C' }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const productImages = product.images?.length > 0 ? product.images : ["https://i.ibb.co/Vp6Yj7v/headphones.png"];
 
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -73,8 +94,8 @@ const ProductDetails = () => {
             showsHorizontalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={16}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={({ item }) => (
+            keyExtractor={(item: string, index: number) => index.toString()}
+            renderItem={({ item }: { item: string }) => (
               <View style={{ width: width - 40, height: 250, justifyContent: 'center', alignItems: 'center' }}>
                 <Image
                   source={{ uri: item }}
@@ -87,7 +108,7 @@ const ProductDetails = () => {
 
           {/* Pagination Dots */}
           <View style={{ flexDirection: "row", position: "absolute", bottom: 15 }}>
-            {productImages.map((_, index) => (
+            {productImages.map((_: string, index: number) => (
               <View
                 key={index}
                 style={[
@@ -100,30 +121,26 @@ const ProductDetails = () => {
         </View>
 
         {/* Title & Rating */}
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#333", marginBottom: 8 }}>Wireless Noise-Canceling Headphones</Text>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: "#333", marginBottom: 8 }}>{product.title || product.name}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
           <View style={{ flexDirection: "row", marginRight: 8 }}>
-            {[1, 2, 3, 4].map((i) => (
-              <Ionicons key={i} name="star" size={14} color="#FFD700" />
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Ionicons key={i} name="star" size={14} color={i <= (product.rating || 0) ? "#FFD700" : "#E0E0E0"} />
             ))}
-            <Ionicons name="star-half" size={14} color="#FFD700" />
           </View>
           <Text style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}>
-            4.8 <Text style={{ fontWeight: "400", color: "#777", textDecorationLine: "underline" }}>(5,387 reviews)</Text>
+            {product.rating || "0.0"} <Text style={{ fontWeight: "400", color: "#777", textDecorationLine: "underline" }}>({product.reviews || 0} reviews)</Text>
           </Text>
         </View>
-        <Text style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Sku: EC-100</Text>
+        <Text style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Sku: {product.sku || "N/A"}</Text>
 
         {/* Price */}
-        <Text style={{ fontSize: 22, fontWeight: "bold", color: "#2D8C8C", marginBottom: 10 }}>$3.44</Text>
+        <Text style={{ fontSize: 22, fontWeight: "bold", color: "#2D8C8C", marginBottom: 10 }}>${product.price}</Text>
 
         {/* Description */}
         <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 6 }}>Description</Text>
         <Text style={{ fontSize: 13, color: "#666", lineHeight: 20, marginBottom: 20 }}>
-          Industry-leading noise canceling with Dual Noise Sensor technology. Next-
-          level music with Edge-AI, co-developed with Sony Music Studios Tokyo. Up to
-          30-hour battery life with quick charging (10 min charge for 5 hours of
-          playback).
+          {product.description || "No description available."}
         </Text>
 
         {/* Specification Card */}
@@ -210,7 +227,7 @@ const ProductDetails = () => {
         </TouchableOpacity>
 
         <TouchableOpacity style={{ backgroundColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 30 }}>
-          <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>Buy $3.44</Text>
+          <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>Buy ${product.price}</Text>
         </TouchableOpacity>
 
         {/* Reviews */}

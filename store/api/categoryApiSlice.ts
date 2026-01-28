@@ -12,10 +12,20 @@ export const categoryApiSlice = apiSlice.injectEndpoints({
         }),
         getCategories: builder.query({
             query: () => '/categories',
+            transformResponse: (response: any) => {
+                if (Array.isArray(response)) return response;
+                if (Array.isArray(response?.data)) return response.data;
+                return [];
+            },
             providesTags: [{ type: 'Category', id: 'LIST' }],
         }),
         getCategoriesByVendor: builder.query({
             query: (vendorId) => `/categories/vendor/${vendorId}`,
+            transformResponse: (response: any) => {
+                if (Array.isArray(response)) return response;
+                if (Array.isArray(response?.data)) return response.data;
+                return [];
+            },
             providesTags: [{ type: 'Category', id: 'LIST' }],
         }),
 

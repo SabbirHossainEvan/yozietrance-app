@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -17,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { useRegisterVendorMutation } from "../../store/api/apiSlice";
+import { setCredentials } from "../../store/slices/authSlice";
 import { updateVendorRegistration } from "../../store/slices/registrationSlice";
 import { RootState } from "../../store/store";
 
@@ -126,7 +128,22 @@ const BusinessIdUploadScreen: React.FC = () => {
 
       console.log('Registering Vendor with Latest Data (FormData)');
 
-      await registerVendor(formData).unwrap();
+      const response = await registerVendor(formData).unwrap();
+      const updatedUser = response?.data?.user || response?.user || response?.data;
+
+      if (updatedUser) {
+        // Update Redux
+        const accessToken = await AsyncStorage.getItem('accessToken');
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        dispatch(setCredentials({
+          user: updatedUser,
+          accessToken: accessToken || '',
+          refreshToken: refreshToken || ''
+        }));
+
+        // Update AsyncStorage
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      }
 
       Alert.alert("Success", "Vendor registration successful!", [
         { text: "OK", onPress: () => router.push("/(tabs)") }

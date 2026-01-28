@@ -6,6 +6,8 @@ interface AuthState {
         name?: string;
         email: string;
         userType: string;
+        vendorCode?: string;
+        businessName?: string;
     } | null;
     accessToken: string | null;
     refreshToken: string | null;

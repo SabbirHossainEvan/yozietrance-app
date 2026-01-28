@@ -1,6 +1,8 @@
+import { useConnectToVendorMutation } from "@/store/api/connectionApiSlice";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   StyleSheet,
@@ -22,6 +24,25 @@ const VendorModal: React.FC<VendorModalProps> = ({
   onConnect,
 }) => {
   const [vendorCode, setVendorCode] = useState("");
+  const [connectToVendor, { isLoading }] = useConnectToVendorMutation();
+
+  const handleConnect = async () => {
+    if (!vendorCode) {
+      alert("Please enter a vendor code");
+      return;
+    }
+
+    try {
+      await connectToVendor({ vendorCode }).unwrap();
+      alert("Connected successfully!");
+      onConnect(vendorCode);
+      onClose();
+      router.replace("/(users)/categoriesScreen");
+    } catch (err: any) {
+      console.error("Connection error:", err);
+      alert(err?.data?.message || "Failed to connect to vendor");
+    }
+  };
 
   return (
     <Modal
@@ -35,7 +56,7 @@ const VendorModal: React.FC<VendorModalProps> = ({
           <View style={styles.header}>
             <Text style={styles.title}>Enter Code</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text style={styles.closeIcon} onPress={() => router.back()}>
+              <Text style={styles.closeIcon}>
                 ✕
               </Text>
             </TouchableOpacity>
@@ -52,14 +73,14 @@ const VendorModal: React.FC<VendorModalProps> = ({
 
           <TouchableOpacity
             style={styles.button}
-            onPress={() => onConnect(vendorCode)}
+            onPress={handleConnect}
+            disabled={isLoading}
           >
-            <Text
-              style={styles.buttonText}
-              onPress={() => router.replace("/(user_screen)/ChatDetailsScreen")}
-            >
-              Connect to Vendor
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Connect to Vendor</Text>
+            )}
           </TouchableOpacity>
         </View>
       </Pressable>

@@ -1,7 +1,10 @@
+import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
+import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -59,28 +62,48 @@ const COLUMN_WIDTH = (width - 48) / 2;
 const CategoriesScreen: React.FC = () => {
   const [search, setSearch] = useState("");
 
-  const filteredCategories = CATEGORIES.filter((item) =>
-    item.title.toLowerCase().includes(search.toLowerCase())
+  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
+
+  const { data: categoriesData, isLoading: isCategoriesLoading } = useGetCategoriesByVendorQuery(
+    activeVendorId,
+    { skip: !activeVendorId }
   );
 
-  const handleCategoryPress = () => {
-    router.push("/ElectronicsScreen");
+  const filteredCategories = (Array.isArray(categoriesData) ? categoriesData : []).filter((item: any) => {
+    const title = item.title || item.name || "";
+    return title.toLowerCase().includes(search.toLowerCase());
+  });
+
+  const handleCategoryPress = (category: any) => {
+    router.push({
+      pathname: "/(user_screen)/ElectronicsScreen",
+      params: { categoryId: category._id || category.id }
+    });
   };
 
-  const renderCategory = ({ item }: { item: Category }) => (
+  const renderCategory = ({ item }: { item: any }) => (
     <View style={styles.cardContainer}>
-      <TouchableOpacity activeOpacity={0.8} onPress={handleCategoryPress}>
+      <TouchableOpacity activeOpacity={0.8} onPress={() => handleCategoryPress(item)}>
         <Image
-          source={item.image}
+          source={item.image ? { uri: item.image } : require("../../assets/users/Mask group.png")}
           style={styles.categoryImage}
           resizeMode="cover"
         />
         <View style={styles.categoryButton}>
-          <Text style={styles.categoryText}>{item.title}</Text>
+          <Text style={styles.categoryText}>{item.title || item.name}</Text>
         </View>
       </TouchableOpacity>
     </View>
   );
+
+  if (isConnectionsLoading || isCategoriesLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#4FB0A8" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
