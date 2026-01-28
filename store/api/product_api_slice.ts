@@ -7,11 +7,17 @@ export const productApiSlice = apiSlice.injectEndpoints({
                 url: `/products/vendor/${vendorId}${categoryId ? `?categoryId=${categoryId}` : ''}`,
                 method: 'GET',
             }),
+            transformResponse: (response: any) => {
+                if (Array.isArray(response)) return response;
+                if (Array.isArray(response?.data)) return response.data;
+                if (Array.isArray(response?.products)) return response.products;
+                if (response?.data && Array.isArray(response.data.products)) return response.data.products;
+                return [];
+            },
             providesTags: (result) => {
-                const products = Array.isArray(result) ? result : (result?.data || result?.products || []);
                 const tags: any[] = [{ type: 'Product' as const, id: 'LIST' }];
-                if (Array.isArray(products)) {
-                    products.forEach((p: any) => {
+                if (Array.isArray(result)) {
+                    result.forEach((p: any) => {
                         const id = p.id || p._id;
                         if (id) tags.push({ type: 'Product' as const, id });
                     });
@@ -21,6 +27,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         }),
         getProductById: builder.query<any, string>({
             query: (id) => `/products/${id}`,
+            transformResponse: (response: any) => response?.data || response,
             providesTags: (result, error, id) => [{ type: 'Product', id }],
         }),
         createProduct: builder.mutation({
