@@ -1,3 +1,4 @@
+import { useAddToCartMutation } from "@/store/api/cartApiSlice";
 import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
 import { useGetProductByIdQuery } from "@/store/api/product_api_slice";
 import { RootState } from "@/store/store";
@@ -29,6 +30,7 @@ const ProductDetails = () => {
   const actualId = (id || productId) as string;
   const { data: product, isLoading, error } = useGetProductByIdQuery(actualId, { skip: !actualId });
   const [createOrder, { isLoading: isCreating }] = useCreateOrderMutation();
+  const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
   const user = useSelector((state: RootState) => state.auth.user);
 
   const [quantity, setQuantity] = useState(1);
@@ -90,10 +92,11 @@ const ProductDetails = () => {
   const specs = product.specification ? Object.entries(product.specification).map(([key, value]) => ({
     label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
     value: Array.isArray(value) ? value.join(", ") : String(value),
-  })) : [
-    { label: "Brand", value: "N/A" },
-    { label: "Model", value: "N/A" },
-  ];
+  })) : [];
+
+  // Extract colors from product if available
+  const productColors = product.colors || product.specification?.colors || [];
+  const hasColors = Array.isArray(productColors) && productColors.length > 0;
 
   const handleScroll = (event: any) => {
     const scrollPosition = event.nativeEvent.contentOffset.x;
@@ -177,38 +180,44 @@ const ProductDetails = () => {
           {product.description || "No description available."}
         </Text>
 
-        {/* Specification Card */}
-        <View style={{ marginBottom: 25, position: 'relative', marginTop: 10 }}>
-          <View style={{ backgroundColor: "#FFF", borderRadius: 16, padding: 16, elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } }}>
-            <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 15, color: "#333" }}>Specification</Text>
-            {specs.map((item, index) => (
-              <View key={index} style={[
-                { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F0F0F0", alignItems: "center" },
-                index === specs.length - 1 && { borderBottomWidth: 0 }
-              ]}>
-                <Text style={{ fontSize: 13, color: "#555", flex: 1 }}>{item.label}</Text>
-                <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}>{item.value}</Text>
-              </View>
-            ))}
+        {/* Specification Card - Only show if specs exist */}
+        {specs.length > 0 && (
+          <View style={{ marginBottom: 25, position: 'relative', marginTop: 10 }}>
+            <View style={{ backgroundColor: "#FFF", borderRadius: 16, padding: 16, elevation: 3, shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 5, shadowOffset: { width: 0, height: 2 } }}>
+              <Text style={{ fontSize: 16, fontWeight: "700", marginBottom: 15, color: "#333" }}>Specification</Text>
+              {specs.map((item, index) => (
+                <View key={index} style={[
+                  { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F0F0F0", alignItems: "center" },
+                  index === specs.length - 1 && { borderBottomWidth: 0 }
+                ]}>
+                  <Text style={{ fontSize: 13, color: "#555", flex: 1 }}>{item.label}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#333", textAlign: "right" }}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* Color Selection */}
-        <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>Color</Text>
-        <View style={{ flexDirection: "row", marginBottom: 20, gap: 12 }}>
-          <TouchableOpacity
-            onPress={() => setSelectedColor("Black")}
-            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "black" }, selectedColor === "Black" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
-          />
-          <TouchableOpacity
-            onPress={() => setSelectedColor("Teal")}
-            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "#6FA4A4" }, selectedColor === "Teal" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
-          />
-          <TouchableOpacity
-            onPress={() => setSelectedColor("White")}
-            style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "white" }, selectedColor === "White" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
-          />
-        </View>
+        {/* Color Selection - Only show if product has colors */}
+        {hasColors && (
+          <>
+            <Text style={{ fontSize: 14, fontWeight: "600", color: "#333", marginBottom: 10 }}>Color</Text>
+            <View style={{ flexDirection: "row", marginBottom: 20, gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setSelectedColor("Black")}
+                style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "black" }, selectedColor === "Black" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+              />
+              <TouchableOpacity
+                onPress={() => setSelectedColor("Teal")}
+                style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "#6FA4A4" }, selectedColor === "Teal" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+              />
+              <TouchableOpacity
+                onPress={() => setSelectedColor("White")}
+                style={[{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: "transparent", backgroundColor: "white" }, selectedColor === "White" && { borderWidth: 2, borderColor: "#2D8C8C" }]}
+              />
+            </View>
+          </>
+        )}
 
         {/* Quantity */}
         <View style={{
@@ -247,9 +256,28 @@ const ProductDetails = () => {
 
         {/* Action Buttons */}
         <TouchableOpacity
-          onPress={() => router.push("/cart")}
-          style={{ borderWidth: 1.5, borderColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 12 }}>
-          <Text style={{ color: "#2D8C8C", fontWeight: "700", fontSize: 16 }}>Add To Cart</Text>
+          onPress={async () => {
+            if (!product) return;
+            if (!user) {
+              Alert.alert("Error", "Please login to add items to cart");
+              return;
+            }
+            try {
+              await addToCart({
+                productId: product._id || product.id,
+                quantity: quantity
+              }).unwrap();
+              Alert.alert("Success", "Product added to cart!", [
+                { text: "OK", onPress: () => router.push("/(users)/cart") }
+              ]);
+            } catch (err: any) {
+              Alert.alert("Error", err?.data?.message || "Failed to add to cart");
+            }
+          }}
+          style={[{ borderWidth: 1.5, borderColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 12 }, isAdding && { opacity: 0.7 }]}
+          disabled={isAdding}
+        >
+          {isAdding ? <ActivityIndicator color="#2D8C8C" /> : <Text style={{ color: "#2D8C8C", fontWeight: "700", fontSize: 16 }}>Add To Cart</Text>}
         </TouchableOpacity>
 
         <TouchableOpacity

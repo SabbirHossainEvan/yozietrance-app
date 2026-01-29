@@ -1,19 +1,9 @@
 
+import { useGetCartQuery, useRemoveFromCartMutation, useUpdateCartItemMutation } from "@/store/api/cartApiSlice";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import {
-  Dimensions,
-  Image,
-  Modal,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface CartItem {
@@ -28,52 +18,65 @@ const { width } = Dimensions.get("window");
 
 const MyCart: React.FC = () => {
   const router = useRouter();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { data: cartData, isLoading, isError, refetch } = useGetCartQuery();
+  const [updateCartItem] = useUpdateCartItemMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
+
+  const cartItems = useMemo(() => {
+    const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+    console.log('Raw Cart Data:', JSON.stringify(cartData, null, 2));
+    console.log('Raw Items:', JSON.stringify(rawItems, null, 2));
+
+    return rawItems.map((item: any) => {
+      console.log('Processing item:', JSON.stringify(item, null, 2));
+      const mappedItem = {
+        id: item.id || item._id,
+        name: item.product?.name || item.product?.title || item.productId?.title || item.productId?.name || item.title || item.name || "Unknown Product",
+        price: parseFloat(item.product?.price || item.productId?.price || item.price || 0),
+        quantity: item.quantity,
+        image: item.product?.images?.[0] || item.product?.imageUrl || item.productId?.images?.[0] || item.productId?.image || item.image || "https://via.placeholder.com/150",
+      };
+      console.log('Mapped item:', mappedItem);
+      return mappedItem;
+    });
+  }, [cartData]);
 
   // 1. Modal state define kora hoyeche
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const loadCart = async () => {
-    try {
-      const storedCart = await AsyncStorage.getItem("userCart");
-      if (storedCart) {
-        setCartItems(JSON.parse(storedCart));
-      }
-    } catch (error) {
-      console.error("Failed to load cart", error);
-    }
-  };
-
   useFocusEffect(
     useCallback(() => {
-      loadCart();
-    }, [])
+      refetch();
+    }, [refetch])
   );
 
   const TAX_RATE: number = 0.075;
   const SHIPPING_FEE: number = 0.6;
 
   const updateQuantity = async (id: string, type: "inc" | "dec") => {
-    const newCart = cartItems.map((item) => {
-      if (item.id === id) {
-        const newQty =
-          type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
-        return { ...item, quantity: newQty };
-      }
-      return item;
-    });
-    setCartItems(newCart);
-    await AsyncStorage.setItem("userCart", JSON.stringify(newCart));
+    const item = cartItems.find((i: any) => i.id === id);
+    if (!item) return;
+
+    const newQty = type === "inc" ? item.quantity + 1 : Math.max(1, item.quantity - 1);
+    if (newQty === item.quantity) return;
+
+    try {
+      await updateCartItem({ itemId: id, quantity: newQty }).unwrap();
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to update quantity");
+    }
   };
 
   const removeItem = async (id: string) => {
-    const newCart = cartItems.filter((item) => item.id !== id);
-    setCartItems(newCart);
-    await AsyncStorage.setItem("userCart", JSON.stringify(newCart));
+    try {
+      await removeFromCart(id).unwrap();
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to remove item");
+    }
   };
 
   const subtotal: number = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
+    (acc: number, item: any) => acc + item.price * item.quantity,
     0
   );
   const tax: number = subtotal * TAX_RATE;
@@ -84,6 +87,14 @@ const MyCart: React.FC = () => {
     setIsModalVisible(false);
     router.push("/(users)/Information" as any);
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#349488" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -133,7 +144,7 @@ const MyCart: React.FC = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {cartItems.map((item) => (
+        {cartItems.map((item: any) => (
           <View key={item.id} style={styles.cartCard}>
             <View style={styles.itemMainRow}>
               <View style={styles.imageWrapper}>
@@ -402,3 +413,4 @@ const styles = StyleSheet.create({
 });
 
 export default MyCart;
+

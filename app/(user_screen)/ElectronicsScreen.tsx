@@ -1,11 +1,12 @@
+import { useAddToCartMutation, useGetCartQuery } from "@/store/api/cartApiSlice";
 import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
 import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Image,
@@ -68,59 +69,40 @@ const ElectronicsScreen = () => {
     { skip: !activeVendorId }
   );
 
-  const loadAddedItems = async () => {
-    try {
-      const cartData = await AsyncStorage.getItem("userCart");
-      if (cartData) {
-        const cartItems = JSON.parse(cartData);
-        const addedMap: { [key: string]: boolean } = {};
-        cartItems.forEach((item: any) => {
-          addedMap[item.id] = true;
-        });
-        setAddedItems(addedMap);
-      }
-    } catch (error) {
-      console.log("Error loading cart for UI sync:", error);
+  const [addToCartMutation, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery();
+
+  const loadAddedItems = useCallback(() => {
+    if (cartData) {
+      const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+      const addedMap: { [key: string]: boolean } = {};
+      rawItems.forEach((item: any) => {
+        const id = item.productId?._id || item.productId?.id || item.productId;
+        if (id) addedMap[id] = true;
+      });
+      setAddedItems(addedMap);
     }
-  };
+  }, [cartData]);
 
   useFocusEffect(
     useCallback(() => {
+      refetchCart();
       loadAddedItems();
-    }, []),
+    }, [refetchCart, loadAddedItems]),
   );
 
   const addToCart = async (product: any) => {
     try {
-      // 1. Get existing cart
-      const existingCart = await AsyncStorage.getItem("userCart");
-      let cart = existingCart ? JSON.parse(existingCart) : [];
+      await addToCartMutation({
+        productId: product._id || product.id,
+        quantity: 1
+      }).unwrap();
 
-      // 2. Check if item exists
-      const existingItemIndex = cart.findIndex(
-        (item: any) => item.id === product.id,
-      );
-
-      if (existingItemIndex > -1) {
-        cart[existingItemIndex].quantity += 1;
-      } else {
-        // New Item
-        cart.push({
-          id: product.id,
-          name: product.title,
-          price: parseFloat(product.price.replace("$", "")),
-          quantity: 1,
-          image: Image.resolveAssetSource(product.image).uri,
-        });
-      }
-
-      // 3. Save back to storage
-      await AsyncStorage.setItem("userCart", JSON.stringify(cart));
-
-      // 4. Update UI state
-      setAddedItems((prev) => ({ ...prev, [product.id]: true }));
-    } catch (error) {
+      Alert.alert("Success", "Product added to cart!");
+      // loadAddedItems will be updated via cartData change
+    } catch (error: any) {
       console.error("Error adding to cart:", error);
+      Alert.alert("Error", error?.data?.message || "Failed to add to cart");
     }
   };
 

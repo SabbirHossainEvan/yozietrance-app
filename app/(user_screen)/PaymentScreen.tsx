@@ -1,3 +1,5 @@
+import { useGetCartQuery, useRemoveFromCartMutation } from "@/store/api/cartApiSlice";
+import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
 import {
   FontAwesome5,
   Ionicons,
@@ -6,6 +8,8 @@ import {
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -21,6 +25,48 @@ const CardDetailsScreen: React.FC = () => {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState("card");
+  const [createOrder, { isLoading: isCreating }] = useCreateOrderMutation();
+  const { data: cartData } = useGetCartQuery();
+  const [removeFromCart] = useRemoveFromCartMutation();
+
+  const handleConfirm = async () => {
+    const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+    if (rawItems.length === 0) {
+      Alert.alert("Error", "Your cart is empty");
+      return;
+    }
+
+    try {
+      // Group items by vendorId
+      const vendors = [...new Set(rawItems.map((item: any) => item.productId?.vendorId || item.productId?.vendor))];
+
+      for (const vendorId of vendors) {
+        if (!vendorId) continue;
+
+        const vendorItems = rawItems.filter((item: any) => (item.productId?.vendorId || item.productId?.vendor) === vendorId);
+        const orderData = {
+          vendorId,
+          orderItems: vendorItems.map((item: any) => ({
+            product: item.productId?._id || item.productId?.id || item.productId,
+            quantity: item.quantity,
+            price: item.productId?.price || item.price || 0
+          })),
+          shippingAddress: "Default Shipping Address", // This should ideally come from Information.tsx
+          totalPrice: vendorItems.reduce((acc: number, item: any) => acc + (item.productId?.price || item.price || 0) * item.quantity, 0),
+        };
+        await createOrder(orderData).unwrap();
+
+        // Remove items from cart after successful order
+        for (const item of vendorItems) {
+          await removeFromCart(item._id || item.id).unwrap();
+        }
+      }
+
+      router.replace("/(user_screen)/OrderAcceptedScreen");
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to place order");
+    }
+  };
 
   // ১. Card Form Content
   const renderCardForm = () => (
@@ -185,10 +231,11 @@ const CardDetailsScreen: React.FC = () => {
           </View>
 
           <TouchableOpacity
-            style={styles.confirmBtn}
-            onPress={() => router.replace("/(user_screen)/OrderAcceptedScreen")}
+            style={[styles.confirmBtn, isCreating && { opacity: 0.7 }]}
+            onPress={handleConfirm}
+            disabled={isCreating}
           >
-            <Text style={styles.confirmBtnText}>Confirm</Text>
+            {isCreating ? <ActivityIndicator color="white" /> : <Text style={styles.confirmBtnText}>Confirm</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

@@ -71,7 +71,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
-    tagTypes: ['Category', 'Product', 'Order'], // Define tag types for invalidation here if needed
+    tagTypes: ['Category', 'Product', 'Order', 'Cart'], // Define tag types for invalidation here if needed
     endpoints: (builder) => ({
         registerBuyer: builder.mutation({
             query: (data) => {

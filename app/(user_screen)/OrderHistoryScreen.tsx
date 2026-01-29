@@ -1,7 +1,9 @@
+import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -37,8 +39,11 @@ const DUMMY_ORDERS = [
 
 export default function OrderHistoryScreen() {
   const router = useRouter();
+  const { data: ordersData, isLoading } = useGetOrdersQuery(undefined);
 
   const [activeTab, setActiveTab] = useState("Order History");
+
+  const orders = ordersData || [];
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -130,67 +135,73 @@ export default function OrderHistoryScreen() {
         />
       </View>
 
-      {/* Orders List */}
-      <FlatList
-        data={DUMMY_ORDERS}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.orderCard}
-            onPress={() =>
-              router.push({
-                pathname: "/OrderDetails",
-                params: { status: item.status },
-              })
-            }
-          >
-            <View style={styles.cardHeader}>
-              <Image
-                source={{
-                  uri: "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
-                }}
-                style={styles.productImg}
-              />
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.orderNo}>{item.orderNo}</Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: getStatusStyle(item.status).bg },
-                    ]}
-                  >
-                    <Text
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#2A8383" />
+        </View>
+      ) : (
+        /* Orders List */
+        <FlatList
+          data={orders}
+          keyExtractor={(item) => item._id || item.id}
+          contentContainerStyle={{ paddingBottom: 20 }}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.orderCard}
+              onPress={() =>
+                router.push({
+                  pathname: "/(user_screen)/OrderDetails",
+                  params: { id: item._id || item.id, status: item.status },
+                })
+              }
+            >
+              <View style={styles.cardHeader}>
+                <Image
+                  source={{
+                    uri: item.orderItems?.[0]?.product?.images?.[0] || "https://via.placeholder.com/80",
+                  }}
+                  style={styles.productImg}
+                />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.orderNo}>#{item._id?.slice(-6) || item.id?.slice(-6)}</Text>
+                    <View
                       style={[
-                        styles.statusText,
-                        { color: getStatusStyle(item.status).text },
+                        styles.statusBadge,
+                        { backgroundColor: getStatusStyle(item.status).bg },
                       ]}
                     >
-                      {item.status}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: getStatusStyle(item.status).text },
+                        ]}
+                      >
+                        {item.status}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.addressText} numberOfLines={1}>
+                    {item.shippingAddress || "Default Shipping Address"}
+                  </Text>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={14} color="#FFB400" />
+                    <Text style={styles.ratingText}>{item.vendor?.rating || "4.5"}</Text>
                   </View>
                 </View>
-                <Text style={styles.addressText} numberOfLines={1}>
-                  {item.address}
-                </Text>
-                <View style={styles.ratingRow}>
-                  <Ionicons name="star" size={14} color="#FFB400" />
-                  <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
               </View>
-            </View>
 
-            <View style={styles.cardFooter}>
-              <View>
-                <Text style={styles.customerName}>{item.customer}</Text>
-                <Text style={styles.itemDetailText}>{item.itemsInfo}</Text>
+              <View style={styles.cardFooter}>
+                <View>
+                  <Text style={styles.customerName}>{item.vendor?.name || item.vendorId || "Vendor"}</Text>
+                  <Text style={styles.itemDetailText}>{item.orderItems?.length || 0} item{item.orderItems?.length > 1 ? 's' : ''} • {item.orderItems?.[0]?.product?.title || "Product"}</Text>
+                </View>
+                <Text style={styles.priceText}>${(item.totalPrice || 0).toFixed(2)}</Text>
               </View>
-              <Text style={styles.priceText}>${item.price.toFixed(2)}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 }

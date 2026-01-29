@@ -1,7 +1,12 @@
+import { useGetCartQuery, useRemoveFromCartMutation } from "@/store/api/cartApiSlice";
+import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
+import { RootState } from "@/store/store";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,6 +18,7 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 const stateData = [
   { label: "New York", value: "NY" },
@@ -25,13 +31,113 @@ const stateData = [
 
 export default function InformationScreen() {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const { data: cartData, isLoading: isCartLoading } = useGetCartQuery();
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const [removeFromCart] = useRemoveFromCartMutation();
 
-  const [fullName, setFullName] = useState("Rokey Mahmud");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [fullName, setFullName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [address, setAddress] = useState("");
+  const [zipCode, setZipCode] = useState("");
   const [stateValue, setStateValue] = useState<string | null>(null);
   const [isFocus, setIsFocus] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      if (user.name) setFullName(user.name);
+      if (user.email) setEmail(user.email);
+      if (user.phone) setPhone(user.phone);
+    }
+  }, [user]);
+
+  const handleContinue = async () => {
+    // Validation
+    if (!fullName.trim()) {
+      Alert.alert("Error", "Please enter your full name");
+      return;
+    }
+    if (!email.trim()) {
+      Alert.alert("Error", "Please enter your email");
+      return;
+    }
+    if (!phone.trim()) {
+      Alert.alert("Error", "Please enter your phone number");
+      return;
+    }
+    if (!address.trim()) {
+      Alert.alert("Error", "Please enter your address");
+      return;
+    }
+    if (!stateValue) {
+      Alert.alert("Error", "Please select a state");
+      return;
+    }
+    if (!zipCode.trim()) {
+      Alert.alert("Error", "Please enter your zip code");
+      return;
+    }
+
+    // Get cart items
+    const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+
+    if (rawItems.length === 0) {
+      Alert.alert("Error", "Your cart is empty");
+      return;
+    }
+
+    // Construct shipping address
+    const shippingAddress = `${address}, ${stateValue} ${zipCode}`;
+
+    try {
+      // Group items by vendor
+      const vendorGroups: { [key: string]: any[] } = {};
+      rawItems.forEach((item: any) => {
+        const vendorId = item.product?.vendorId || item.product?.vendor?.id || item.productId?.vendorId || item.productId?.vendor?._id || item.productId?.vendor;
+        if (!vendorId) {
+          console.warn('Item missing vendorId:', item);
+          return;
+        }
+        if (!vendorGroups[vendorId]) {
+          vendorGroups[vendorId] = [];
+        }
+        vendorGroups[vendorId].push(item);
+      });
+
+      const vendors = Object.keys(vendorGroups);
+      if (vendors.length === 0) {
+        Alert.alert("Error", "Unable to process order. Products missing vendor information.");
+        return;
+      }
+
+      // Create orders for each vendor
+      for (const vendorId of vendors) {
+        const vendorItems = vendorGroups[vendorId];
+        const orderData = {
+          vendorId,
+          shippingAddress,
+        };
+
+        console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+        await createOrder(orderData).unwrap();
+
+        // Remove items from cart after successful order
+        for (const item of vendorItems) {
+          await removeFromCart(item._id || item.id).unwrap();
+        }
+      }
+
+      Alert.alert(
+        "Success",
+        `Order${vendors.length > 1 ? 's' : ''} placed successfully!`,
+        [{ text: "OK", onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
+      );
+    } catch (err: any) {
+      console.error('Order creation error:', err);
+      Alert.alert("Error", err?.data?.message || "Failed to place order");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -160,16 +266,23 @@ export default function InformationScreen() {
                 placeholder="00000"
                 keyboardType="numeric"
                 maxLength={5}
+                value={zipCode}
+                onChangeText={setZipCode}
               />
             </View>
           </View>
 
           {/* Continue Button */}
           <TouchableOpacity
-            style={styles.continueButton}
-            onPress={() => router.push("/(user_screen)/PaymentScreen")}
+            style={[styles.continueButton, (isCreatingOrder || isCartLoading) && { opacity: 0.7 }]}
+            onPress={handleContinue}
+            disabled={isCreatingOrder || isCartLoading}
           >
-            <Text style={styles.continueButtonText}>Continue</Text>
+            {isCreatingOrder ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.continueButtonText}>Continue</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -247,3 +360,4 @@ const styles = StyleSheet.create({
   },
   continueButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
 });
+
