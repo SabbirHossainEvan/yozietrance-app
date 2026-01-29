@@ -123,9 +123,9 @@ export default function InformationScreen() {
         await createOrder(orderData).unwrap();
 
         // Remove items from cart after successful order
-        for (const item of vendorItems) {
-          await removeFromCart(item._id || item.id).unwrap();
-        }
+        // for (const item of vendorItems) {
+        //   await removeFromCart(item._id || item.id).unwrap();
+        // }
       }
 
       Alert.alert(
