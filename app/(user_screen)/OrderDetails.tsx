@@ -1,7 +1,9 @@
+import { useGetOrderByIdQuery } from "@/store/api/orderApiSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   ScrollView,
@@ -15,57 +17,67 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const OrderDetails = () => {
   const router = useRouter();
-  const { status } = useLocalSearchParams();
+  const { id, status: initialStatus } = useLocalSearchParams();
+  const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string, { skip: !id });
+
+  const order = orderResponse?.data || orderResponse;
+  const status = order?.status || initialStatus;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [rating, setRating] = useState(5);
 
-  const orderItems = [
-    {
-      id: "1",
-      title: "#ORD-2025",
-      price: 20,
-      qty: 2,
-      desc: "Lorem ipsum ultricies in tortor...",
-    },
-    {
-      id: "2",
-      title: "#ORD-2025",
-      price: 20,
-      qty: 2,
-      desc: "Lorem ipsum ultricies in tortor...",
-    },
-  ];
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#2A8383" style={{ marginTop: 50 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (!order || error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>Order not found</Text>
+          <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 10 }}>
+            <Text style={{ color: '#2A8383' }}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const orderItems = order.orderItems || [];
 
   const statusSteps = [
     {
       label: "Order Created",
-      date: "18 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Created",
+      date: new Date(order.createdAt).toLocaleDateString(),
+      location: order.shippingAddress || "",
+      key: "Pending",
     },
     {
       label: "Processing",
-      date: "22 May 2025",
-      location: "Mirpur 11, Dhaka",
+      date: status === "Processing" ? "Updating..." : "",
+      location: "",
       key: "Processing",
     },
     {
       label: "Shipped",
-      date: "23 May 2025",
-      location: "Mirpur 11, Dhaka",
+      date: "",
+      location: "",
       key: "Shipped",
     },
     {
-      label: "Ready For Pickup",
-      date: "23 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Shipped",
+      label: "Delivered",
+      date: "",
+      location: "",
+      key: "Delivered",
     },
-    { label: "Pickup", date: "", location: "", key: "Delivered" },
   ];
 
   const checkCompleted = (stepKey: string) => {
-    const levels: any = { Processing: 1, Shipped: 2, Delivered: 4 };
+    const levels: any = { Pending: 0, Processing: 1, Shipped: 2, Delivered: 3, Completed: 4 };
     const currentLevel = levels[status as string] || 0;
     const stepLevel = levels[stepKey] || 0;
     return stepLevel <= currentLevel;
@@ -92,7 +104,10 @@ const OrderDetails = () => {
         {/* Added Download Button */}
         <TouchableOpacity
           style={styles.downloadButton}
-          onPress={() => router.push("/(user_screen)/ExportInvoiceScreen")}
+          onPress={() => router.push({
+            pathname: "/(user_screen)/ExportInvoiceScreen",
+            params: { id: order._id || order.id }
+          })}
         >
           <Ionicons name="download-outline" size={20} color="#FFF" />
         </TouchableOpacity>
@@ -106,12 +121,12 @@ const OrderDetails = () => {
         <View style={styles.card}>
           <View style={styles.userInfo}>
             <Image
-              source={{ uri: "https://i.@pravatar.cc/100" }}
+              source={{ uri: order.buyer?.avatar || order.user?.avatar || "https://i.pravatar.cc/100" }}
               style={styles.avatar}
             />
             <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={styles.userName}>Ronald Richards</Text>
-              <Text style={styles.userId}>ID: #225432</Text>
+              <Text style={styles.userName}>{order.buyer?.name || order.user?.name || "Customer"}</Text>
+              <Text style={styles.userId}>ID: {order.buyer?._id || order.user?._id || "N/A"}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.messageBtn}>
@@ -123,7 +138,7 @@ const OrderDetails = () => {
         {/* Order Items */}
         <Text style={styles.sectionTitle}>Order items</Text>
         <View style={styles.card}>
-          {orderItems.map((item, idx) => (
+          {orderItems.map((item: any, idx: number) => (
             <View
               key={item.id}
               style={[
@@ -132,19 +147,19 @@ const OrderDetails = () => {
               ]}
             >
               <Image
-                source={{ uri: "https://via.placeholder.com/100" }}
+                source={{ uri: item.product?.images?.[0] || "https://via.placeholder.com/100" }}
                 style={styles.itemImg}
               />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <View style={styles.rowBetween}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
+                  <Text style={styles.itemTitle}>{item.product?.name || item.product?.title || "Product"}</Text>
                   <Text style={styles.itemPrice}>${item.price}</Text>
                 </View>
                 <View style={styles.rowBetween}>
                   <Text style={styles.itemDesc} numberOfLines={2}>
-                    {item.desc}
+                    {item.product?.description || ""}
                   </Text>
-                  <Text style={styles.itemQty}>x{item.qty}</Text>
+                  <Text style={styles.itemQty}>x{item.quantity}</Text>
                 </View>
               </View>
             </View>
@@ -156,24 +171,16 @@ const OrderDetails = () => {
         <View style={styles.card}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>$80.00</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tax(7.5%)</Text>
-            <Text style={styles.summaryValue}>$10.00</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping</Text>
-            <Text style={styles.summaryValue}>$0.60</Text>
+            <Text style={styles.summaryValue}>${order.totalPrice?.toFixed(2)}</Text>
           </View>
           <View style={styles.dashedLine} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Grand total</Text>
-            <Text style={styles.totalValue}>$90.60</Text>
+            <Text style={styles.totalValue}>${order.totalPrice?.toFixed(2)}</Text>
           </View>
           <View style={styles.paidBadge}>
-            <Text style={styles.paidText}>Paid</Text>
-            <Text style={styles.paidSubText}>Via Credit Card ending 4242</Text>
+            <Text style={styles.paidText}>{order.status === 'Pending' ? 'Unpaid' : 'Paid'}</Text>
+            <Text style={styles.paidSubText}>Via {order.paymentMethod || "Credit Card"}</Text>
           </View>
         </View>
 

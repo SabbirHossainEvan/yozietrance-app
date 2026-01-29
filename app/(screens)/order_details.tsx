@@ -1,23 +1,41 @@
-import { chatConversations, recentOrders } from '@/constants/common';
+import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '@/store/api/orderApiSlice';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const OrderDetails = () => {
     const { id } = useLocalSearchParams();
-    const order = recentOrders.find(order => order.id === id);
+    const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string, { skip: !id });
+    const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+
+    const order = orderResponse?.data || orderResponse;
+
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
 
-    if (!order) {
+    if (isLoading) {
         return (
             <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Order not found</Text>
+                <ActivityIndicator size="large" color="#278687" />
             </SafeAreaView>
         );
     }
+
+    if (!order || error) {
+        return (
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>Order not found</Text>
+                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 10 }}>
+                    <Text style={{ color: '#278687' }}>Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
+
+    const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
 
     const getStatusColor = (status: any) => {
         switch (status) {
@@ -26,14 +44,26 @@ const OrderDetails = () => {
             case 'Processing': return '#2196F3';
             case 'Shipped': return '#9C27B0';
             case 'Delivered': return '#4CAF50';
+            case 'Cancelled': return '#F44336';
             default: return '#9E9E9E';
         }
     };
 
-    const statusColor = getStatusColor(order.orderStatus.status);
+    const statusColor = getStatusColor(order.status);
 
     const handleBack = () => {
         router.back();
+    };
+
+    const handleUpdateStatus = async () => {
+        if (!selectedStatus) return;
+        try {
+            await updateStatus({ id: id as string, status: selectedStatus }).unwrap();
+            Alert.alert("Success", "Order status updated successfully");
+            setShowUpdateStatusModal(false);
+        } catch (err: any) {
+            Alert.alert("Error", err?.data?.message || "Failed to update status");
+        }
     };
 
     return (
@@ -49,11 +79,11 @@ const OrderDetails = () => {
                 <TouchableOpacity onPress={handleBack}>
                     <MaterialIcons name="arrow-back-ios-new" size={20} color="black" />
                 </TouchableOpacity>
-                <Text style={{ fontSize: 16, fontWeight: '600' }}>Orders {order.orderNumber}</Text>
+                <Text style={{ fontSize: 16, fontWeight: '600' }}>Order #{order._id?.slice(-6) || order.id?.slice(-6)}</Text>
                 <TouchableOpacity
                     onPress={() => router.push({
                         pathname: '/(screens)/export_invoice',
-                        params: { id: order.id }
+                        params: { id: order._id || order.id }
                     })}
                     style={{
                         backgroundColor: "#278687",
@@ -88,7 +118,7 @@ const OrderDetails = () => {
                         marginBottom: 12
                     }}>
                         <Image
-                            source={{ uri: order.customer.avatar }}
+                            source={{ uri: order.buyer?.avatar || order.user?.avatar || 'https://via.placeholder.com/48' }}
                             resizeMode="cover"
                             style={{
                                 height: 48,
@@ -99,28 +129,19 @@ const OrderDetails = () => {
                         />
                         <View style={{ flex: 1 }}>
                             <Text style={{ fontSize: 16, fontWeight: "600", color: '#1F2937', marginBottom: 2 }}>
-                                {order.customer.name}
+                                {order.buyer?.name || order.user?.name || "Customer"}
                             </Text>
                             <Text style={{ fontSize: 13, color: "#6B7280" }}>
-                                ID: {order.customer.customerId}
+                                ID: {order.buyer?._id || order.user?._id || "N/A"}
                             </Text>
                         </View>
                     </View>
                     <TouchableOpacity
                         onPress={() => {
-                            const conversation = chatConversations.find(c =>
-                                c.participant.customerId === order.customer.customerId ||
-                                c.participant.name === order.customer.name
-                            );
-                            if (conversation) {
-                                router.push({
-                                    pathname: '/(screens)/chat_box',
-                                    params: { conversationId: conversation.id }
-                                });
-                            } else {
-                                console.log('No conversation found for this user');
-                                // Optionally handle creating a new conversation or showing an alert
-                            }
+                            router.push({
+                                pathname: '/(screens)/chat_box',
+                                params: { recipientId: order.buyer?._id || order.user?._id }
+                            });
                         }}
                         style={{
                             flexDirection: "row",
@@ -162,34 +183,31 @@ const OrderDetails = () => {
                             Order Items
                         </Text>
 
-                        {order.orderItems.map((item, index) => (
-                            <View key={item.id}>
+                        {order.orderItems?.map((item: any, index: number) => (
+                            <View key={item._id || index}>
                                 <View style={{ borderColor: '#F3F4F6', borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: 'row', marginBottom: index === order.orderItems.length - 1 ? 0 : 16 }}>
                                     <Image
-                                        source={{ uri: item.image }}
+                                        source={{ uri: item.product?.images?.[0] || 'https://via.placeholder.com/72' }}
                                         style={{ width: 72, height: 72, borderRadius: 8, marginRight: 12 }}
                                         resizeMode="cover"
                                     />
                                     <View style={{ flex: 1 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', flex: 1 }}>
-                                                {order.orderNumber}
+                                                {item.product?.name || item.product?.title || "Product"}
                                             </Text>
                                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
                                                 ${item.price}
                                             </Text>
                                         </View>
                                         <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }} numberOfLines={2}>
-                                            {item.description}
+                                            {item.product?.description || ""}
                                         </Text>
                                         <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
                                             <Text style={{ fontSize: 12, color: '#6B7280' }}>x{item.quantity}</Text>
                                         </View>
                                     </View>
                                 </View>
-                                {index < order.orderItems.length - 1 && (
-                                    <View style={{ height: 1, backgroundColor: '#F3F4F6', marginVertical: 0 }} />
-                                )}
                             </View>
                         ))}
                     </View>
@@ -212,21 +230,7 @@ const OrderDetails = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
                             <Text style={{ fontSize: 14, color: '#6B7280' }}>Subtotal</Text>
                             <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.subtotal.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Tax(25%)</Text>
-                            <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.tax.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Shipping</Text>
-                            <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.shipping.toFixed(2)}
+                                ${order.totalPrice?.toFixed(2)}
                             </Text>
                         </View>
 
@@ -240,7 +244,7 @@ const OrderDetails = () => {
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
                             <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937' }}>Grand total</Text>
                             <Text style={{ fontSize: 15, fontWeight: '700', color: '#1F2937' }}>
-                                ${order.payment.grandTotal.toFixed(2)}
+                                ${order.totalPrice?.toFixed(2)}
                             </Text>
                         </View>
 
@@ -253,15 +257,15 @@ const OrderDetails = () => {
                             borderRadius: 6,
                         }}>
                             <Text style={{ fontSize: 13, fontWeight: '600', color: '#2E7D32', backgroundColor: '#E8F5E9', padding: 6, borderRadius: 6 }}>
-                                {order.payment.status}
+                                {order.status}
                             </Text>
                             <Text style={{ fontSize: 12 }}>
-                                {order.payment.method}
+                                {order.paymentMethod || "Credit Card"}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Order History Section */}
+                    {/* Order History Section (Simplified for API) */}
                     <View style={{
                         backgroundColor: '#fff',
                         borderRadius: 12,
@@ -273,135 +277,11 @@ const OrderDetails = () => {
                         elevation: 0.5,
                     }}>
                         <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
-                            Order History
+                            Shipping Address
                         </Text>
-
-                        {/* Order Created */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: '#4CAF50',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Order Created
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Processing */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Processing' ||
-                                        order.orderStatus.status === 'Shipped' ||
-                                        order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Processing
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Shipped */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Shipped' ||
-                                        order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Shipped
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Delivered */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Delivered
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Ready to Receive */}
-                        <View style={{ flexDirection: 'row' }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
-                                    Ready to Receive
-                                </Text>
-                            </View>
-                        </View>
+                        <Text style={{ fontSize: 14, color: '#4B5563' }}>
+                            {order.shippingAddress || "N/A"}
+                        </Text>
                     </View>
 
                     {/* Action Buttons */}
@@ -422,7 +302,10 @@ const OrderDetails = () => {
                         }}>
                             <Text style={{ color: '#FF5C5C', fontWeight: '600', fontSize: 16 }}>Cancel Order</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setShowUpdateStatusModal(true)} style={{
+                        <TouchableOpacity onPress={() => {
+                            setSelectedStatus(order.status);
+                            setShowUpdateStatusModal(true);
+                        }} style={{
                             flex: 1,
                             flexDirection: 'row',
                             gap: 8,
@@ -439,7 +322,7 @@ const OrderDetails = () => {
                 </View>
             </ScrollView>
 
-            {/* Cancel Order Confirmation Modal */}
+            {/* Cancel Order Confirmation Modal (Integrated) */}
             <Modal
                 visible={showCancelModal}
                 transparent={true}
@@ -461,176 +344,68 @@ const OrderDetails = () => {
                         maxWidth: 320,
                         alignItems: 'center',
                     }}>
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 20,
-                            fontWeight: '600',
-                            color: '#1F2937',
-                            textAlign: 'center',
-                            marginBottom: 8,
-                        }}>
-                            Are you sure?
-                        </Text>
-
-                        {/* Description */}
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#6B7280',
-                            textAlign: 'center',
-                            lineHeight: 20,
-                            marginBottom: 24,
-                        }}>
-                            Are you sure you want to cancel this order? This action cannot be undone.
-                        </Text>
-
-                        {/* Buttons */}
-                        <View style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            gap: 12,
-                        }}>
-                            <TouchableOpacity
-                                onPress={() => setShowCancelModal(false)}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    borderWidth: 1.7,
-                                    borderColor: '#FF5C5C',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#FF5C5C',
-                                }}>
-                                    No, keep it
-                                </Text>
+                        <Text style={{ fontSize: 20, fontWeight: '600', color: '#1F2937', marginBottom: 8 }}>Are you sure?</Text>
+                        <Text style={{ fontSize: 14, color: '#6B7280', textAlign: 'center', marginBottom: 24 }}>Do you want to cancel this order? This action will set the status to 'Cancelled'.</Text>
+                        <View style={{ flexDirection: 'row', width: '100%', gap: 12 }}>
+                            <TouchableOpacity onPress={() => setShowCancelModal(false)} style={{ flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1.7, borderColor: '#FF5C5C', alignItems: 'center' }}>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#FF5C5C' }}>No</Text>
                             </TouchableOpacity>
-
                             <TouchableOpacity
-                                onPress={() => {
-                                    setShowCancelModal(false);
-                                    // Handle actual cancel order logic here
-                                    console.log('Order cancelled');
+                                onPress={async () => {
+                                    try {
+                                        await updateStatus({ id: id as string, status: 'Cancelled' }).unwrap();
+                                        setShowCancelModal(false);
+                                        Alert.alert("Success", "Order cancelled");
+                                    } catch (err: any) {
+                                        Alert.alert("Error", err?.data?.message || "Failed to cancel");
+                                    }
                                 }}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    backgroundColor: '#278687',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
+                                style={{ flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#278687', alignItems: 'center' }}
                             >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#fff',
-                                }}>
-                                    Yes, cancel
-                                </Text>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Yes, cancel</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
 
-            {/* Update Status Confirmation Modal */}
+            {/* Update Status Selection Modal */}
             <Modal
                 visible={showUpdateStatusModal}
                 transparent={true}
                 animationType="fade"
                 onRequestClose={() => setShowUpdateStatusModal(false)}
             >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                }}>
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 16,
-                        padding: 24,
-                        width: '100%',
-                        maxWidth: 320,
-                        alignItems: 'center',
-                    }}>
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 20,
-                            fontWeight: '600',
-                            color: '#1F2937',
-                            textAlign: 'center',
-                            marginBottom: 8,
-                        }}>
-                            Update Status?
-                        </Text>
-
-                        {/* Description */}
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#6B7280',
-                            textAlign: 'center',
-                            lineHeight: 20,
-                            marginBottom: 24,
-                        }}>
-                            Are you sure you want to update the status?
-                        </Text>
-
-                        {/* Buttons */}
-                        <View style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            gap: 12,
-                        }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+                    <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 24, width: '100%', maxWidth: 320 }}>
+                        <Text style={{ fontSize: 20, fontWeight: '600', color: '#1F2937', textAlign: 'center', marginBottom: 16 }}>Update Status</Text>
+                        {statuses.map((s) => (
                             <TouchableOpacity
-                                onPress={() => setShowUpdateStatusModal(false)}
+                                key={s}
+                                onPress={() => setSelectedStatus(s)}
                                 style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    borderWidth: 1.7,
-                                    borderColor: '#FF5C5C',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
+                                    paddingVertical: 12,
+                                    borderBottomWidth: 1,
+                                    borderBottomColor: '#F3F4F6',
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
                                 }}
                             >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#FF5C5C',
-                                }}>
-                                    Cancel
-                                </Text>
+                                <Text style={{ fontSize: 16, color: selectedStatus === s ? '#278687' : '#374151', fontWeight: selectedStatus === s ? '600' : '400' }}>{s}</Text>
+                                {selectedStatus === s && <Feather name="check" size={20} color="#278687" />}
                             </TouchableOpacity>
-
+                        ))}
+                        <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+                            <TouchableOpacity onPress={() => setShowUpdateStatusModal(false)} style={{ flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#DDD', alignItems: 'center' }}>
+                                <Text style={{ fontWeight: '600' }}>Cancel</Text>
+                            </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() => {
-                                    setShowUpdateStatusModal(false);
-                                    // Handle actual update status logic here
-                                    console.log('Status updated');
-                                }}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    backgroundColor: '#278687',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
+                                onPress={handleUpdateStatus}
+                                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: '#278687', alignItems: 'center' }}
+                                disabled={isUpdating}
                             >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#fff',
-                                }}>
-                                    Yes
-                                </Text>
+                                {isUpdating ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontWeight: '600' }}>Update</Text>}
                             </TouchableOpacity>
                         </View>
                     </View>

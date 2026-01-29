@@ -1,3 +1,4 @@
+import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -8,7 +9,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -75,10 +76,13 @@ export default function OrdersScreen() {
   const [activeFilter, setActiveFilter] = useState("All");
   const filters = ["All", "Delivered", "Processing", "Shipped", "Canceled"];
 
+  const { data: ordersData, isLoading } = useGetOrdersQuery(undefined);
+  const orders = ordersData || [];
+
   const filteredOrders =
     activeFilter === "All"
-      ? DUMMY_ORDERS
-      : DUMMY_ORDERS.filter((o) => o.status === activeFilter);
+      ? orders
+      : orders.filter((o: any) => o.status === activeFilter);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -145,21 +149,21 @@ export default function OrdersScreen() {
             style={styles.card}
             onPress={() =>
               router.push({
-                pathname: "/OrderDetails",
-                params: { status: item.status },
+                pathname: "/(user_screen)/OrderDetails",
+                params: { id: item._id || item.id, status: item.status },
               })
             }
           >
             <View style={styles.cardTop}>
               <Image
                 source={{
-                  uri: "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+                  uri: item.orderItems?.[0]?.product?.images?.[0] || "https://via.placeholder.com/60",
                 }}
                 style={styles.img}
               />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <View style={styles.row}>
-                  <Text style={styles.orderNo}>{item.orderNo}</Text>
+                  <Text style={styles.orderNo}>#{item._id?.slice(-6) || item.id?.slice(-6)}</Text>
                   <View
                     style={[
                       styles.badge,
@@ -177,16 +181,16 @@ export default function OrdersScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.address}>{item.address}</Text>
+                <Text style={styles.address}>{item.shippingAddress || "N/A"}</Text>
                 <View style={styles.row}>
-                  <Ionicons name="star" size={14} color="#FFB400" />
-                  <Text style={styles.rating}>{item.rating}</Text>
+                  <Ionicons name="time-outline" size={14} color="#666" />
+                  <Text style={styles.rating}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                 </View>
               </View>
             </View>
             <View style={styles.cardBottom}>
-              <Text style={styles.customer}>{item.customer}</Text>
-              <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+              <Text style={styles.customer}>{item.vendor?.name || "Vendor"}</Text>
+              <Text style={styles.price}>${item.totalPrice?.toFixed(2) || item.grandTotal?.toFixed(2) || "0.00"}</Text>
             </View>
           </TouchableOpacity>
         )}

@@ -1,32 +1,70 @@
+import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
 import { useGetProductByIdQuery } from "@/store/api/product_api_slice";
+import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Image,
   ScrollView,
   StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 const { width } = Dimensions.get("window");
 
 const ProductDetails = () => {
   const router = useRouter();
-  const { productId } = useLocalSearchParams<{ productId: string }>();
-  const { data: product, isLoading } = useGetProductByIdQuery(productId as string, { skip: !productId });
+  const { id, productId } = useLocalSearchParams();
+  const actualId = (id || productId) as string;
+  const { data: product, isLoading, error } = useGetProductByIdQuery(actualId, { skip: !actualId });
+  const [createOrder, { isLoading: isCreating }] = useCreateOrderMutation();
+  const user = useSelector((state: RootState) => state.auth.user);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("Teal");
   const [coupon, setCoupon] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const handleBuyNow = async () => {
+    if (!product) return;
+    if (!user) {
+      Alert.alert("Error", "Please login to place an order");
+      return;
+    }
+
+    try {
+      const orderData = {
+        vendorId: product.vendorId || product.vendor?._id || product.vendor,
+        orderItems: [
+          {
+            product: product._id || product.id,
+            quantity: quantity,
+            price: product.price
+          }
+        ],
+        shippingAddress: "Default Shipping Address", // User should provide this in a real app
+        totalPrice: product.price * quantity,
+      };
+
+      const result = await createOrder(orderData).unwrap();
+      Alert.alert("Success", "Order placed successfully!", [
+        { text: "OK", onPress: () => router.push("/(users)/order") }
+      ]);
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to place order");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -214,8 +252,12 @@ const ProductDetails = () => {
           <Text style={{ color: "#2D8C8C", fontWeight: "700", fontSize: 16 }}>Add To Cart</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={{ backgroundColor: "#2D8C8C", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 30 }}>
-          <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 16 }}>Buy ${product.price}</Text>
+        <TouchableOpacity
+          style={[styles.buyBtn, isCreating && { opacity: 0.7 }]}
+          onPress={handleBuyNow}
+          disabled={isCreating}
+        >
+          {isCreating ? <ActivityIndicator color="white" /> : <Text style={styles.buyBtnText}>Buy ${product.price}</Text>}
         </TouchableOpacity>
 
         {/* Reviews */}
@@ -288,5 +330,20 @@ const ProductDetails = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  buyBtn: {
+    backgroundColor: "#2D8C8C",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  buyBtnText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+});
 
 export default ProductDetails;

@@ -1,8 +1,8 @@
-import { recentOrders } from '@/constants/common'
+import { useGetOrdersQuery } from '@/store/api/orderApiSlice'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import React, { useState } from 'react'
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 type OrderStatus = 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Completed';
@@ -11,13 +11,17 @@ const OrderTabs = () => {
     const [activeFilter, setActiveFilter] = useState<string>('All');
     const [searchQuery, setSearchQuery] = useState<string>('');
 
-    const filteredOrders = recentOrders.filter(order => {
+    const { data: ordersData, isLoading } = useGetOrdersQuery(undefined);
+
+    const filteredOrders = (ordersData || []).filter((order: any) => {
         // Filter by status
-        const statusMatch = activeFilter === 'All' || order.orderStatus.status === activeFilter;
+        const statusMatch = activeFilter === 'All' || order.status === activeFilter;
 
         // Filter by search query (customer name)
+        // Adjusting based on common API structure (customer name might be in buyer/user field)
+        const customerName = order.buyer?.name || order.user?.name || order.customer?.name || "Unknown";
         const searchMatch = searchQuery.trim() === '' ||
-            order.customer.name.toLowerCase().includes(searchQuery.toLowerCase());
+            customerName.toLowerCase().includes(searchQuery.toLowerCase());
 
         return statusMatch && searchMatch;
     });
@@ -25,6 +29,14 @@ const OrderTabs = () => {
     const handleBack = () => {
         router.back();
     };
+
+    if (isLoading) {
+        return (
+            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#278687" />
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
@@ -97,13 +109,13 @@ const OrderTabs = () => {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={{ gap: 12 }}>
-                        {filteredOrders.map((order) => (
+                        {filteredOrders.map((order: any) => (
                             <TouchableOpacity
                                 onPress={() => router.push({
                                     pathname: '/(screens)/order_details',
-                                    params: { id: order.id }
+                                    params: { id: order._id || order.id }
                                 })}
-                                key={order.id}
+                                key={order._id || order.id}
                                 style={{
                                     backgroundColor: 'white',
                                     borderRadius: 12,
@@ -118,7 +130,7 @@ const OrderTabs = () => {
                             >
                                 <View style={{ flexDirection: 'row', marginBottom: 8 }}>
                                     <Image
-                                        source={{ uri: order.customer.avatar }}
+                                        source={{ uri: order.orderItems?.[0]?.product?.images?.[0] || 'https://via.placeholder.com/80' }}
                                         style={{
                                             width: 80,
                                             height: 80,
@@ -129,14 +141,14 @@ const OrderTabs = () => {
                                     />
                                     <View style={{ flex: 1 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                            <Text style={{ color: "#2B2B2B", fontSize: 16 }}>{order.orderNumber}</Text>
+                                            <Text style={{ color: "#2B2B2B", fontSize: 16 }}>#{order._id?.slice(-6) || order.id?.slice(-6)}</Text>
                                             <View
                                                 style={{
-                                                    backgroundColor: order.orderStatus.status === 'Completed' ? '#E3F9E7' :
-                                                        order.orderStatus.status === 'Pending' ? '#FFF3E0' :
-                                                            order.orderStatus.status === 'Processing' ? '#E3F2FD' :
-                                                                order.orderStatus.status === 'Shipped' ? '#FFF3E0' :
-                                                                    order.orderStatus.status === 'Delivered' ? '#E8F5E9' : '#F3E5F5',
+                                                    backgroundColor: order.status === 'Completed' ? '#E3F9E7' :
+                                                        order.status === 'Pending' ? '#FFF3E0' :
+                                                            order.status === 'Processing' ? '#E3F2FD' :
+                                                                order.status === 'Shipped' ? '#FFF3E0' :
+                                                                    order.status === 'Delivered' ? '#E8F5E9' : '#F3E5F5',
                                                     paddingHorizontal: 8,
                                                     paddingVertical: 2,
                                                     borderRadius: 12,
@@ -144,25 +156,25 @@ const OrderTabs = () => {
                                             >
                                                 <Text
                                                     style={{
-                                                        color: order.orderStatus.status === 'Completed' ? '#1B5E20' :
-                                                            order.orderStatus.status === 'Pending' ? '#E65100' :
-                                                                order.orderStatus.status === 'Processing' ? '#0D47A1' :
-                                                                    order.orderStatus.status === 'Shipped' ? '#F57C00' :
-                                                                        order.orderStatus.status === 'Delivered' ? '#2E7D32' : '#4A148C',
+                                                        color: order.status === 'Completed' ? '#1B5E20' :
+                                                            order.status === 'Pending' ? '#E65100' :
+                                                                order.status === 'Processing' ? '#0D47A1' :
+                                                                    order.status === 'Shipped' ? '#F57C00' :
+                                                                        order.status === 'Delivered' ? '#2E7D32' : '#4A148C',
                                                         fontSize: 10,
                                                         fontWeight: '500',
                                                     }}
                                                 >
-                                                    {order.orderStatus.status}
+                                                    {order.status}
                                                 </Text>
                                             </View>
                                         </View>
                                         <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>
-                                            {order.orderStatus.location}
+                                            {order.shippingAddress || "N/A"}
                                         </Text>
                                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <Ionicons name="star" size={12} color="#FFC107" />
-                                            <Text style={{ fontSize: 12, marginLeft: 4 }}>{order.customer.customerId}</Text>
+                                            <Ionicons name="time-outline" size={12} color="#666" />
+                                            <Text style={{ fontSize: 12, marginLeft: 4 }}>{new Date(order.createdAt).toLocaleDateString()}</Text>
                                         </View>
                                     </View>
                                 </View>
@@ -181,14 +193,14 @@ const OrderTabs = () => {
                                 }}>
                                     <View>
                                         <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687" }}>
-                                            {order.customer.name}
+                                            {order.buyer?.name || order.user?.name || "Customer"}
                                         </Text>
                                         <Text style={{ fontSize: 12, color: '#278687' }}>
-                                            {order.orderItems.length} item{order.orderItems.length > 1 ? 's' : ''}
+                                            {order.orderItems?.length || 0} item{order.orderItems?.length > 1 ? 's' : ''}
                                         </Text>
                                     </View>
                                     <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687" }}>
-                                        ${order.payment.grandTotal.toFixed(2)}
+                                        ${order.totalPrice?.toFixed(2) || order.grandTotal?.toFixed(2) || "0.00"}
                                     </Text>
                                 </View>
                             </TouchableOpacity>
