@@ -39,7 +39,7 @@
 //           </TouchableOpacity>
 //           <View style={styles.userText}>
 //             <Text style={styles.welcomeTitle}>Welcome Back</Text>
-//             <Text style={styles.userName}>Rokey Mahmud</Text>
+//             <Text style={styles.userName}>{user?.name || user?.fullName || user?.fulllName || "User"}</Text>
 //           </View>
 //         </View>
 //         <TouchableOpacity style={styles.notificationBtn}>
@@ -339,7 +339,11 @@ import { DUMMY_ORDERS } from "./order";
 
 const { width } = Dimensions.get("window");
 
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
+
 const Dashboard: React.FC = () => {
+  const user = useAppSelector(selectCurrentUser);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -357,7 +361,7 @@ const Dashboard: React.FC = () => {
           </TouchableOpacity>
           <View style={styles.userText}>
             <Text style={styles.welcomeTitle}>Welcome Back</Text>
-            <Text style={styles.userName}>Rokey Mahmud</Text>
+            <Text style={styles.userName}>{user?.name || user?.fullName || user?.fulllName || "User"}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>

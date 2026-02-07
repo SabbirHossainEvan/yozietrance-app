@@ -1,3 +1,4 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -33,8 +34,18 @@ const InfoItem = ({ icon, label, value, isLast }: InfoItemProps) => (
 );
 
 const ProfileInfoScreen = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const userData = profileData?.data;
+
+  // Helper to safely get user properties with fallbacks for weird backend keys
+  const getName = () => userData?.fulllName || userData?.fullName || userData?.name || "User";
+  const getDob = () => userData?.dob || "N/A";
+  const getPhone = () => userData?.phone || userData?.phoneNumber || "N/A"; // Backend might use phoneNumber
+  const getIdType = () => userData?.idType || "National ID"; // Default if missing
+  const getIdNumber = () => userData?.nationalIdNumber || userData?.idNumber || "N/A";
+
   const [profileImage, setProfileImage] = useState(
-    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
+    userData?.avatar || userData?.image || userData?.logo || "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
   );
 
   const pickImage = async () => {
@@ -89,7 +100,7 @@ const ProfileInfoScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: profileImage }} style={styles.avatar} />
+            <Image source={{ uri: userData?.avatar || userData?.image || profileImage }} style={styles.avatar} />
 
             <TouchableOpacity style={styles.cameraBadge} onPress={pickImage}>
               <MaterialCommunityIcons
@@ -99,7 +110,7 @@ const ProfileInfoScreen = () => {
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Rokey</Text>
+          <Text style={styles.userName}>{getName()}</Text>
         </View>
 
         <View style={styles.sectionCard}>
@@ -107,12 +118,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="account-outline"
             label="Full Name"
-            value="Rokey Mahmud"
+            value={getName()}
           />
           <InfoItem
             icon="calendar-month-outline"
             label="Date of Birth"
-            value="May 15, 1990"
+            value={getDob()}
             isLast
           />
         </View>
@@ -122,12 +133,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="email-outline"
             label="Email"
-            value="alice@example.com"
+            value={userData?.email || "N/A"}
           />
           <InfoItem
             icon="phone-outline"
             label="Phone"
-            value="+1 (555) 123-4567"
+            value={getPhone()}
             isLast
           />
         </View>
@@ -137,12 +148,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="card-account-details-outline"
             label="ID Type"
-            value="Passport"
+            value={getIdType()}
           />
           <InfoItem
             icon="card-text-outline"
             label="ID Number"
-            value="P123456789"
+            value={getIdNumber()}
             isLast
           />
         </View>

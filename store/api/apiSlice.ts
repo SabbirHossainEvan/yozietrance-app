@@ -71,26 +71,8 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
-    tagTypes: ['Category', 'Product', 'Order', 'Cart'], // Define tag types for invalidation here if needed
-    endpoints: (builder) => ({
-        registerBuyer: builder.mutation({
-            query: (data) => {
-                console.log('registerBuyer query data:', JSON.stringify(data));
-                return {
-                    url: '/auth/register/buyer',
-                    method: 'POST',
-                    body: data,
-                };
-            },
-        }),
-        registerVendor: builder.mutation({
-            query: (data) => ({
-                url: '/auth/register/vendor',
-                method: 'POST',
-                body: data,
-            }),
-        }),
-    }),
+    tagTypes: ['Category', 'Product', 'Order', 'Cart', 'User'], // Define tag types for invalidation here if needed
+    endpoints: (builder) => ({}),
 });
 
-export const { useRegisterBuyerMutation, useRegisterVendorMutation } = apiSlice;
+export const { } = apiSlice;

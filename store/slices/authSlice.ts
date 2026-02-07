@@ -5,15 +5,24 @@ interface AuthState {
         id: string;
         name?: string;
         fullName?: string;
+        fulllName?: string; // Backend typo support
         email: string;
         phone?: string;
+        nationalIdNumber?: string;
+        gender?: string;
         userType: string;
         vendorCode?: string;
+        vendor?: string; // Backend alias
         businessName?: string;
         storename?: string;
         address?: string;
         aboutStore?: string;
         logo?: string;
+        image?: string; // Backend alias
+        avatar?: string; // Frontend alias
+        dob?: string;
+        idType?: string;
+        idNumber?: string;
     } | null;
     accessToken: string | null;
     refreshToken: string | null;

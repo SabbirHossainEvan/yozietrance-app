@@ -1,6 +1,7 @@
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/authApiSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,6 +15,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const EditPersonalInfoScreen = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const userData = profileData?.data;
+
   const [formData, setFormData] = useState({
     fullName: "",
     emailOrNumber: "",
@@ -22,18 +27,30 @@ const EditPersonalInfoScreen = () => {
     address: "",
   });
 
-  const handleInputChange = (field: any, value: any) => {
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        fullName: userData.name || userData.fullName || "",
+        emailOrNumber: userData.email || "", // Fallback or redundant
+        phoneNumber: userData.phone || "",
+        email: userData.email || "",
+        address: userData.address || "",
+      });
+    }
+  }, [userData]);
+
+  const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate form
     const requiredFields = ["fullName", "phoneNumber", "email", "address"];
     const emptyFields = requiredFields.filter(
-      (field) => !formData[field].trim()
+      (field) => !formData[field as keyof typeof formData].trim()
     );
 
     if (emptyFields.length > 0) {
@@ -64,20 +81,33 @@ const EditPersonalInfoScreen = () => {
     }
 
     // Success - Save data and navigate back
-    Alert.alert(
-      "Success",
-      "Your personal information has been saved successfully!",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            // Here you would typically save to your backend/state management
-            console.log("Saved data:", formData);
-            router.back();
+    // Success - Save data and navigate back
+    try {
+      const updateData: any = {};
+      if (formData.fullName) updateData.fullName = formData.fullName;
+      if (formData.phoneNumber) updateData.phoneNumber = formData.phoneNumber; // Try phoneNumber instead of phone
+      if (formData.address) updateData.address = formData.address; // Keep address for now
+      // Removed: email, fulllName (3Ls), gender, nationalIdNumber, vendor as they were rejected.
+      // If address also fails, we'll need to remove it or find the right key.
+
+      await updateProfile(updateData).unwrap();
+
+      Alert.alert(
+        "Success",
+        "Your personal information has been saved successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.back();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Update failed", error);
+      Alert.alert("Error", "Failed to update profile. Please try again.");
+    }
   };
 
   return (
@@ -325,7 +355,7 @@ const EditPersonalInfoScreen = () => {
                 letterSpacing: -0.3,
               }}
             >
-              Save
+              {isLoading ? "Saving..." : "Save"}
             </Text>
           </TouchableOpacity>
 

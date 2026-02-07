@@ -9,7 +9,7 @@ import { commonData, quickActions, recentOrders } from "../../constants/common";
 
 export default function HomeScreen() {
   const user = useAppSelector(selectCurrentUser);
-  const userName = user?.name || user?.fullName || "User";
+  const userName = user?.name || user?.fullName || user?.fulllName || user?.storename || "User";
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (

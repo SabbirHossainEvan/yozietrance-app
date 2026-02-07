@@ -2,7 +2,6 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { useSignupMutation } from "@/store/api/authApiSlice";
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -15,6 +14,7 @@ import {
   View,
 } from "react-native";
 
+import { useRegisterBuyerMutation } from "@/store/api/authApiSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/slices/authSlice";
 import { router } from "expo-router";
@@ -23,12 +23,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignUpScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [contact, setContact] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [confirmPassword, setConfirmPassword] = useState<string>(""); // Confirm password state add kora hoyeche
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
 
-  const [signup, { isLoading, error }] = useSignupMutation();
+  const [registerBuyer, { isLoading, error }] = useRegisterBuyerMutation();
 
   const handleSignup = async () => {
     if (!acceptedTerms) {
@@ -37,22 +39,31 @@ const SignUpScreen: React.FC = () => {
     }
     const locationData = await AsyncStorage.getItem("userLocation");
 
-    const parsedLocation = locationData
-      ? JSON.parse(locationData)
-      : null;
+    // Basic Validation
+    if (!fullName.trim() || !email.trim() || !phoneNumber.trim()) {
+      alert("Please fill in all fields");
+      return;
+    }
+
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
+
     try {
       const payload = {
-        email: contact,
+        email: email,
         password: password,
-        confirmPassword: confirmPassword,
-        evanAddress: parsedLocation?.address,
+        fulllName: fullName,
+        phone: phoneNumber,
+        nidNumber: "N/A",
+        nidFontPhotoUrl: "",
+        nidBackPhotoUrl: "",
+        profilePhotoUrl: "",
       };
+
       console.log(payload);
-      const response = await signup(payload).unwrap();
+      const response = await registerBuyer(payload).unwrap();
       console.log('Signup successful', response);
 
       const { data } = response;
@@ -60,7 +71,6 @@ const SignUpScreen: React.FC = () => {
         dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
         router.replace("/(onboarding)/user-selection");
       } else {
-        // Fallback or error handling if structure is different, though likely same
         console.error("Signup response missing data/token", response);
         alert("Signup successful but failed to auto-login. Please login manually.");
         router.push("/(auth)/login");
@@ -93,12 +103,27 @@ const SignUpScreen: React.FC = () => {
           <View style={styles.formContainer}>
             <TextInput
               style={styles.input}
-              placeholder="E-mail address or phone number"
+              placeholder="Full Name"
+              placeholderTextColor="#999"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail address"
               placeholderTextColor="#999"
               keyboardType="email-address"
               autoCapitalize="none"
-              value={contact}
-              onChangeText={setContact}
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              placeholderTextColor="#999"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
             />
             <TextInput
               style={styles.input}

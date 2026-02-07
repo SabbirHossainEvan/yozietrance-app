@@ -1,3 +1,4 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -16,17 +17,34 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const PersonalInfoScreen = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const { data: profileData } = useGetProfileQuery({});
+  const displayUser = profileData?.data || currentUser;
 
   // Initialize state with Redux data or defaults
   const [user, setUser] = useState({
-    name: currentUser?.name || currentUser?.fullName || "User",
-    avatar: currentUser?.logo || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-    dob: (currentUser as any)?.dob || "N/A",
-    email: currentUser?.email || "N/A",
-    phone: currentUser?.phone || "N/A",
-    idType: (currentUser as any)?.idType || "N/A",
-    idNumber: (currentUser as any)?.idNumber || "N/A",
+    name: displayUser?.name || displayUser?.fullName || displayUser?.fulllName || "User",
+    avatar: displayUser?.logo || displayUser?.image || displayUser?.avatar || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    dob: displayUser?.dob || "N/A",
+    email: displayUser?.email || "N/A",
+    phone: displayUser?.phone || displayUser?.phoneNumber || "N/A",
+    idType: displayUser?.idType || "National ID",
+    idNumber: displayUser?.idNumber || displayUser?.nationalIdNumber || "N/A",
   });
+
+  // Effect to update local state when profileData changes
+  React.useEffect(() => {
+    if (displayUser) {
+      setUser({
+        name: displayUser.name || displayUser.fullName || displayUser.fulllName || "User",
+        avatar: displayUser.logo || displayUser.image || displayUser.avatar || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+        dob: displayUser.dob || "N/A",
+        email: displayUser.email || "N/A",
+        phone: displayUser.phone || displayUser.phoneNumber || "N/A",
+        idType: displayUser.idType || "National ID",
+        idNumber: displayUser.idNumber || displayUser.nationalIdNumber || "N/A",
+      });
+    }
+  }, [displayUser]);
 
 
   // Function to handle image picker

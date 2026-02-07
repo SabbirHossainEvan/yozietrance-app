@@ -22,6 +22,7 @@ const CustomLightTheme: Theme = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const [isReady, setIsReady] = React.useState(false);
 
   // Auto-login logic
   React.useEffect(() => {
@@ -39,16 +40,20 @@ export default function RootLayout() {
             accessToken,
             refreshToken: refreshToken || ''
           }));
-          // Optional: Navigate to home if needed, but router might not be ready here.
-          // Usually better to render different layout or let the screens redirect.
         }
       } catch (e) {
         console.error('Auto-login failed:', e);
+      } finally {
+        setIsReady(true);
       }
     };
 
     checkLogin();
   }, []);
+
+  if (!isReady) {
+    return null; // Or return a custom loading component/splash screen
+  }
 
   return (
     <Provider store={store}>

@@ -1,3 +1,4 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import {
   AntDesign,
   Feather,
@@ -13,6 +14,8 @@ const ProfileScreen = () => {
   const [isBusinessProfile, setIsBusinessProfile] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { data: profileData } = useGetProfileQuery({});
+  const displayUser = profileData?.data;
 
   const onLogout = () => {
     setShowLogoutModal(false);
@@ -66,8 +69,8 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: "Abcd.LTD",
-    avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: displayUser?.name || displayUser?.fullName || "User",
+    avatar: displayUser?.avatar || displayUser?.image || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

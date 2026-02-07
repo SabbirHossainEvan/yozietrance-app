@@ -1,3 +1,4 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logOut, selectCurrentUser } from "@/store/slices/authSlice";
 import {
@@ -27,6 +28,10 @@ const ProfileScreen = () => {
   const [isBusinessProfile, setIsBusinessProfile] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const { data: profileData, isLoading, refetch } = useGetProfileQuery({});
+
+  // Use profileData if available, otherwise fallback to Redux user
+  const displayUser = profileData?.data || user;
 
   const onLogout = async () => {
     setShowLogoutModal(false);
@@ -139,8 +144,8 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: user?.name || user?.fullName || user?.businessName || user?.storename || "User",
-    avatar: user?.logo || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: displayUser?.name || displayUser?.fullName || displayUser?.businessName || displayUser?.storename || "User",
+    avatar: displayUser?.logo || displayUser?.image || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

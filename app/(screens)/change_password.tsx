@@ -1,16 +1,20 @@
+import { useChangePasswordMutation } from '@/store/api/authApiSlice';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ChangePasswordScreen = () => {
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [changePassword, { isLoading }] = useChangePasswordMutation();
+
     const handleBack = () => {
         router.back();
     };
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F8FBFB' }}>
             {/* Header */}
@@ -115,9 +119,29 @@ const ChangePasswordScreen = () => {
                         shadowRadius: 5,
                         elevation: 3,
                     }}
+                    onPress={async () => {
+                        if (newPassword !== confirmPassword) {
+                            Alert.alert('Error', 'New passwords do not match');
+                            return;
+                        }
+                        try {
+                            // Using the dedicated change-password endpoint
+                            await changePassword({
+                                oldPassword: currentPassword,
+                                newPassword: newPassword
+                            }).unwrap();
+                            Alert.alert('Success', 'Password updated successfully', [
+                                { text: 'OK', onPress: () => router.back() }
+                            ]);
+                        } catch (error: any) {
+                            console.error('Password update failed', error);
+                            const errorMessage = error?.data?.message || 'Failed to update password';
+                            Alert.alert('Error', errorMessage);
+                        }
+                    }}
                 >
                     <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700' }}>
-                        Update password
+                        {isLoading ? "Updating..." : "Update password"}
                     </Text>
                 </TouchableOpacity>
 

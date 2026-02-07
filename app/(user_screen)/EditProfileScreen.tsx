@@ -1,9 +1,10 @@
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/authApiSlice";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -30,16 +31,34 @@ interface FormData {
 }
 
 const EditProfileScreen = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const userData = profileData?.data;
+
   const [formData, setFormData] = useState<FormData>({
-    fullName: "Rokey Mahmud",
-    email: "alice@example.com",
+    fullName: "",
+    email: "",
     password: "",
     confirmPassword: "",
-    phone: "+1 (555) 123-4567",
+    phone: "",
     dob: new Date(),
     category: "",
-    address: "123 Business St, Dhaka",
+    address: "",
   });
+
+  useEffect(() => {
+    if (userData) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: userData.name || userData.fullName || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        address: userData.address || "",
+        // Dates need parsing if string
+        // dob: userData.dob ? new Date(userData.dob) : new Date(), 
+      }));
+    }
+  }, [userData]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -58,9 +77,21 @@ const EditProfileScreen = () => {
     }
   };
 
-  const handleSave = () => {
-    console.log("Final Data:", formData);
-    Alert.alert("Success", "Profile information saved!");
+  const handleSave = async () => {
+    try {
+      await updateProfile({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        // Add other fields as needed
+      }).unwrap();
+      Alert.alert("Success", "Profile information saved!");
+      router.back();
+    } catch (error) {
+      console.error("Failed to update profile", error);
+      Alert.alert("Error", "Failed to save profile information");
+    }
   };
 
   return (
@@ -163,7 +194,7 @@ const EditProfileScreen = () => {
           />
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
+            <Text style={styles.saveButtonText}>{isLoading ? "Saving..." : "Save"}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

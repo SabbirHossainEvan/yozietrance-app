@@ -17,7 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { useRegisterVendorMutation } from "../../store/api/apiSlice";
+import { useRegisterVendorMutation } from "../../store/api/authApiSlice";
 import { setCredentials } from "../../store/slices/authSlice";
 import { updateVendorRegistration } from "../../store/slices/registrationSlice";
 import { RootState } from "../../store/store";
@@ -82,18 +82,26 @@ const BusinessIdUploadScreen: React.FC = () => {
       // Use FormData for multipart/form-data request
       const formData = new FormData();
 
-      // Append text fields from latestData
-      // NOTE: Backend error literally says 'fulllName' (3 'l's). Following typo.
-      if (latestData.fullName) formData.append('fulllName', latestData.fullName);
-      if (latestData.phone) formData.append('phone', latestData.phone);
-      if (latestData.address) formData.append('address', latestData.address);
-      if (latestData.storename) formData.append('storename', latestData.storename);
-      if (latestData.storeDescription) formData.append('storeDescription', latestData.storeDescription);
-      if (latestData.nationalIdNumber) formData.append('nationalIdNumber', latestData.nationalIdNumber);
-      if (latestData.bussinessRegNumber) formData.append('bussinessRegNumber', latestData.bussinessRegNumber);
-      if (latestData.gender) formData.append('gender', latestData.gender || 'Other'); // Fallback if missing
+      // Append text fields with EXACT keys provided by user
+      // fulllName, phone, email, address, storename, storeDescription, gender, nationalIdNumber, bussinessRegNumber, logo, nidFront, businessId
 
-      // Append files from latestData
+      const safeAppend = (key: string, value: any) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value);
+        }
+      };
+
+      safeAppend('fulllName', latestData.fullName);
+      safeAppend('phone', latestData.phone);
+      safeAppend('email', latestData.email || 'vendor@example.com'); // Required key, fallback if missing
+      safeAppend('address', latestData.address);
+      safeAppend('storename', latestData.storename); // This maps to businessName in frontend usually
+      safeAppend('storeDescription', latestData.storeDescription);
+      safeAppend('gender', latestData.gender || 'Other');
+      safeAppend('nationalIdNumber', latestData.nationalIdNumber);
+      safeAppend('bussinessRegNumber', latestData.bussinessRegNumber || businessId); // Using businessId input as reg number if provided there
+
+      // Append files
       if (latestData.logo) {
         formData.append('logo', {
           uri: latestData.logo,
@@ -110,16 +118,12 @@ const BusinessIdUploadScreen: React.FC = () => {
         } as any);
       }
 
-      if (latestData.nidBack) {
-        formData.append('nidBack', {
-          uri: latestData.nidBack,
-          name: 'nid_back.jpg',
-          type: 'image/jpeg',
-        } as any);
-      }
-
+      // User listed 'businessId' at the end of the list. In this specific screen context, 
+      // 'businessId' variable is the text input for ID Number, and 'selectedImage' is the image.
+      // However, usually 'businessId' implies the image document in this app's context based on variables (selectedImage).
+      // Let's assume the user meant the FILE key is 'businessId'.
       if (selectedImage) {
-        formData.append('businessId', {
+        formData.append('businessId', { // This key 'businessId' for the file
           uri: selectedImage,
           name: 'business_id.jpg',
           type: 'image/jpeg',

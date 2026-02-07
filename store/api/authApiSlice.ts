@@ -4,11 +4,18 @@ import { apiSlice } from './apiSlice';
 
 export const authApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        signup: builder.mutation({
-            query: (credentials) => ({
-                url: '/auth/register',
+        registerBuyer: builder.mutation({
+            query: (data) => ({
+                url: '/auth/register/buyer',
                 method: 'POST',
-                body: credentials,
+                body: data,
+            }),
+        }),
+        registerVendor: builder.mutation({
+            query: (data) => ({
+                url: '/auth/register/vendor',
+                method: 'POST',
+                body: data,
             }),
         }),
         login: builder.mutation({
@@ -42,8 +49,37 @@ export const authApiSlice = apiSlice.injectEndpoints({
                 body: data,
             }),
         }),
+        getProfile: builder.query({
+            query: () => '/auth/me',
+            providesTags: ['User'],
+        }),
+        updateProfile: builder.mutation({
+            query: (data) => ({
+                url: '/auth/me',
+                method: 'PATCH',
+                body: data,
+            }),
+            invalidatesTags: ['User'],
+        }),
+        changePassword: builder.mutation({
+            query: (data) => ({
+                url: '/auth/change-password',
+                method: 'POST',
+                body: data,
+            }),
+        }),
     }),
     overrideExisting: true,
 });
 
-export const { useSignupMutation, useLoginMutation, useForgotPasswordScreenMutation, useOTPVerificationMutation, useSetNewPasswordScreenMutation } = authApiSlice;
+export const {
+    useRegisterBuyerMutation,
+    useRegisterVendorMutation,
+    useLoginMutation,
+    useForgotPasswordScreenMutation,
+    useOTPVerificationMutation,
+    useSetNewPasswordScreenMutation,
+    useGetProfileQuery,
+    useUpdateProfileMutation,
+    useChangePasswordMutation
+} = authApiSlice;

@@ -1,4 +1,5 @@
 import { images } from "@/constants/import_images";
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
@@ -12,6 +13,8 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const VerificationCard = () => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const { data: profileData } = useGetProfileQuery({});
+  const displayUser = profileData?.data || currentUser;
 
   // handle back
   const handleBack = () => {
@@ -78,7 +81,7 @@ const VerificationCard = () => {
                   height: 120,
                   borderRadius: 50,
                 }}
-                source={currentUser?.logo ? { uri: currentUser.logo } : images.welcome_image}
+                source={displayUser?.logo ? { uri: displayUser.logo } : images.welcome_image}
               />
             </View>
             {/* Personal Information Section */}
@@ -125,7 +128,7 @@ const VerificationCard = () => {
                       color: "#000000",
                     }}
                   >
-                    {currentUser?.businessName || currentUser?.storename || "N/A"}
+                    {displayUser?.businessName || displayUser?.storename || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -184,7 +187,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {currentUser?.email || "N/A"}
+                    {displayUser?.email || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -222,7 +225,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {currentUser?.phone || "N/A"}
+                    {displayUser?.phone || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -265,7 +268,7 @@ const VerificationCard = () => {
                       lineHeight: 22,
                     }}
                   >
-                    {currentUser?.address || "N/A"}
+                    {displayUser?.address || "N/A"}
                   </Text>
                 </View>
               </View>
@@ -324,7 +327,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {currentUser?.vendorCode || (currentUser as any)?.businessID || "N/A"}
+                    {displayUser?.vendorCode || displayUser?.businessID || "N/A"}
                   </Text>
                 </View>
               </View>

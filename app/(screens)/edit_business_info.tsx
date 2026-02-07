@@ -1,3 +1,4 @@
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/authApiSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -16,6 +17,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const BusinessInfoForm = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const userData = profileData?.data;
+
   const [formData, setFormData] = useState({
     fullName: "",
     emailOrNumber: "",
@@ -23,12 +28,31 @@ const BusinessInfoForm = () => {
     email: "",
     address: "",
     businessID: "3254 35465",
+    businessName: "",
   });
 
-  const [profileImage, setProfileImage] = useState(null);
-  const [businessIdImage, setBusinessIdImage] = useState(null);
+  const [profileImage, setProfileImage] = useState<any>(null);
+  const [businessIdImage, setBusinessIdImage] = useState<any>(null);
 
-  const handleInputChange = (field: any, value: any) => {
+  React.useEffect(() => {
+    if (userData) {
+      setFormData({
+        fullName: userData.name || userData.fullName || "",
+        emailOrNumber: userData.email || "",
+        phoneNumber: userData.phone || "",
+        email: userData.email || "",
+        address: userData.address || "",
+        businessID: userData.vendorCode || userData.businessID || "N/A",
+        businessName: userData.businessName || userData.storename || "",
+      });
+      // Optionally prefill images if URL exists (not implemented for file object but for UI display)
+      if (userData.logo) {
+        setProfileImage({ uri: userData.logo, name: 'current_logo' }); // Placeholder logic
+      }
+    }
+  }, [userData]);
+
+  const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -131,11 +155,11 @@ const BusinessInfoForm = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate form
     const requiredFields = ["fullName", "phoneNumber", "email", "address"];
     const emptyFields = requiredFields.filter(
-      (field) => !formData[field].trim()
+      (field) => !formData[field as keyof typeof formData].trim()
     );
 
     if (emptyFields.length > 0) {
@@ -154,9 +178,29 @@ const BusinessInfoForm = () => {
     }
 
     // Submit logic here
-    Alert.alert("Success", "Business information submitted successfully!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    try {
+      const updateData: any = {};
+      if (formData.fullName) updateData.fullName = formData.fullName;
+      if (formData.phoneNumber) updateData.phoneNumber = formData.phoneNumber;
+      if (formData.address) updateData.address = formData.address;
+      if (formData.businessName) updateData.storename = formData.businessName; // Mapping businessName UI to storename key
+
+      // Removed: email, fulllName (3Ls), gender, nationalIdNumber, vendor as they are rejected by PATCH /auth/me
+
+      // Handle Images: Check if profileImage is a new file (uri starts with file:// or similar, not http)
+      // If API supports FormData, we should use it. 
+      // For now, assuming JSON update for basic info as requested. 
+      // Image upload often requires a separate endpoint or multipart handling.
+
+      await updateProfile(updateData).unwrap();
+
+      Alert.alert("Success", "Business information submitted successfully!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error) {
+      console.error("Update failed", error);
+      Alert.alert("Error", "Failed to update business information.");
+    }
   };
 
   //   this is for handle back
@@ -249,7 +293,7 @@ const BusinessInfoForm = () => {
           </Text>
         </View>
 
-        {/* Full Name Input */}
+        {/* Full Name Input */}\n        {/* Note: This label says 'Full Name' but might be intended for Business Name in this context? Keeping generic for now based on file content. */}
         <View style={{ marginBottom: 20 }}>
           <Text
             style={{
