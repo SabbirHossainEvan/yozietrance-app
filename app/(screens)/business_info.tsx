@@ -8,13 +8,37 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const VerificationCard = () => {
   const currentUser = useAppSelector(selectCurrentUser);
   const { data: profileData } = useGetProfileQuery({});
   const displayUser = profileData?.data || currentUser;
+  const [user, setUser] = useState({
+    businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
+    avatar: displayUser?.vendor?.logoUrl || "N/A",
+    dob: displayUser?.dob || "N/A",
+    email: displayUser?.email || "N/A",
+    phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",
+    address: displayUser?.vendor?.address || "N/A",
+    bussinessRegNumber: displayUser?.vendor?.bussinessRegNumber || "N/A",
+  });
+
+  // Effect to update local state when profileData changes
+  React.useEffect(() => {
+    if (displayUser) {
+      setUser({
+        businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
+        avatar: displayUser?.vendor?.logoUrl || "N/A",
+        dob: displayUser?.dob || "N/A",
+        email: displayUser?.email || "N/A",
+        phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",
+        address: displayUser?.vendor?.address || "N/A",
+        bussinessRegNumber: displayUser?.vendor?.bussinessRegNumber || "N/A",
+      });
+    }
+  }, [displayUser]);
 
   // handle back
   const handleBack = () => {
@@ -81,7 +105,7 @@ const VerificationCard = () => {
                   height: 120,
                   borderRadius: 50,
                 }}
-                source={displayUser?.logo ? { uri: displayUser.logo } : images.welcome_image}
+                source={user.avatar && user.avatar !== "N/A" ? { uri: user.avatar } : images.welcome_image}
               />
             </View>
             {/* Personal Information Section */}
@@ -128,7 +152,7 @@ const VerificationCard = () => {
                       color: "#000000",
                     }}
                   >
-                    {displayUser?.businessName || displayUser?.storename || "N/A"}
+                    {user.businessName}
                   </Text>
                 </View>
               </View>
@@ -187,7 +211,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {displayUser?.email || "N/A"}
+                    {user.email}
                   </Text>
                 </View>
               </View>
@@ -225,7 +249,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {displayUser?.phone || "N/A"}
+                    {user.phone}
                   </Text>
                 </View>
               </View>
@@ -268,7 +292,7 @@ const VerificationCard = () => {
                       lineHeight: 22,
                     }}
                   >
-                    {displayUser?.address || "N/A"}
+                    {user.address}
                   </Text>
                 </View>
               </View>
@@ -327,7 +351,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    {displayUser?.vendorCode || displayUser?.businessID || "N/A"}
+                    {user.bussinessRegNumber}
                   </Text>
                 </View>
               </View>

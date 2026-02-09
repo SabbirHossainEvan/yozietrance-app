@@ -58,7 +58,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
             }),
         }),
         getProfile: builder.query({
-            query: () => '/auth/me',
+            query: () => '/auth/me?profile=true',
             providesTags: ['User'],
         }),
         updateProfile: builder.mutation({

@@ -50,10 +50,10 @@ const EditProfileScreen = () => {
     if (userData) {
       setFormData((prev) => ({
         ...prev,
-        fullName: userData.name || userData.fullName || "",
+        fullName: userData.vendor.fullName || userData.name || "",
         email: userData.email || "",
-        phone: userData.phone || "",
-        address: userData.address || "",
+        phone: userData.vendor.phone || userData.phoneNumber || "",
+        address: userData.vendor.address || "",
         // Dates need parsing if string
         // dob: userData.dob ? new Date(userData.dob) : new Date(), 
       }));
@@ -79,13 +79,14 @@ const EditProfileScreen = () => {
 
   const handleSave = async () => {
     try {
-      await updateProfile({
-        name: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        // Add other fields as needed
-      }).unwrap();
+      const updateData: any = {};
+
+      // Send only vendor table fields without nesting
+      if (formData.fullName) updateData.fullName = formData.fullName;
+      if (formData.phone) updateData.phone = formData.phone;
+      if (formData.address) updateData.address = formData.address;
+
+      await updateProfile(updateData).unwrap();
       Alert.alert("Success", "Profile information saved!");
       router.back();
     } catch (error) {

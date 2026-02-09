@@ -27,7 +27,7 @@ const BusinessInfoForm = () => {
     phoneNumber: "",
     email: "",
     address: "",
-    businessID: "3254 35465",
+    businessID: "",
     businessName: "",
   });
 
@@ -37,13 +37,13 @@ const BusinessInfoForm = () => {
   React.useEffect(() => {
     if (userData) {
       setFormData({
-        fullName: userData.name || userData.fullName || "",
+        fullName: userData.vendor.fullName || userData.vendor.name || "",
         emailOrNumber: userData.email || "",
-        phoneNumber: userData.phone || "",
-        email: userData.email || "",
-        address: userData.address || "",
-        businessID: userData.vendorCode || userData.businessID || "N/A",
-        businessName: userData.businessName || userData.storename || "",
+        phoneNumber: userData.vendor.phone || userData.vendor.phoneNumber || "",
+        email: userData.vendor.email || "",
+        address: userData.vendor.address || "",
+        businessID: userData.vendor.vendorCode || userData.vendor.businessID || "",
+        businessName: userData.storename || userData.businessName || "",
       });
       // Optionally prefill images if URL exists (not implemented for file object but for UI display)
       if (userData.logo) {
@@ -180,17 +180,12 @@ const BusinessInfoForm = () => {
     // Submit logic here
     try {
       const updateData: any = {};
+
+      // Send only vendor table fields without nesting
       if (formData.fullName) updateData.fullName = formData.fullName;
-      if (formData.phoneNumber) updateData.phoneNumber = formData.phoneNumber;
+      if (formData.phoneNumber) updateData.phone = formData.phoneNumber;
       if (formData.address) updateData.address = formData.address;
-      if (formData.businessName) updateData.storename = formData.businessName; // Mapping businessName UI to storename key
-
-      // Removed: email, fulllName (3Ls), gender, nationalIdNumber, vendor as they are rejected by PATCH /auth/me
-
-      // Handle Images: Check if profileImage is a new file (uri starts with file:// or similar, not http)
-      // If API supports FormData, we should use it. 
-      // For now, assuming JSON update for basic info as requested. 
-      // Image upload often requires a separate endpoint or multipart handling.
+      if (formData.businessName) updateData.storename = formData.businessName;
 
       await updateProfile(updateData).unwrap();
 

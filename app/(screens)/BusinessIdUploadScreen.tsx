@@ -95,7 +95,7 @@ const BusinessIdUploadScreen: React.FC = () => {
 
       safeAppend('fullName', latestData.fullName);
       safeAppend('phone', latestData.phone);
-      // safeAppend('email', latestData.email || 'vendor@example.com'); 
+      // safeAppend('email', latestData.email);
       safeAppend('address', latestData.address);
       safeAppend('storename', latestData.storename); // This maps to businessName in frontend usually
       safeAppend('storeDescription', latestData.storeDescription);
@@ -116,6 +116,14 @@ const BusinessIdUploadScreen: React.FC = () => {
         formData.append('nidFront', {
           uri: latestData.nidFront,
           name: 'nid_front.jpg',
+          type: 'image/jpeg',
+        } as any);
+      }
+
+      if (latestData.nidBack) {
+        formData.append('nidBack', {
+          uri: latestData.nidBack,
+          name: 'nid_back.jpg',
           type: 'image/jpeg',
         } as any);
       }

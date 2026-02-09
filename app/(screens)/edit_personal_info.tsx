@@ -22,7 +22,7 @@ const EditPersonalInfoScreen = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     emailOrNumber: "",
-    phoneNumber: "",
+    phone: "",
     email: "",
     address: "",
   });
@@ -30,11 +30,11 @@ const EditPersonalInfoScreen = () => {
   useEffect(() => {
     if (userData) {
       setFormData({
-        fullName: userData.name || userData.fullName || "",
-        emailOrNumber: userData.email || "", // Fallback or redundant
-        phoneNumber: userData.phone || "",
+        fullName: userData.vendor.fullName || userData.name || "",
+        emailOrNumber: userData.email || "",
+        phone: userData.vendor.phone || userData.phoneNumber || "",
         email: userData.email || "",
-        address: userData.address || "",
+        address: userData.vendor.address || "",
       });
     }
   }, [userData]);
@@ -48,9 +48,9 @@ const EditPersonalInfoScreen = () => {
 
   const handleSubmit = async () => {
     // Validate form
-    const requiredFields = ["fullName", "phoneNumber", "email", "address"];
+    const requiredFields = ["fullName", "phone", "email", "address"];
     const emptyFields = requiredFields.filter(
-      (field) => !formData[field as keyof typeof formData].trim()
+      (field) => !formData[field as keyof typeof formData]?.trim()
     );
 
     if (emptyFields.length > 0) {
@@ -73,7 +73,7 @@ const EditPersonalInfoScreen = () => {
 
     // Phone validation (basic)
     const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+    if (formData.phone && !phoneRegex.test(formData.phone)) {
       Alert.alert("Invalid Phone", "Please enter a valid phone number.", [
         { text: "OK" },
       ]);
@@ -81,14 +81,17 @@ const EditPersonalInfoScreen = () => {
     }
 
     // Success - Save data and navigate back
-    // Success - Save data and navigate back
     try {
       const updateData: any = {};
+
+      // Send only vendor table fields without nesting
       if (formData.fullName) updateData.fullName = formData.fullName;
-      if (formData.phoneNumber) updateData.phoneNumber = formData.phoneNumber; // Try phoneNumber instead of phone
-      if (formData.address) updateData.address = formData.address; // Keep address for now
-      // Removed: email, fulllName (3Ls), gender, nationalIdNumber, vendor as they were rejected.
-      // If address also fails, we'll need to remove it or find the right key.
+      if (formData.phone) updateData.phone = formData.phone;
+      if (formData.address) updateData.address = formData.address;
+
+      // Clean up empty objects if necessary, but backend might handle partials.
+      // If user provided no email change, we might not want to send user object with just empty fields if backend validates.
+      // But typically sending what we have is okay.
 
       await updateProfile(updateData).unwrap();
 
@@ -183,7 +186,7 @@ const EditPersonalInfoScreen = () => {
                   height: "100%",
                   letterSpacing: -0.3,
                 }}
-                placeholder="Enter email address or number"
+                placeholder="Enter Your Full Name"
                 placeholderTextColor="#999999"
                 value={formData.fullName}
                 onChangeText={(text) => handleInputChange("fullName", text)}
@@ -229,8 +232,8 @@ const EditPersonalInfoScreen = () => {
                 }}
                 placeholder="Enter phone number"
                 placeholderTextColor="#999999"
-                value={formData.phoneNumber}
-                onChangeText={(text) => handleInputChange("phoneNumber", text)}
+                value={formData.phone}
+                onChangeText={(text) => handleInputChange("phone", text)}
                 keyboardType="phone-pad"
                 returnKeyType="next"
               />

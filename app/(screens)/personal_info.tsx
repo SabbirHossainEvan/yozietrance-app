@@ -20,28 +20,30 @@ const PersonalInfoScreen = () => {
   const { data: profileData } = useGetProfileQuery({});
   const displayUser = profileData?.data || currentUser;
 
+  console.log(displayUser, "displayUser");
+  const test = { "createdAt": "2026-02-09T16:55:46.953Z", "email": "ev@gmail.com", "evanAddress": "sdfdf", "id": "5c22aba9-3f8b-44af-82bc-7193026c82aa", "index": 4, "passwordHash": "$2b$10$iGAqRYMe6F2dVIu2z.qXfOmeBOAAcOLVV9jLUNfq7qBUEPEKCthRS", "updatedAt": "2026-02-09T18:37:35.790Z", "userType": "vendor", "vendor": { "address": "Dhaka", "averageRating": 0, "businessDescription": null, "businessName": null, "bussinessIdPhotoUrl": "https://res.cloudinary.com/ds6qok1on/image/upload/v1770662254/uploads/nxx6tufoaxwtiqbtwiiq.jpg", "bussinessRegNumber": "23423", "createdAt": "2026-02-09T18:37:35.341Z", "fullName": "Evan", "gender": "Male", "id": "d1ee0849-37d6-4cf8-a117-e85f2a91835e", "isActive": true, "isBussinessIdVerified": false, "isNidVerify": false, "logoUrl": "https://res.cloudinary.com/ds6qok1on/image/upload/v1770662254/uploads/xsyn8fzn2ui5klxtqrcg.jpg", "nationalIdNumber": "243231234", "nidBackPhotoUrl": "https://res.cloudinary.com/ds6qok1on/image/upload/v1770662254/uploads/s0ua6avk3k9z5ftpqyrk.jpg", "nidFontPhotoUrl": "https://res.cloudinary.com/ds6qok1on/image/upload/v1770662254/uploads/esg9jvp0etph4cssarxp.jpg", "phone": "01327284962", "storeDescription": "Jani na ", "storename": "Ev", "totalReviews": 0, "updatedAt": "2026-02-09T18:37:35.341Z", "userId": "5c22aba9-3f8b-44af-82bc-7193026c82aa", "vendorCode": "VEN-82851F95", "website": "" } }
   // Initialize state with Redux data or defaults
   const [user, setUser] = useState({
-    name: displayUser?.name || displayUser?.fullName || displayUser?.fulllName || "User",
-    avatar: displayUser?.logo || displayUser?.image || displayUser?.avatar || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
+    name: displayUser?.vendor.fullName || displayUser?.buyer.fullName || "N/A",
+    avatar: displayUser?.vendor.logoUrl || displayUser?.vendor.logoUrl || "N/A",
     dob: displayUser?.dob || "N/A",
-    email: displayUser?.email || "N/A",
-    phone: displayUser?.phone || displayUser?.phoneNumber || "N/A",
-    idType: displayUser?.idType || "National ID",
-    idNumber: displayUser?.idNumber || displayUser?.nationalIdNumber || "N/A",
+    email: displayUser?.vendor.email || "N/A",
+    phone: displayUser?.vendor.phone || displayUser?.vendor.phoneNumber || "N/A",
+    idType: displayUser?.vendor.idType || "National ID",
+    nationalIdNumber: displayUser?.vendor.nationalIdNumber || displayUser?.vendor.nationalIdNumber || "N/A",
   });
 
   // Effect to update local state when profileData changes
   React.useEffect(() => {
     if (displayUser) {
       setUser({
-        name: displayUser.name || displayUser.fullName || displayUser.fulllName || "User",
-        avatar: displayUser.logo || displayUser.image || displayUser.avatar || "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-        dob: displayUser.dob || "N/A",
-        email: displayUser.email || "N/A",
-        phone: displayUser.phone || displayUser.phoneNumber || "N/A",
-        idType: displayUser.idType || "National ID",
-        idNumber: displayUser.idNumber || displayUser.nationalIdNumber || "N/A",
+        name: displayUser?.vendor.fullName || displayUser?.buyer.fullName || "N/A",
+        avatar: displayUser?.vendor.logoUrl || displayUser?.vendor.logoUrl || "N/A",
+        dob: displayUser?.dob || "N/A",
+        email: displayUser?.email || "N/A",
+        phone: displayUser?.vendor.phone || displayUser?.vendor.phoneNumber || "N/A",
+        idType: displayUser?.vendor.idType || "National ID",
+        nationalIdNumber: displayUser?.vendor.nationalIdNumber || displayUser?.vendor.nationalIdNumber || "N/A",
       });
     }
   }, [displayUser]);
@@ -285,7 +287,7 @@ const PersonalInfoScreen = () => {
           />
           <InfoRow
             label="ID Number"
-            value={user.idNumber}
+            value={user.nationalIdNumber}
             icon={<FontAwesome5 name="id-card" size={20} color="#9CA3AF" />}
           />
         </View>

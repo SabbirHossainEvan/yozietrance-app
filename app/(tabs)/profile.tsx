@@ -144,8 +144,8 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: displayUser?.name || displayUser?.fullName || displayUser?.businessName || displayUser?.storename || "User",
-    avatar: displayUser?.logo || displayUser?.image || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: displayUser?.fullName || displayUser?.name || displayUser?.storename || displayUser?.businessName || "User",
+    avatar: displayUser?.logo || displayUser?.image || displayUser?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

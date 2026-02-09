@@ -38,10 +38,10 @@ const ProfileInfoScreen = () => {
   const userData = profileData?.data;
 
   // Helper to safely get user properties with fallbacks for weird backend keys
-  const getName = () => userData?.fulllName || userData?.fullName || userData?.name || "User";
+  const getName = () => userData?.fullName || userData?.name || userData?.fulllName || "User";
   const getDob = () => userData?.dob || "N/A";
-  const getPhone = () => userData?.phone || userData?.phoneNumber || "N/A"; // Backend might use phoneNumber
-  const getIdType = () => userData?.idType || "National ID"; // Default if missing
+  const getPhone = () => userData?.phone || userData?.phoneNumber || "N/A";
+  const getIdType = () => userData?.idType || "National ID";
   const getIdNumber = () => userData?.nationalIdNumber || userData?.idNumber || "N/A";
 
   const [profileImage, setProfileImage] = useState(
