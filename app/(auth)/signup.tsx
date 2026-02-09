@@ -14,7 +14,7 @@ import {
   View,
 } from "react-native";
 
-import { useRegisterBuyerMutation } from "@/store/api/authApiSlice";
+import { useRegisterMutation } from "@/store/api/authApiSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/slices/authSlice";
 import { router } from "expo-router";
@@ -23,14 +23,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignUpScreen: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [fullName, setFullName] = useState<string>("");
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
 
-  const [registerBuyer, { isLoading, error }] = useRegisterBuyerMutation();
+  const [register, { isLoading, error }] = useRegisterMutation();
 
   const handleSignup = async () => {
     if (!acceptedTerms) {
@@ -40,7 +38,7 @@ const SignUpScreen: React.FC = () => {
     const locationData = await AsyncStorage.getItem("userLocation");
 
     // Basic Validation
-    if (!fullName.trim() || !email.trim() || !phoneNumber.trim()) {
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
       alert("Please fill in all fields");
       return;
     }
@@ -54,21 +52,17 @@ const SignUpScreen: React.FC = () => {
       const payload = {
         email: email,
         password: password,
-        fulllName: fullName,
-        phone: phoneNumber,
-        nidNumber: "N/A",
-        nidFontPhotoUrl: "",
-        nidBackPhotoUrl: "",
-        profilePhotoUrl: "",
+        confirmPassword: confirmPassword,
+        evanAddress: "sdfdf",
       };
 
       console.log(payload);
-      const response = await registerBuyer(payload).unwrap();
+      const response = await register(payload).unwrap();
       console.log('Signup successful', response);
 
       const { data } = response;
       if (data && data.accessToken) {
-        dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
+        dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken || null }));
         router.replace("/(onboarding)/user-selection");
       } else {
         console.error("Signup response missing data/token", response);
@@ -101,13 +95,7 @@ const SignUpScreen: React.FC = () => {
 
           {/* Form Section */}
           <View style={styles.formContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name"
-              placeholderTextColor="#999"
-              value={fullName}
-              onChangeText={setFullName}
-            />
+
             <TextInput
               style={styles.input}
               placeholder="E-mail address"
@@ -117,14 +105,7 @@ const SignUpScreen: React.FC = () => {
               value={email}
               onChangeText={setEmail}
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone Number"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
+
             <TextInput
               style={styles.input}
               placeholder="Password"

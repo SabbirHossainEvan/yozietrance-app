@@ -43,6 +43,8 @@ const BusinessIdUploadScreen: React.FC = () => {
       return;
     }
 
+
+
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -91,9 +93,9 @@ const BusinessIdUploadScreen: React.FC = () => {
         }
       };
 
-      safeAppend('fulllName', latestData.fullName);
+      safeAppend('fullName', latestData.fullName);
       safeAppend('phone', latestData.phone);
-      safeAppend('email', latestData.email || 'vendor@example.com'); // Required key, fallback if missing
+      // safeAppend('email', latestData.email || 'vendor@example.com'); 
       safeAppend('address', latestData.address);
       safeAppend('storename', latestData.storename); // This maps to businessName in frontend usually
       safeAppend('storeDescription', latestData.storeDescription);
