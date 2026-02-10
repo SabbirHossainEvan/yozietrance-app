@@ -69,8 +69,8 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: displayUser?.fullName || displayUser?.name || "User",
-    avatar: displayUser?.avatar || displayUser?.image || displayUser?.logo || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: displayUser?.buyer?.fullName || displayUser?.name || "User",
+    avatar: displayUser?.buyer?.profilePhotoUrl || displayUser?.image || displayUser?.logo || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

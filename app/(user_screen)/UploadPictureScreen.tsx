@@ -13,7 +13,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { useRegisterBuyerMutation } from "../../store/api/apiSlice";
+
+import { useRegisterBuyerMutation } from "@/store/api/authApiSlice";
 import { updateBuyerRegistration } from "../../store/slices/registrationSlice";
 import { RootState } from "../../store/store";
 

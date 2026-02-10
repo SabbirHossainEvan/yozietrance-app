@@ -38,14 +38,14 @@ const ProfileInfoScreen = () => {
   const userData = profileData?.data;
 
   // Helper to safely get user properties with fallbacks for weird backend keys
-  const getName = () => userData?.fullName || userData?.name || userData?.fulllName || "User";
-  const getDob = () => userData?.dob || "N/A";
-  const getPhone = () => userData?.phone || userData?.phoneNumber || "N/A";
-  const getIdType = () => userData?.idType || "National ID";
-  const getIdNumber = () => userData?.nationalIdNumber || userData?.idNumber || "N/A";
+  const getName = () => userData?.buyer?.fullName || userData?.name || userData?.fulllName || "User";
+  const getDob = () => userData?.buyer?.dob || "N/A";
+  const getPhone = () => userData?.buyer?.phone || userData?.phoneNumber || "N/A";
+  const getIdType = () => userData?.buyer?.idType || "National ID";
+  const getIdNumber = () => userData?.buyer?.nidNumber || userData?.idNumber || "N/A";
 
   const [profileImage, setProfileImage] = useState(
-    userData?.avatar || userData?.image || userData?.logo || "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
+    userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
   );
 
   const pickImage = async () => {
@@ -100,7 +100,7 @@ const ProfileInfoScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: userData?.avatar || userData?.image || profileImage }} style={styles.avatar} />
+            <Image source={{ uri: userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || profileImage }} style={styles.avatar} />
 
             <TouchableOpacity style={styles.cameraBadge} onPress={pickImage}>
               <MaterialCommunityIcons

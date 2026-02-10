@@ -50,10 +50,10 @@ const EditProfileScreen = () => {
     if (userData) {
       setFormData((prev) => ({
         ...prev,
-        fullName: userData.vendor.fullName || userData.name || "",
+        fullName: userData.buyer.fullName || userData.name || "",
         email: userData.email || "",
-        phone: userData.vendor.phone || userData.phoneNumber || "",
-        address: userData.vendor.address || "",
+        phone: userData.buyer.phone || userData.phoneNumber || "",
+        address: userData.buyer.address || "",
         // Dates need parsing if string
         // dob: userData.dob ? new Date(userData.dob) : new Date(), 
       }));
