@@ -1,6 +1,7 @@
 import { useAddToCartMutation } from "@/store/api/cartApiSlice";
 import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
 import { useGetProductByIdQuery } from "@/store/api/product_api_slice";
+import { useCreateReviewMutation, useGetProductReviewsQuery } from "@/store/api/reviewApiSlice";
 import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -11,6 +12,7 @@ import {
   Dimensions,
   FlatList,
   Image,
+  Modal,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -29,14 +31,55 @@ const ProductDetails = () => {
   const { id, productId } = useLocalSearchParams();
   const actualId = (id || productId) as string;
   const { data: product, isLoading, error } = useGetProductByIdQuery(actualId, { skip: !actualId });
+  const { data: reviewsData, isLoading: isReviewsLoading } = useGetProductReviewsQuery(
+    { productId: actualId },
+    { skip: !actualId }
+  );
   const [createOrder, { isLoading: isCreating }] = useCreateOrderMutation();
   const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
+  const [createReview, { isLoading: isSubmittingReview }] = useCreateReviewMutation();
   const user = useSelector((state: RootState) => state.auth.user);
 
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("Teal");
   const [coupon, setCoupon] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Review Modal State
+  const [isReviewModalVisible, setIsReviewModalVisible] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+  const [userComment, setUserComment] = useState("");
+
+  const reviews = reviewsData?.data?.reviews || [];
+  const totalReviews = reviewsData?.data?.meta?.total || 0;
+  const avgRating = totalReviews > 0
+    ? (reviews.reduce((acc: number, curr: any) => acc + curr.rating, 0) / reviews.length).toFixed(1)
+    : (product?.rating?.toFixed(1) || "0.0");
+
+  const handleReviewSubmit = async () => {
+    if (!user) {
+      Alert.alert("Error", "Please login to submit a review");
+      return;
+    }
+    if (!userComment.trim()) {
+      Alert.alert("Error", "Please enter a comment");
+      return;
+    }
+
+    try {
+      await createReview({
+        productId: actualId,
+        rating: userRating,
+
+      }).unwrap();
+      Alert.alert("Success", "Review submitted successfully!");
+      setIsReviewModalVisible(false);
+      setUserComment("");
+      setUserRating(5);
+    } catch (err: any) {
+      Alert.alert("Error", err?.data?.message || "Failed to submit review");
+    }
+  };
 
   const handleBuyNow = async () => {
     if (!product) return;
@@ -108,9 +151,17 @@ const ProductDetails = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F8FBF9" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FBF9" />
-      {/* Floating Chat Button */}
-      <TouchableOpacity onPress={() => router.push("/(screens)/chat_box")} style={{ position: 'absolute', bottom: 30, zIndex: 9999, right: 15, backgroundColor: "#FFF", width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", elevation: 4, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, borderWidth: 1, borderColor: "#2D8C8C" }}>
-        <Ionicons name="chatbubble-ellipses-outline" size={24} color="#2D8C8C" />
+      {/* Floating Review Button */}
+      <TouchableOpacity
+        onPress={() => {
+          if (!user) {
+            Alert.alert("Login Required", "Please login to give a review");
+            return;
+          }
+          setIsReviewModalVisible(true);
+        }}
+        style={{ position: 'absolute', bottom: 30, zIndex: 9999, right: 15, backgroundColor: "#FFF", width: 44, height: 44, borderRadius: 14, justifyContent: "center", alignItems: "center", elevation: 4, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, borderWidth: 1, borderColor: "#2D8C8C" }}>
+        <Ionicons name="star-outline" size={24} color="#2D8C8C" />
       </TouchableOpacity>
       {/* Header */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 10 }}>
@@ -166,7 +217,7 @@ const ProductDetails = () => {
             ))}
           </View>
           <Text style={{ fontSize: 12, fontWeight: "bold", color: "#333" }}>
-            {product.rating || "0.0"} <Text style={{ fontWeight: "400", color: "#777", textDecorationLine: "underline" }}>({product.reviews || 0} reviews)</Text>
+            {avgRating} <Text style={{ fontWeight: "400", color: "#777", textDecorationLine: "underline" }}>({totalReviews} reviews)</Text>
           </Text>
         </View>
         <Text style={{ fontSize: 12, color: "#888", marginBottom: 8 }}>Sku: {product.sku || "N/A"}</Text>
@@ -290,71 +341,99 @@ const ProductDetails = () => {
 
         {/* Reviews */}
         <View style={{ marginBottom: 20 }}>
-          {/* Review 1 */}
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: "row", marginBottom: 8 }}>
-              <Image source={{ uri: "https://randomuser.me/api/portraits/women/44.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Darrell Steward</Text>
-                  <Text style={{ fontSize: 12, color: "#999" }}>12/04/25</Text>
-                </View>
-                <View style={{ flexDirection: "row", marginRight: 8 }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
-                  ))}
-                </View>
-              </View>
-            </View>
-            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
-              Ms. Sarah helped me prepare for my IB math exams, I improved from a 4 to a 6! Her techniques and practice sessions are very effective.
-            </Text>
-          </View>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: "#333", marginBottom: 15 }}>Customer Reviews</Text>
 
-          {/* Review 2 */}
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: "row", marginBottom: 8 }}>
-              <Image source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Albert Flores</Text>
-                  <Text style={{ fontSize: 12, color: "#999" }}>10/04/25</Text>
+          {isReviewsLoading ? (
+            <ActivityIndicator color="#2D8C8C" style={{ marginVertical: 20 }} />
+          ) : reviewsData?.data?.reviews && reviewsData.data.reviews.length > 0 ? (
+            reviewsData.data.reviews.map((review: any) => (
+              <View key={review._id} style={{ marginBottom: 20 }}>
+                <View style={{ flexDirection: "row", marginBottom: 8 }}>
+                  <Image
+                    source={{ uri: review.user?.profilePhotoUrl || "https://ui-avatars.com/api/?name=" + (review.user?.fullName || "User") }}
+                    style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>{review.user?.fullName || "Unknown User"}</Text>
+                      <Text style={{ fontSize: 12, color: "#999" }}>
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: "row", marginTop: 2 }}>
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Ionicons key={i} name="star" size={12} color={i <= review.rating ? "#FFD700" : "#E0E0E0"} />
+                      ))}
+                    </View>
+                  </View>
                 </View>
-                <View style={{ flexDirection: "row", marginRight: 8 }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
-                  ))}
-                </View>
+                <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
+                  {review.comment}
+                </Text>
               </View>
+            ))
+          ) : (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#777' }}>No reviews yet for this product.</Text>
             </View>
-            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
-              I've always found math boring and hard, but she made it fun with games, and visual explanations.
-            </Text>
-          </View>
-
-          {/* Review 3 */}
-          <View style={{ marginBottom: 20 }}>
-            <View style={{ flexDirection: "row", marginBottom: 8 }}>
-              <Image source={{ uri: "https://randomuser.me/api/portraits/men/45.jpg" }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 10 }} />
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#333" }}>Ronald Richards</Text>
-                  <Text style={{ fontSize: 12, color: "#999" }}>10/04/25</Text>
-                </View>
-                <View style={{ flexDirection: "row", marginRight: 8 }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Ionicons key={i} name="star" size={12} color="#FFD700" />
-                  ))}
-                </View>
-              </View>
-            </View>
-            <Text style={{ fontSize: 13, color: "#555", lineHeight: 18 }}>
-              I used to struggle so much with algebra, but after just a few sessions with Sarah, everything started making sense.
-            </Text>
-          </View>
+          )}
         </View>
 
       </ScrollView>
+
+      {/* Review Modal */}
+      <Modal
+        visible={isReviewModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsReviewModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: '#FFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#333' }}>Give a Review</Text>
+              <TouchableOpacity onPress={() => setIsReviewModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>Rating</Text>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setUserRating(star)}>
+                  <Ionicons
+                    name={star <= userRating ? "star" : "star-outline"}
+                    size={32}
+                    color={star <= userRating ? "#FFD700" : "#E0E0E0"}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={{ fontSize: 14, color: '#666', marginBottom: 10 }}>Comment</Text>
+            <TextInput
+              multiline
+              numberOfLines={4}
+              placeholder="Tell us what you think about this product..."
+              value={userComment}
+              onChangeText={setUserComment}
+              style={{ backgroundColor: '#F8FBF9', borderRadius: 12, padding: 15, height: 100, textAlignVertical: 'top', borderWidth: 1, borderColor: '#EEE', marginBottom: 24 }}
+            />
+
+            <TouchableOpacity
+              onPress={handleReviewSubmit}
+              disabled={isSubmittingReview}
+              style={{ backgroundColor: '#2D8C8C', borderRadius: 12, paddingVertical: 14, alignItems: 'center', opacity: isSubmittingReview ? 0.7 : 1 }}
+            >
+              {isSubmittingReview ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 16 }}>Submit Review</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

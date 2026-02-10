@@ -436,7 +436,74 @@ export default function InformationScreen() {
       return;
     }
 
-    Alert.alert("Success", "Processing your information...");
+    const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+
+    if (rawItems.length === 0) {
+      Alert.alert("Error", "Your cart is empty");
+      return;
+    }
+
+    // Construct shipping address
+    const shippingAddress = `${address1}${address2 ? ', ' + address2 : ''}, ${city}, ${stateValue} ${zipCode}, ${countryName}`;
+
+    try {
+      // Group items by vendor
+      const vendorGroups: { [key: string]: any[] } = {};
+      rawItems.forEach((item: any) => {
+        const product = item.product || item.productId;
+        const vendorId = product?.vendorId || product?.vendor?._id || product?.vendor?.id || product?.vendor;
+
+        if (!vendorId) {
+          console.warn('Item missing vendorId:', item);
+          return;
+        }
+        if (!vendorGroups[vendorId]) {
+          vendorGroups[vendorId] = [];
+        }
+        vendorGroups[vendorId].push(item);
+      });
+
+      const vendors = Object.keys(vendorGroups);
+      if (vendors.length === 0) {
+        Alert.alert("Error", "Unable to process order. Products missing vendor information.");
+        return;
+      }
+
+      // Create orders for each vendor
+      for (const vendorId of vendors) {
+        const vendorItems = vendorGroups[vendorId];
+
+        const orderItems = vendorItems.map((item: any) => {
+          const product = item.product || item.productId;
+          return {
+            product: product._id || product.id,
+            quantity: item.quantity,
+            price: product.price
+          };
+        });
+
+        const orderData = {
+          vendorId,
+          shippingAddress,
+          orderItems,
+          email,
+          phone,
+          fullName,
+        };
+
+        console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
+        await createOrder(orderData).unwrap();
+      }
+
+      Alert.alert(
+        "Success",
+        `Order${vendors.length > 1 ? 's' : ''} placed successfully!`,
+        [{ text: "OK", onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
+      );
+    } catch (err: any) {
+      console.error('Order creation error:', err);
+      Alert.alert("Error", err?.data?.message || "Failed to place order");
+    }
   };
 
   return (
