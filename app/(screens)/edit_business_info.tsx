@@ -40,10 +40,10 @@ const BusinessInfoForm = () => {
         fullName: userData.vendor.fullName || userData.vendor.name || "",
         emailOrNumber: userData.email || "",
         phoneNumber: userData.vendor.phone || userData.vendor.phoneNumber || "",
-        email: userData.vendor.email || "",
+        email: userData.email || "",
         address: userData.vendor.address || "",
-        businessID: userData.vendor.vendorCode || userData.vendor.businessID || "",
-        businessName: userData.storename || userData.businessName || "",
+        businessID: userData.vendor.bussinessRegNumber || userData.vendor.businessID || "",
+        businessName: userData.vendor.storename || userData.vendor.businessName || "",
       });
       // Optionally prefill images if URL exists (not implemented for file object but for UI display)
       if (userData.logo) {

@@ -27,7 +27,7 @@ const PersonalInfoScreen = () => {
     name: displayUser?.vendor.fullName || displayUser?.buyer.fullName || "N/A",
     avatar: displayUser?.vendor.logoUrl || displayUser?.vendor.logoUrl || "N/A",
     dob: displayUser?.dob || "N/A",
-    email: displayUser?.vendor.email || "N/A",
+    email: displayUser?.email || "N/A",
     phone: displayUser?.vendor.phone || displayUser?.vendor.phoneNumber || "N/A",
     idType: displayUser?.vendor.idType || "National ID",
     nationalIdNumber: displayUser?.vendor.nationalIdNumber || displayUser?.vendor.nationalIdNumber || "N/A",

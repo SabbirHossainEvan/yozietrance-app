@@ -46,6 +46,93 @@ interface CustomChatMessage {
 
 // Removed hardcoded coupons - now fetched from API
 
+// --- HELPER COMPONENTS ---
+
+const AttachmentBtn = ({ icon, label, onPress }: any) => (
+  <TouchableOpacity style={styles.attachBtn} onPress={onPress}>
+    <View style={styles.attachIconCircle}>
+      <MaterialIcons name={icon} size={24} color="#2A8383" />
+    </View>
+    <Text style={styles.attachLabel}>{label}</Text>
+  </TouchableOpacity>
+);
+
+const ChatCouponCard = ({ coupon, isOwn }: { coupon: any, isOwn: boolean }) => {
+  if (!coupon) return null;
+  return (
+    <View style={[styles.chatCouponContainer, isOwn ? styles.chatCouponOwn : styles.chatCouponOther]}>
+      <View style={[styles.chatCouponSide, { backgroundColor: coupon.color || '#FF9100' }]}>
+        <Text style={styles.chatCouponVerticalText}>{coupon.type || 'OFFER'}</Text>
+        <View style={styles.chatCouponDotContainer}>
+          {[...Array(4)].map((_, i) => (
+            <View key={i} style={styles.chatCouponDot} />
+          ))}
+        </View>
+      </View>
+      <View style={styles.chatCouponBody}>
+        <View style={styles.chatCouponTop}>
+          <Text style={styles.chatCouponCode}>Code:{coupon.code}</Text>
+          <Text style={styles.chatCouponDiscount}>{coupon.discount || '10%'}</Text>
+        </View>
+        <Text style={styles.chatCouponDesc} numberOfLines={2}>{coupon.desc || coupon.description}</Text>
+        <View style={styles.chatCouponFooter}>
+          <View style={styles.chatCouponInfo}>
+            <Ionicons name="time-outline" size={12} color="#666" />
+            <Text style={styles.chatCouponInfoText}>Limited Time</Text>
+          </View>
+          <View style={styles.chatCouponInfo}>
+            <Ionicons name="bag-handle-outline" size={12} color="#666" />
+            <Text style={styles.chatCouponInfoText}>Min. Spend</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
+  <Modal visible={visible} transparent animationType="slide">
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContent}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>Select Coupon</Text>
+          <TouchableOpacity onPress={onClose}>
+            <MaterialIcons name="close" size={24} color="#333" />
+          </TouchableOpacity>
+        </View>
+        <ScrollView style={{ padding: 15 }}>
+          {coupons && coupons.length > 0 ? (
+            coupons.map((coupon: CouponData) => (
+              <TouchableOpacity key={coupon.id} style={[styles.couponItem, { borderColor: coupon.color }]} onPress={() => { onSelect(coupon); onClose(); }}>
+                <View style={[styles.couponSide, { backgroundColor: coupon.color }]}>
+                  <Text style={styles.couponTypeText}>{coupon.type}</Text>
+                  <View style={styles.chatCouponDotContainer}>
+                    {[...Array(4)].map((_, i) => (
+                      <View key={i} style={styles.chatCouponDot} />
+                    ))}
+                  </View>
+                </View>
+                <View style={styles.couponBody}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={styles.couponCode}>Code: {coupon.code}</Text>
+                    <Text style={styles.couponDiscountMain}>{coupon.discount}</Text>
+                  </View>
+                  <Text style={styles.couponDesc}>{coupon.desc}</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+              <Text style={{ color: '#666', fontSize: 16 }}>No active coupons</Text>
+              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>Create coupons to send to buyers</Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    </View>
+  </Modal>
+);
+
 const ChatBox: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
   const router = useRouter();
@@ -119,13 +206,31 @@ const ChatBox: React.FC = () => {
     loadRole();
   }, []);
 
-  // Determine if user is vendor based on stored role or user data
-  const isVendorSide =
-    storedRole?.toLowerCase() === "vendor" ||
-    user?.userType?.toUpperCase() === "VENDOR" ||
-    !!user?.vendor ||
-    !!user?.businessName ||
-    !!user?.storename;
+  // 1. Detect role from global state & storage
+  const role = user?.userType?.toLowerCase() || storedRole?.toLowerCase() || "buyer";
+  const isVendorSide = role === "vendor";
+
+  // 2. Define Tab Configuration dynamically - SWAPPED as per user request
+  const tabs = isVendorSide
+    ? [
+      { name: "Chat", action: () => setActiveTab("Chat") },
+
+      {
+        name: "Order History",
+        action: () => setActiveTab("Order History")
+      },
+    ]
+    : [
+      { name: "Chat", action: () => setActiveTab("Chat") },
+      {
+        name: "Categories",
+        action: () => setActiveTab("Categories")
+      },
+      {
+        name: "Order History",
+        action: () => setActiveTab("Order History")
+      },
+    ];
 
   // API Queries
   const { data: messagesData, isLoading: messagesLoading } = useGetMessagesQuery(activePartnerId, {
@@ -320,29 +425,21 @@ const ChatBox: React.FC = () => {
       </View>
     );
   };
-
+  // 3. Map Dynamically
   const renderTabs = () => (
     <View style={styles.tabsContainer}>
-      {(isVendorSide ? ["Chat", "Order History"] : ["Chat", "Categories", "Order History"]).map((tab) => (
+      {tabs.map((tab) => (
         <TouchableOpacity
-          key={tab}
-          style={[styles.tab, activeTab === tab && styles.activeTab]}
-          onPress={() => {
-            if (tab === "Categories") {
-              router.push("/(users)/categoriesScreen");
-            } else if (tab === "Order History") {
-              const targetPath = isVendorSide ? "/order_details" : "/(user_screen)/OrderHistoryScreen";
-              router.push(targetPath as any);
-            } else {
-              setActiveTab(tab);
-            }
-          }}
+          key={tab.name}
+          style={[styles.tab, activeTab === tab.name && styles.activeTab]}
+          onPress={tab.action}
         >
-          <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
+          <Text style={[styles.tabText, activeTab === tab.name && styles.activeTabText]}>{tab.name}</Text>
         </TouchableOpacity>
       ))}
     </View>
   );
+
 
   const renderContent = () => {
     switch (activeTab) {
@@ -463,90 +560,8 @@ const ChatBox: React.FC = () => {
   );
 };
 
-const AttachmentBtn = ({ icon, label, onPress }: any) => (
-  <TouchableOpacity style={styles.attachBtn} onPress={onPress}>
-    <View style={styles.attachIconCircle}>
-      <MaterialIcons name={icon} size={24} color="#2A8383" />
-    </View>
-    <Text style={styles.attachLabel}>{label}</Text>
-  </TouchableOpacity>
-);
 
-const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
-  <Modal visible={visible} transparent animationType="slide">
-    <View style={styles.modalOverlay}>
-      <View style={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Select Coupon</Text>
-          <TouchableOpacity onPress={onClose}>
-            <MaterialIcons name="close" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-        <ScrollView style={{ padding: 15 }}>
-          {coupons && coupons.length > 0 ? (
-            coupons.map((coupon: CouponData) => (
-              <TouchableOpacity key={coupon.id} style={[styles.couponItem, { borderColor: coupon.color }]} onPress={() => { onSelect(coupon); onClose(); }}>
-                <View style={[styles.couponSide, { backgroundColor: coupon.color }]}>
-                  <Text style={styles.couponTypeText}>{coupon.type}</Text>
-                  <View style={styles.chatCouponDotContainer}>
-                    {[...Array(4)].map((_, i) => (
-                      <View key={i} style={styles.chatCouponDot} />
-                    ))}
-                  </View>
-                </View>
-                <View style={styles.couponBody}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={styles.couponCode}>Code: {coupon.code}</Text>
-                    <Text style={styles.couponDiscountMain}>{coupon.discount}</Text>
-                  </View>
-                  <Text style={styles.couponDesc}>{coupon.desc}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          ) : (
-            <View style={{ padding: 40, alignItems: 'center' }}>
-              <Text style={{ color: '#666', fontSize: 16 }}>No active coupons</Text>
-              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>Create coupons to send to buyers</Text>
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </View>
-  </Modal>
-);
-
-const ChatCouponCard = ({ coupon, isOwn }: { coupon: any, isOwn: boolean }) => {
-  if (!coupon) return null;
-  return (
-    <View style={[styles.chatCouponContainer, isOwn ? styles.chatCouponOwn : styles.chatCouponOther]}>
-      <View style={[styles.chatCouponSide, { backgroundColor: coupon.color || '#FF9100' }]}>
-        <Text style={styles.chatCouponVerticalText}>{coupon.type || 'OFFER'}</Text>
-        <View style={styles.chatCouponDotContainer}>
-          {[...Array(4)].map((_, i) => (
-            <View key={i} style={styles.chatCouponDot} />
-          ))}
-        </View>
-      </View>
-      <View style={styles.chatCouponBody}>
-        <View style={styles.chatCouponTop}>
-          <Text style={styles.chatCouponCode}>Code:{coupon.code}</Text>
-          <Text style={styles.chatCouponDiscount}>{coupon.discount || '10%'}</Text>
-        </View>
-        <Text style={styles.chatCouponDesc} numberOfLines={2}>{coupon.desc || coupon.description}</Text>
-        <View style={styles.chatCouponFooter}>
-          <View style={styles.chatCouponInfo}>
-            <Ionicons name="time-outline" size={12} color="#666" />
-            <Text style={styles.chatCouponInfoText}>Limited Time</Text>
-          </View>
-          <View style={styles.chatCouponInfo}>
-            <Ionicons name="bag-handle-outline" size={12} color="#666" />
-            <Text style={styles.chatCouponInfoText}>Min. Spend</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-};
+// Helpers moved to top
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "#fff" },
