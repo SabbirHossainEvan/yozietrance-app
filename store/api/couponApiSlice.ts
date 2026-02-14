@@ -93,11 +93,14 @@ export const couponApiSlice = apiSlice.injectEndpoints({
 
         // Assign coupon to buyer
         assignCoupon: builder.mutation<any, { id: string; buyerId: string }>({
-            query: ({ id, buyerId }) => ({
-                url: `/coupons/${id}/assign`,
-                method: 'POST',
-                body: { buyerId },
-            }),
+            query: ({ id, buyerId }) => {
+                console.log(`Assigning coupon ${id} to buyer ${buyerId}`);
+                return {
+                    url: `/coupons/${id}/assign`,
+                    method: 'POST',
+                    body: { buyerId },
+                };
+            },
             invalidatesTags: (result, error, { id }) => [{ type: 'Coupon', id }],
         }),
 

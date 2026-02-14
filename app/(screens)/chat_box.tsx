@@ -196,6 +196,17 @@ const ChatBox: React.FC = () => {
         const buyerProfileId = messagesData?.find((m: any) => m.buyerId)?.buyerId;
         const targetBuyerId = buyerProfileId || activePartnerId;
 
+        console.log('ChatBox.handleSendMessage - Triggered with type:', type);
+        console.log('ChatBox.handleSendMessage - Coupon:', coupon?.id);
+        console.log('ChatBox.handleSendMessage - Target Buyer ID:', targetBuyerId);
+
+        // Validation: Ensure we don't send conversationId as buyerId
+        if (targetBuyerId === conversationId) {
+          console.error('ChatBox.handleSendMessage - ERROR: Target Buyer ID is same as Conversation ID! Aborting assignment.');
+          alert("Error: Cannot assign coupon. Buyer ID not resolved.");
+          return;
+        }
+
         console.log('ChatBox - Assigning coupon:', coupon.id, 'to buyer:', targetBuyerId, (buyerProfileId ? '(Resolved Profile ID)' : '(Using Partner User ID)'));
         try {
           await assignCoupon({
@@ -216,8 +227,6 @@ const ChatBox: React.FC = () => {
       await sendMessage({
         receiverId: activePartnerId,
         messageText: msgText,
-        type: type,
-        couponDetails: type === "coupon" ? coupon : undefined,
       }).unwrap();
 
       setMessageText("");
