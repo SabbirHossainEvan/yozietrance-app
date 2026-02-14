@@ -63,6 +63,12 @@ const SignUpScreen: React.FC = () => {
       const { data } = response;
       if (data && data.accessToken) {
         dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken || null }));
+
+        // Save role to AsyncStorage for role-based UI
+        if (data.user?.userType) {
+          await AsyncStorage.setItem('userRole', data.user.userType);
+        }
+
         router.replace("/(onboarding)/user-selection");
       } else {
         console.error("Signup response missing data/token", response);

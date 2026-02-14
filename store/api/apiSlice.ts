@@ -22,6 +22,15 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
     await mutex.waitForUnlock();
     let result = await baseQuery(args, api, extraOptions);
+
+    // Log query results to debug the map error
+    if (args?.url?.includes('coupons')) {
+        console.log('Coupon API Raw Result status:', result?.error?.status || 'success');
+        if (result?.error) {
+            console.log('Coupon API Error details keys:', Object.keys(result.error));
+        }
+    }
+
     if (result.error && result.error.status === 401) {
         if (!mutex.isLocked()) {
             const release = await mutex.acquire();
@@ -71,7 +80,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
-    tagTypes: ['Category', 'Product', 'Order', 'Cart', 'User', 'Review', 'Chat'], // Define tag types for invalidation here if needed
+    tagTypes: ['Category', 'Product', 'Order', 'Cart', 'User', 'Review', 'Chat', 'Coupon'], // Define tag types for invalidation here if needed
     endpoints: (builder) => ({}),
 });
 

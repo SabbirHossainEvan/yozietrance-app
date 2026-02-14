@@ -57,11 +57,16 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
-
       // Auto-navigate based on userType
       const userType = data.user?.userType;
       console.log('User type detected:', userType);
+
+      dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
+
+      // Save role to AsyncStorage for role-based UI
+      if (userType) {
+        await AsyncStorage.setItem('userRole', userType);
+      }
 
       if (userType === 'vendor') {
         console.log('Redirecting vendor to (tabs)...');

@@ -1,18 +1,24 @@
+import { useDeactivateCouponMutation, useGetCouponsByVendorQuery } from "@/store/api/couponApiSlice";
+import { RootState } from "@/store/store";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 // 1. Coupon Card Component
 const CouponCard = ({
+  id,
   type,
   color,
   code,
@@ -20,6 +26,7 @@ const CouponCard = ({
   expiry,
   minSpend,
   discount,
+  onDelete,
 }: any) => {
   return (
     <View style={[styles.couponContainer, { borderColor: color }]}>
@@ -69,6 +76,14 @@ const CouponCard = ({
               <Text style={styles.infoValue}>${minSpend}</Text>
             </View>
           </View>
+
+          {/* Delete Icon */}
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => onDelete(id)}
+          >
+            <Ionicons name="trash-outline" size={20} color="#FF4B6E" />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -77,39 +92,62 @@ const CouponCard = ({
 
 const MakeCoupon: React.FC = () => {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const vendorId = user?.userId || user?.id || "";
 
-  const coupons = [
-    {
-      id: "1",
-      type: "NEW USER",
-      color: "#8B5CF6",
-      code: "6sfdxx",
-      description: "NEW USER on Orders Over $35",
-      expiry: "May 25, 2025",
-      minSpend: "35",
-      discount: "5",
-    },
-    {
-      id: "2",
-      type: "CASHBACK",
-      color: "#FF4B6E",
-      code: "6sfdxx",
-      description: "CASHBACK on Orders Over $35",
-      expiry: "May 25, 2025",
-      minSpend: "35",
-      discount: "5",
-    },
-    {
-      id: "3",
-      type: "DISCOUNT",
-      color: "#FF9100",
-      code: "6sfdxx",
-      description: "DISCOUNT on Orders Over $35",
-      expiry: "May 25, 2025",
-      minSpend: "35",
-      discount: "5",
-    },
-  ];
+  const { data: couponsData, isLoading, error } = useGetCouponsByVendorQuery(vendorId, {
+    skip: !vendorId,
+  });
+  const [deactivateCoupon] = useDeactivateCouponMutation();
+
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Delete Coupon",
+      "Are you sure you want to delete this coupon? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deactivateCoupon(id).unwrap();
+            } catch (err) {
+              console.error("Failed to deactivate coupon:", err);
+              Alert.alert("Error", "Failed to delete coupon. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  console.log('MakeCoupon - vendorId:', vendorId);
+  console.log('MakeCoupon - couponsData:', couponsData);
+  console.log('MakeCoupon - isLoading:', isLoading);
+  console.log('MakeCoupon - error:', error);
+
+  // Map API coupons to component format
+  const coupons = React.useMemo(() => {
+    if (!couponsData || !Array.isArray(couponsData)) {
+      console.log('MakeCoupon - couponsData is not an array:', couponsData);
+      return [];
+    }
+
+    console.log('MakeCoupon - mapping coupons, count:', couponsData.length);
+    return couponsData
+      .filter(c => c.isActive) // Only show active coupons
+      .map((coupon) => ({
+        id: coupon.id,
+        type: coupon.discountType === 'percentage' ? 'DISCOUNT' : 'CASHBACK',
+        color: coupon.discountType === 'percentage' ? '#FF9100' : '#FF4B6E',
+        code: coupon.code,
+        description: `${coupon.discountType === 'percentage' ? 'DISCOUNT' : 'CASHBACK'} on Orders Over $${coupon.minPurchaseAmount || 0}`,
+        expiry: new Date(coupon.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+        minSpend: coupon.minPurchaseAmount?.toString() || "0",
+        discount: coupon.discountValue.toString(),
+      }));
+  }, [couponsData]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -129,14 +167,31 @@ const MakeCoupon: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {coupons.map((item) => (
-          <CouponCard key={item.id} {...item} />
-        ))}
-      </ScrollView>
+      {isLoading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#349488" />
+        </View>
+      ) : error ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: '#666', textAlign: 'center' }}>Failed to load coupons. Please try again.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {coupons.length === 0 ? (
+            <View style={{ padding: 40, alignItems: 'center' }}>
+              <Text style={{ color: '#666', fontSize: 16 }}>No coupons yet</Text>
+              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>Tap + to create your first coupon</Text>
+            </View>
+          ) : (
+            coupons.map((item) => (
+              <CouponCard key={item.id} {...item} onDelete={handleDelete} />
+            ))
+          )}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -248,6 +303,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     color: "#333",
+  },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFF5F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFE5EA'
   },
 });
 

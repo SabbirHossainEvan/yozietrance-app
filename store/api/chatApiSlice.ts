@@ -71,7 +71,7 @@ export const chatApiSlice = apiSlice.injectEndpoints({
                 }
             },
         }),
-        sendMessage: builder.mutation<any, { receiverId: string; messageText: string }>({
+        sendMessage: builder.mutation<any, { receiverId: string; messageText: string; type?: string; couponDetails?: any }>({
             query: (body) => {
                 console.log('Sending message body:', body);
                 return {
