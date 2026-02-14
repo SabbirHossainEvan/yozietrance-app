@@ -12,7 +12,7 @@ export const connectionApiSlice = apiSlice.injectEndpoints({
         }),
         getMyConnections: builder.query<any, void>({
             query: () => ({
-                url: '/connections/',
+                url: '/connections',
                 method: 'GET',
             }),
         }),

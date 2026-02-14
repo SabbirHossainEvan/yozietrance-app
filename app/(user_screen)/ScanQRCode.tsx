@@ -10,10 +10,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import VendorModal from "./UserModal";
+
+import { useConnectToVendorMutation } from "@/store/api/connectionApiSlice";
 
 const { width } = Dimensions.get("window");
 
@@ -23,6 +25,8 @@ export default function ScanQRScreen() {
   const [scanned, setScanned] = useState(false);
   const [zoom, setZoom] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const [connectToVendor, { isLoading }] = useConnectToVendorMutation();
 
   const dynamicSize = width * 0.6 + zoom * 100;
 
@@ -46,19 +50,35 @@ export default function ScanQRScreen() {
     );
   }
 
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
     if (!scanned) {
       setScanned(true);
-      // If the QR code data is a vendorCode or a URL containing it, handle it here
-      // For now, let's assume it leads to connection or specific screen
-      router.push("/(user_screen)/ChatDetailsScreen");
+      try {
+        // Assuming data is the vendor code
+        const res = await connectToVendor({ vendorCode: data }).unwrap();
+
+        const vendor = res.vendor || res.connection?.vendor || {};
+
+        router.push({
+          pathname: "/(screens)/chat_box",
+          params: {
+            partnerId: res.data.vendorId?.userId || res.data.vendorId?._id || res.data.vendorId?.id,
+            conversationId: res.data.vendorId?.userId || res.data.vendorId?._id || res.data.vendorId?.id,
+            name: res.data.vendorId?.storename || res.data.vendorId?.businessName || 'Vendor'
+          }
+        });
+      } catch (err: any) {
+        console.error("QR Connection error:", err);
+        alert(err?.data?.message || "Failed to connect via QR code");
+        // Reset scanned so they can try again
+        setTimeout(() => setScanned(false), 2000);
+      }
     }
   };
 
   const handleManualConnect = (code: string) => {
     setIsModalVisible(false);
-    // Connection logic will be handled inside UserModal or here via props
-    // The user request says "the User/Buyer will be connected with that Vendor."
+    // Connection handled in UserModal, which redirects.
   };
 
   return (

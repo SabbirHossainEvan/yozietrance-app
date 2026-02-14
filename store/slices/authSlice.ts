@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 interface AuthState {
     user: {
         id: string;
+        userId?: string; // Account-level ID
         name?: string;
         fullName?: string;
         fulllName?: string; // Backend typo support

@@ -7,10 +7,41 @@ import {
 import { Stack } from "expo-router";
 import React from 'react';
 import "react-native-reanimated";
-import { Provider } from 'react-redux';
+import { Provider, useSelector } from 'react-redux';
+import { SocketProvider } from "../context/SocketContext";
+import { useGetProfileQuery } from "../store/api/authApiSlice";
 import { setCredentials } from '../store/slices/authSlice';
-import { store } from '../store/store';
+import { RootState, store } from '../store/store';
 import "./global.css";
+
+const AuthSync = () => {
+  const dispatch = store.dispatch;
+  const user = useSelector((state: RootState) => state.auth.user);
+  const userId = user?.userId;
+  const token = useSelector((state: RootState) => state.auth.accessToken);
+  const refreshToken = useSelector((state: RootState) => state.auth.refreshToken);
+
+  const { data: profileData } = useGetProfileQuery(undefined, {
+    skip: !token || !!userId
+  });
+
+  React.useEffect(() => {
+    if (profileData?.data && token) {
+      const resolvedUserId = profileData.data.userId || profileData.data.vendor?.userId || profileData.data.buyer?.userId || profileData.data.id;
+
+      if (resolvedUserId && userId !== resolvedUserId) {
+        console.log('Syncing profile: Found Account ID:', resolvedUserId);
+        dispatch(setCredentials({
+          user: { ...user, ...profileData.data, userId: resolvedUserId },
+          accessToken: token,
+          refreshToken: refreshToken || ''
+        }));
+      }
+    }
+  }, [profileData, token, userId, refreshToken, dispatch]);
+
+  return null;
+};
 
 const CustomLightTheme: Theme = {
   ...DefaultTheme,
@@ -57,27 +88,30 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      {/* <ThemeProvider
+      <AuthSync />
+      <SocketProvider>
+        {/* <ThemeProvider
         value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
       > */}
-      <Stack>
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        <Stack.Screen name="(users)" options={{ headerShown: false }} />
-        <Stack.Screen name="(user_screen)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
-      </Stack>
-      {/* <StatusBar
+        <Stack>
+          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+          <Stack.Screen name="(users)" options={{ headerShown: false }} />
+          <Stack.Screen name="(user_screen)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(screens)" options={{ headerShown: false }} />
+          {/* <Stack.Screen
+            name="modal"
+            options={{ presentation: "modal", title: "Modal" }}
+          /> */}
+        </Stack>
+        {/* <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor="transparent"
         translucent
         /> */}
-      {/* </ThemeProvider> */}
-    </Provider>
+        {/* </ThemeProvider> */}
+      </SocketProvider>
+    </Provider >
   );
 }

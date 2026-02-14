@@ -1,6 +1,8 @@
-import { Ionicons } from "@expo/vector-icons";
+import { useGetConversationsQuery } from '@/store/api/chatApiSlice';
+import { useGetMyConnectionsQuery } from '@/store/api/connectionApiSlice';
+import { RootState } from '@/store/store';
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import {
   FlatList,
   Image,
@@ -8,101 +10,140 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface ChatUser {
-  id: string;
-  name: string;
-  lastMessage: string;
-  time: string;
-  unreadCount?: number;
-  avatar: string;
-}
-
-const CHAT_DATA: ChatUser[] = [
-  {
-    id: "1",
-    name: "Stephen Yustiono",
-    lastMessage: "Nice. I don't know why I...",
-    time: "9:30 am",
-    unreadCount: 1,
-    avatar: "https://i.pravatar.cc/150?u=1",
-  },
-  {
-    id: "2",
-    name: "Stephen Yustiono",
-    lastMessage: "Nice. I don't know why I...",
-    time: "9:30 am",
-    unreadCount: 1,
-    avatar: "https://i.pravatar.cc/150?u=2",
-  },
-  {
-    id: "3",
-    name: "Stephen Yustiono",
-    lastMessage: "Nice. I don't know why I...",
-    time: "9:30 am",
-    avatar: "https://i.pravatar.cc/150?u=3",
-  },
-];
+import { useSelector } from 'react-redux';
 
 export default function ChatScreen() {
   const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery();
+  const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  console.log('Connections Data:', JSON.stringify(connectionsData, null, 2));
 
-  const renderItem = ({ item }: { item: ChatUser }) => (
-    <TouchableOpacity
-      style={styles.chatCard}
-      onPress={() => router.push("/ChatDetailsScreen")}
-      // onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id, name: item.name } })}
-    >
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.chatInfo}>
-        <View style={styles.chatHeader}>
-          <Text style={styles.userName}>{item.name}</Text>
-          <Text
-            style={[
-              styles.timeText,
-              item.unreadCount ? styles.activeTime : null,
-            ]}
-          >
-            {item.time}
-          </Text>
-        </View>
-        <View style={styles.chatFooter}>
-          <Text style={styles.lastMessage} numberOfLines={1}>
-            {item.lastMessage}
-          </Text>
-          {item.unreadCount && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{item.unreadCount}</Text>
+  const conversations = useMemo(() => {
+    console.log('Calculating merged conversations...');
+    const chatList = Array.isArray(conversationsData) ? [...conversationsData] : [];
+    const connections = connectionsData?.data || [];
+    console.log('Connections length:', connections.length);
+    console.log('ChatList length before merge:', chatList.length);
+
+    // Map conversation partner IDs
+    const existingPartnerIds = new Set(
+      chatList.map(conv => {
+        const partner = conv.participants?.find((p: any) => (p._id || p.id) !== user?.id)
+          || conv.participant
+          || conv.participants?.[0];
+        return partner?.userId || partner?._id || partner?.id;
+      }).filter(Boolean)
+    );
+
+    // Add connections that don't have a conversation yet
+    connections.forEach((conn: any) => {
+      const vendor = conn.vendor;
+      const partnerId = vendor?.userId || vendor?._id || vendor?.id;
+      if (vendor && partnerId && !existingPartnerIds.has(partnerId)) {
+        chatList.push({
+          _id: partnerId,
+          id: partnerId,
+          participants: [vendor],
+          lastMessage: null,
+          unreadCount: 0,
+          isConnectionOnly: true,
+          participant: vendor
+        });
+      }
+    });
+
+    return chatList;
+  }, [conversationsData, connectionsData, user?.id, user?.userId]);
+
+  const isLoading = isConversationsLoading || isConnectionsLoading;
+  console.log('Merged Chat List Count:', conversations.length);
+
+  const renderItem = ({ item }: { item: any }) => {
+    const participant = item.participants?.find((p: any) => (p._id || p.id) !== user?.id)
+      || item.participant
+      || item.participants?.[0]
+      || {};
+
+    console.log('Chat List Item:', {
+      id: item.id,
+      participantName: participant.storename || participant.name || participant.businessName || 'Unknown',
+      userId: participant.userId,
+      profileId: participant._id || participant.id
+    });
+    return (
+      <TouchableOpacity
+        style={styles.chatCard}
+        onPress={() => {
+          const partnerId = participant.userId || participant._id || participant.id;
+          console.log('Navigating to ChatBox with partnerId:', partnerId, 'Vendor ID:', participant.id);
+          router.push({
+            pathname: "/chat_box",
+            params: {
+              conversationId: partnerId,
+              partnerId: partnerId,
+              fullname: participant.storename || participant.name || participant.fullName || participant.fulllName || 'Vendor'
+            }
+          })
+        }}
+      >
+
+        <Image source={{ uri: participant.logoUrl || 'https://via.placeholder.com/50' }} style={styles.avatar} />
+        <View style={styles.chatInfo}>
+          <View style={styles.chatHeader}>
+            <View>
+              <Text style={styles.userName}>{participant?.businessName || participant?.fullName || participant?.vendorCode}</Text>
+              {/* <Text style={{ fontSize: 10, color: '#2A8383', fontWeight: '500' }}>#{participant._id?.slice(-6).toUpperCase() || 'ID'}</Text> */}
             </View>
-          )}
+            <Text
+              style={[
+                styles.timeText,
+                (item.unreadCount || 0) > 0 ? styles.activeTime : null,
+              ]}
+            >
+              {item.lastMessage?.createdAt ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+            </Text>
+          </View>
+          <View style={styles.chatFooter}>
+            <Text style={styles.lastMessage} numberOfLines={1}>
+              {item.lastMessage?.text || 'No messages'}
+            </Text>
+            {(item.unreadCount || 0) > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{item.unreadCount}</Text>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chat</Text>
-        <View style={{ width: 28 }} />
+        <Text style={styles.headerTitle}>Chats</Text>
       </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search-outline" size={20} color="#888" />
-        <TextInput placeholder="Search......." style={styles.searchInput} />
+        <TextInput placeholder="Search" style={styles.searchInput} />
       </View>
 
       <FlatList
-        data={CHAT_DATA}
-        keyExtractor={(item) => item.id}
+        data={conversations}
         renderItem={renderItem}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        keyExtractor={(item) => item.id || item._id}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        ListEmptyComponent={
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <Text style={{ color: '#888' }}>
+              {isLoading ? 'Loading chats...' : 'No conversations yet. Connect with a vendor to start chatting!'}
+            </Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );

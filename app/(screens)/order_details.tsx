@@ -139,8 +139,11 @@ const OrderDetails = () => {
                     <TouchableOpacity
                         onPress={() => {
                             router.push({
-                                pathname: '/(screens)/chat_box',
-                                params: { recipientId: order.buyer?._id || order.user?._id }
+                                pathname: '/chat_box',
+                                params: {
+                                    partnerId: order.user?.userId || order.buyer?.userId || order.user?._id || order.buyer?._id,
+                                    name: order.buyer?.fullName || order.buyer?.name || order.user?.fullName || order.user?.name || "Customer"
+                                }
                             });
                         }}
                         style={{

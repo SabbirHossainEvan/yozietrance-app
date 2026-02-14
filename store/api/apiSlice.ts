@@ -12,7 +12,7 @@ const baseQuery = fetchBaseQuery({
         console.log('Redux State Auth:', state.auth);
         console.log('Access Token:', token);
         if (token) {
-            headers.set('authorization', `Bearer ${token}`);
+            headers.set('Authorization', `Bearer ${token}`);
         }
         return headers;
     },
@@ -71,7 +71,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 export const apiSlice = createApi({
     reducerPath: 'api',
     baseQuery: baseQueryWithReauth,
-    tagTypes: ['Category', 'Product', 'Order', 'Cart', 'User', 'Review'], // Define tag types for invalidation here if needed
+    tagTypes: ['Category', 'Product', 'Order', 'Cart', 'User', 'Review', 'Chat'], // Define tag types for invalidation here if needed
     endpoints: (builder) => ({}),
 });
 

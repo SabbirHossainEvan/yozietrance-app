@@ -129,7 +129,23 @@ const OrderDetails = () => {
               <Text style={styles.userId}>ID: {order.buyer?._id || order.user?._id || "N/A"}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.messageBtn}>
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() => {
+              const partnerId = order.vendorId?.userId || order.vendor?.userId || order.vendorId?._id || order.vendorId?.id || order.vendor?._id || order.vendor?.id || order.vendorId;
+              if (partnerId) {
+                router.push({
+                  pathname: "/chat_box",
+                  params: {
+                    partnerId: partnerId,
+                    fullname: order.vendorId?.businessName || order.vendorId?.storename || order.vendorId?.fullName || "Vendor"
+                  }
+                });
+              } else {
+                alert("Vendor information not available for chat");
+              }
+            }}
+          >
             <Ionicons name="chatbubble-outline" size={18} color="#333" />
             <Text style={styles.messageBtnText}>Message</Text>
           </TouchableOpacity>

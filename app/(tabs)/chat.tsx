@@ -1,17 +1,81 @@
-import { chatConversations, supportTickets } from '@/constants/common';
+import { supportTickets } from '@/constants/common';
+import { useGetConversationsQuery, useMarkAsReadMutation } from '@/store/api/chatApiSlice';
+import { useGetMyConnectionsQuery } from '@/store/api/connectionApiSlice';
+import { RootState } from '@/store/store';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
 //
 const ChatTabs = () => {
     const router = useRouter();
+    const user = useSelector((state: RootState) => state.auth.user);
     const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat');
     const [searchQuery, setSearchQuery] = useState('');
 
-    const handleChatPress = (conversationId: string) => {
-        router.push(`/(screens)/chat_box?conversationId=${conversationId}`);
+    const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery();
+    const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+    const [markAsRead] = useMarkAsReadMutation();
+
+    const conversations = useMemo(() => {
+        const chatList = Array.isArray(conversationsData) ? [...conversationsData] : [];
+        const connections = connectionsData?.data || [];
+
+        const isMe = (id: string) => id === user?.id || id === user?.userId;
+
+        // Add partner and normalized participant to existing conversations
+        const enrichedChatList = chatList.map(conv => {
+            const partner = conv.participants?.find((p: any) => !isMe(p._id || p.id || p.userId))
+                || conv.participant
+                || (conv.participants?.[0] && !isMe(conv.participants[0]._id || conv.participants[0].id) ? conv.participants[0] : conv.participants?.[1]);
+
+            return {
+                ...conv,
+                participant: partner
+            };
+        });
+
+        // Map conversation partner IDs
+        const existingPartnerIds = new Set(
+            enrichedChatList.map(conv => {
+                const partner = conv.participant;
+                return partner?.userId || partner?._id || partner?.id;
+            }).filter(Boolean)
+        );
+
+        // Add connections that don't have a conversation yet
+        connections.forEach((conn: any) => {
+            const partner = conn.user || conn.buyer; // For vendor, the connection is to a user/buyer
+            const partnerId = partner?.userId || partner?._id || partner?.id;
+            if (partner && partnerId && !existingPartnerIds.has(partnerId)) {
+                enrichedChatList.push({
+                    _id: partnerId,
+                    id: partnerId,
+                    participants: [partner],
+                    lastMessage: null,
+                    unreadCount: 0,
+                    isConnectionOnly: true,
+                    participant: partner
+                });
+            }
+        });
+
+        return enrichedChatList;
+    }, [conversationsData, connectionsData, user?.id, user?.userId]);
+
+    const chatsLoading = isConversationsLoading || isConnectionsLoading;
+
+    const handleChatPress = (participantId: string, name: string) => {
+        router.push({
+            pathname: "/chat_box",
+            params: { partnerId: participantId, conversationId: participantId, name }
+        });
+    };
+
+    const handleTicketPress = (ticketId: string) => {
+        router.push(`/(screens)/support_ticket_details?ticketId=${ticketId}`);
     };
 
     const handleBack = () => {
@@ -23,20 +87,9 @@ const ChatTabs = () => {
     };
 
     const formatTime = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-        if (hours < 1) return 'Just now';
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString();
+        return new Date(date).toLocaleDateString();
     };
 
-    const filteredChats = chatConversations.filter(chat =>
-        chat.participant.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
     const filteredTickets = supportTickets.filter(ticket =>
         ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -114,88 +167,111 @@ const ChatTabs = () => {
                         <View style={{ paddingHorizontal: 20 }}>
                             {/* Chat List Items */}
                             <View style={{ gap: 12 }}>
-                                {filteredChats.map((conversation) => (
-                                    <TouchableOpacity
-                                        key={conversation.id}
-                                        onPress={() => handleChatPress(conversation.id)}
-                                        style={{
-                                            backgroundColor: '#F3F8F4',
-                                            borderBottomWidth: 1,
-                                            borderBottomColor: '#E3E6F0',
-                                            paddingVertical: 16,
-                                            paddingHorizontal: 12,
-                                            borderRadius: 12,
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <View style={{ position: 'relative' }}>
-                                            <Image
-                                                source={{ uri: conversation.participant.avatar }}
-                                                style={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: 20,
-                                                    marginRight: 12,
+                                {chatsLoading ? (
+                                    <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>Loading conversations...</Text>
+                                ) : (
+                                    (conversations || []).filter((c: any) => {
+                                        const p = c.participant || {};
+                                        const name = p.storename || p.name || p.businessName || p.fullName || '';
+                                        return name.toLowerCase().includes(searchQuery.toLowerCase());
+                                    }).map((conversation: any) => {
+                                        const participant = conversation.participant || {};
+                                        const partnerId = participant.userId || participant._id || participant.id;
+                                        const displayName = participant.storename || participant.name || participant.fullName || participant.fulllName || 'User';
+                                        return (
+                                            <TouchableOpacity
+                                                key={conversation.id || conversation._id || partnerId}
+                                                onPress={() => {
+                                                    if ((conversation.unreadCount || 0) > 0 && (conversation.lastMessage?._id || conversation.lastMessage?.id)) {
+                                                        markAsRead(conversation.lastMessage._id || conversation.lastMessage.id);
+                                                    }
+                                                    handleChatPress(partnerId, displayName);
                                                 }}
-                                                resizeMode="cover"
-                                            />
-                                            {conversation.isOnline && (
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    right: 10,
-                                                    width: 12,
-                                                    height: 12,
-                                                    borderRadius: 6,
-                                                    backgroundColor: '#10B981',
-                                                    borderWidth: 2,
-                                                    borderColor: '#fff',
-                                                }} />
-                                            )}
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
-                                                    {conversation.participant.name}
-                                                </Text>
-                                                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
-                                                    {formatTime(conversation.lastMessage.timestamp)}
-                                                </Text>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Text style={{ fontSize: 12, color: '#6B7280', flex: 1 }} numberOfLines={1}>
-                                                    {conversation.isTyping ? (
-                                                        <Text style={{ fontStyle: 'italic', color: '#278687' }}>Typing...</Text>
-                                                    ) : (
-                                                        conversation.lastMessage.text
+                                                style={{
+                                                    backgroundColor: '#F3F8F4',
+                                                    borderBottomWidth: 1,
+                                                    borderBottomColor: '#E3E6F0',
+                                                    paddingVertical: 16,
+                                                    paddingHorizontal: 12,
+                                                    borderRadius: 12,
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                <View style={{ position: 'relative' }}>
+                                                    <Image
+                                                        source={{ uri: participant.avatar || participant.logoUrl || 'https://via.placeholder.com/40' }}
+                                                        style={{
+                                                            width: 40,
+                                                            height: 40,
+                                                            borderRadius: 20,
+                                                            marginRight: 12,
+                                                        }}
+                                                        resizeMode="cover"
+                                                    />
+                                                    {conversation.isOnline && (
+                                                        <View style={{
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            right: 10,
+                                                            width: 12,
+                                                            height: 12,
+                                                            borderRadius: 6,
+                                                            backgroundColor: '#10B981',
+                                                            borderWidth: 2,
+                                                            borderColor: '#fff',
+                                                        }} />
                                                     )}
-                                                </Text>
-                                                {conversation.unreadCount > 0 && (
-                                                    <View style={{
-                                                        backgroundColor: '#278687',
-                                                        borderRadius: 10,
-                                                        paddingHorizontal: 6,
-                                                        paddingVertical: 2,
-                                                        marginLeft: 8,
-                                                    }}>
-                                                        <Text style={{ fontSize: 10, color: '#fff', fontWeight: '600' }}>
-                                                            {conversation.unreadCount}
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                                        <View>
+                                                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
+                                                                {displayName}
+                                                            </Text>
+                                                            <Text style={{ fontSize: 10, color: '#278687', fontWeight: '500' }}>#{participant.userId?.slice(-6).toUpperCase() || participant._id?.slice(-6).toUpperCase() || 'ID'}</Text>
+                                                        </View>
+                                                        <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
+                                                            {conversation.lastMessage?.createdAt ? formatTime(new Date(conversation.lastMessage.createdAt)) : ''}
                                                         </Text>
                                                     </View>
-                                                )}
-                                            </View>
-                                            {conversation.orderContext && (
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                                    <MaterialIcons name="shopping-bag" size={12} color="#9CA3AF" />
-                                                    <Text style={{ fontSize: 10, color: '#9CA3AF', marginLeft: 4 }}>
-                                                        {conversation.orderContext.orderNumber} • {conversation.orderContext.status}
-                                                    </Text>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                        <Text style={{ fontSize: 12, color: '#6B7280', flex: 1 }} numberOfLines={1}>
+                                                            {conversation.isTyping ? (
+                                                                <Text style={{ fontStyle: 'italic', color: '#278687' }}>Typing...</Text>
+                                                            ) : (
+                                                                conversation.lastMessage?.messageText || conversation.lastMessage?.text || (conversation.isConnectionOnly ? 'Connect to start chatting' : 'No messages yet')
+                                                            )}
+                                                        </Text>
+                                                        {(conversation.unreadCount || 0) > 0 && (
+                                                            <View style={{
+                                                                backgroundColor: '#278687',
+                                                                borderRadius: 10,
+                                                                paddingHorizontal: 6,
+                                                                paddingVertical: 2,
+                                                                marginLeft: 8,
+                                                            }}>
+                                                                <Text style={{ fontSize: 10, color: '#fff', fontWeight: '600' }}>
+                                                                    {conversation.unreadCount}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                    {conversation.orderContext && (
+                                                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                                                            <MaterialIcons name="shopping-bag" size={12} color="#9CA3AF" />
+                                                            <Text style={{ fontSize: 10, color: '#9CA3AF', marginLeft: 4 }}>
+                                                                {conversation.orderContext.orderNumber} • {conversation.orderContext.status}
+                                                            </Text>
+                                                        </View>
+                                                    )}
                                                 </View>
-                                            )}
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
+                                            </TouchableOpacity>
+                                        );
+                                    }))}
+                                {!chatsLoading && (conversations || []).length === 0 && (
+                                    <Text style={{ textAlign: 'center', marginTop: 20, color: '#888' }}>No conversations found</Text>
+                                )}
                             </View>
                         </View>
                     ) : (

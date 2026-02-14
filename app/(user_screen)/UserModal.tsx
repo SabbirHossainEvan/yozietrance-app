@@ -33,11 +33,23 @@ const VendorModal: React.FC<VendorModalProps> = ({
     }
 
     try {
-      await connectToVendor({ vendorCode }).unwrap();
-      alert("Connected successfully!");
+      const res = await connectToVendor({ vendorCode }).unwrap();
+      // alert("Connected successfully!"); // Optional: Feedback is good
       onConnect(vendorCode);
       onClose();
-      router.replace("/(users)/categoriesScreen");
+      // Navigate to ChatDetailsScreen with vendor details from response
+      // Assuming res contains the vendor object or connection object with vendor details
+      // Adjust based on actual API response. For now, assuming res.vendor
+      const vendor = res.vendor || res.connection?.vendor || {};
+
+      router.push({
+        pathname: "/(screens)/chat_box",
+        params: {
+          partnerId: vendor.userId || vendor.id || res.id,
+          conversationId: vendor.userId || vendor.id || res.id,
+          name: vendor.businessName || vendor.name || 'Vendor'
+        }
+      });
     } catch (err: any) {
       console.error("Connection error:", err);
       alert(err?.data?.message || "Failed to connect to vendor");
