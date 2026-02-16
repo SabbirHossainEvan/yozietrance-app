@@ -1,48 +1,122 @@
-import React, { useState } from 'react';
+
+import { useGetOrderByIdQuery } from '@/store/api/orderApiSlice';
+import { useCreatePaymentIntentMutation } from '@/store/api/paymentApiSlice';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
+    Linking,
     Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-/** * Define the interface for your dynamic data 
- */
-interface BookingData {
-    itemName: string;
-    price: number;
-    quantity: number;
-    discount: number;
-    coupon: number;
-    totalPayable: number;
-}
+const PaymentScreen = () => {
+    const router = useRouter();
+    const params = useLocalSearchParams();
+    const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
 
-interface Props {
-    data?: BookingData;
-    onContinue?: (method: string) => void;
-    onBack?: () => void;
-}
-
-const PaymentScreen: React.FC<Props> = ({ data, onContinue, onBack }) => {
     const [selectedMethod, setSelectedMethod] = useState<string>('stripe');
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    // Default values if no props are passed
-    const {
-        itemName = "Optical Mouse",
-        price = 3.44,
-        quantity = 1,
-        discount = 2.00,
-        coupon = 2.00,
-        totalPayable = 37.00
-    } = data || {};
+    // Fetch order details
+    const { data: orderData, isLoading: isOrderLoading, error: orderError } = useGetOrderByIdQuery(orderId, {
+        skip: !orderId,
+    });
+
+    const [createPaymentIntent, { isLoading: isPaymentLoading }] = useCreatePaymentIntentMutation();
+
+    // Extract order details safely
+    const order = orderData?.data || orderData; // Adjust based on API structure
+    const totalPayable = order?.totalPrice || order?.grandTotal || 0;
+    const items = order?.orderItems || [];
+    const firstItemName = items.length > 0 ? (items[0].product?.title || items[0].product?.name || "Product") : "Item";
+    const itemCount = items.length;
+    const displayItemName = itemCount > 1 ? `${firstItemName} + ${itemCount - 1} more` : firstItemName;
+
+
+    const handleContinue = async () => {
+        if (!orderId) {
+            Alert.alert("Error", "Order ID not found.");
+            return;
+        }
+
+        try {
+            setIsProcessing(true);
+            const response = await createPaymentIntent({ orderId }).unwrap();
+
+            if (response?.paymentLink) {
+                // Open Stripe Checkout
+                const supported = await Linking.canOpenURL(response.paymentLink);
+                if (supported) {
+                    await Linking.openURL(response.paymentLink);
+                } else {
+                    Alert.alert("Error", "Cannot open payment link.");
+                }
+            } else {
+                Alert.alert("Error", "Failed to generate payment link.");
+            }
+
+        } catch (error: any) {
+            console.error("Payment intent error:", error);
+            Alert.alert("Error", error?.data?.message || "Failed to initiate payment.");
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Deep link listener for success/cancel
+    useEffect(() => {
+        const handleUrl = (event: { url: string }) => {
+            const { url } = event;
+            // E.g. myapp://payment/success?session_id=...
+            if (url.includes('payment/success')) {
+                router.replace("/(user_screen)/OrderAcceptedScreen");
+            } else if (url.includes('payment/cancel')) {
+                Alert.alert("Payment Canceled", "You canceled the payment.");
+            }
+        };
+
+        const subscription = Linking.addEventListener('url', handleUrl);
+
+        // Check initial URL if app was opened via link
+        Linking.getInitialURL().then((url) => {
+            if (url) handleUrl({ url });
+        });
+
+        return () => {
+            subscription.remove();
+        };
+    }, []);
+
+    if (isOrderLoading) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <ActivityIndicator size="large" color="#00797C" />
+            </SafeAreaView>
+        );
+    }
+
+    if (orderError || !order) {
+        return (
+            <SafeAreaView style={[styles.container, styles.center]}>
+                <Text style={styles.errorText}>Failed to load order details.</Text>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Text style={styles.backButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                     <Text style={styles.backArrow}>{"<"}</Text>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Payment</Text>
@@ -54,14 +128,14 @@ const PaymentScreen: React.FC<Props> = ({ data, onContinue, onBack }) => {
 
                 {/* Summary Card */}
                 <View style={styles.summaryCard}>
-                    <SummaryRow label={itemName} value={`$${price.toFixed(2)}`} />
-                    <SummaryRow label="Quantity" value={quantity.toString()} />
-                    <SummaryRow label="Discount" value={`-$${discount.toFixed(2)}`} />
-                    <SummaryRow label="Coupon" value={`-$${coupon.toFixed(2)}`} />
+                    <SummaryRow label="Item" value={displayItemName} />
+                    <SummaryRow label="Quantity" value={itemCount.toString()} />
+                    {/* Add discount/coupon checks if available in order object */}
+                    {/* <SummaryRow label="Discount" value={`-$${0.00}`} /> */}
 
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Total Payable</Text>
-                        <Text style={styles.totalValue}>${totalPayable.toFixed(2)}</Text>
+                        <Text style={styles.totalValue}>${Number(totalPayable).toFixed(2)}</Text>
                     </View>
                 </View>
 
@@ -80,7 +154,7 @@ const PaymentScreen: React.FC<Props> = ({ data, onContinue, onBack }) => {
                         <View style={styles.cardIconPlaceholder}>
                             <View style={styles.cardLines} />
                         </View>
-                        <Text style={styles.paymentText}>Payment Stripe</Text>
+                        <Text style={styles.paymentText}>Stripe</Text>
                     </View>
 
                     <View style={styles.radioOuter}>
@@ -91,22 +165,24 @@ const PaymentScreen: React.FC<Props> = ({ data, onContinue, onBack }) => {
                 {/* Action Button */}
                 <TouchableOpacity
                     style={styles.continueButton}
-                    onPress={() => onContinue?.(selectedMethod)}
+                    onPress={handleContinue}
+                    disabled={isProcessing || isPaymentLoading}
                 >
-                    <Text style={styles.continueText}>Continue</Text>
+                    {isProcessing || isPaymentLoading ? (
+                        <ActivityIndicator color="#FFF" />
+                    ) : (
+                        <Text style={styles.continueText}>Continue</Text>
+                    )}
                 </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
 };
 
-/**
- * Reusable Row Component for the Summary
- */
 const SummaryRow = ({ label, value }: { label: string; value: string }) => (
     <View style={styles.row}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value}>{value}</Text>
+        <Text style={styles.value} numberOfLines={1} style={[{ maxWidth: '60%', textAlign: 'right' }, styles.value]}>{value}</Text>
     </View>
 );
 
@@ -114,6 +190,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F9FBFB'
+    },
+    center: {
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
@@ -254,6 +334,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700'
     },
+    errorText: {
+        color: 'red',
+        marginBottom: 10,
+    },
+    backButton: {
+        padding: 10,
+        backgroundColor: '#EEE',
+        borderRadius: 5,
+    },
+    backButtonText: {
+        color: '#333',
+    }
 });
 
 export default PaymentScreen;

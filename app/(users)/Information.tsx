@@ -472,6 +472,7 @@ export default function InformationScreen() {
       }
 
       // Create orders for each vendor
+      let firstOrderId = null;
       for (const vendorId of vendors) {
         const orderData = {
           vendorId,
@@ -481,14 +482,27 @@ export default function InformationScreen() {
         };
 
         console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
-        await createOrder(orderData).unwrap();
+        const response = await createOrder(orderData).unwrap();
+        if (!firstOrderId) {
+          // Assuming response contains the created order object or ID
+          firstOrderId = response?.id || response?._id || response?.data?.id || response?.data?._id;
+        }
       }
 
-      Alert.alert(
-        "Success",
-        `Order${vendors.length > 1 ? 's' : ''} placed successfully!`,
-        [{ text: "OK", onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
-      );
+      if (firstOrderId) {
+        router.replace({
+          pathname: "/(user_screen)/stripePaymentScreen",
+          params: { orderId: firstOrderId }
+        });
+      } else {
+        // Fallback if no ID found (should typically not happen if successful)
+        Alert.alert(
+          "Success",
+          `Order${vendors.length > 1 ? 's' : ''} placed successfully!`,
+          [{ text: "OK", onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
+        );
+      }
+
     } catch (err: any) {
       console.error('Order creation error:', err);
       Alert.alert("Error", err?.data?.message || "Failed to place order");

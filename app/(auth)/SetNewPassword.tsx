@@ -26,6 +26,11 @@ const SetNewPasswordScreen: React.FC = () => {
   const [resetPassword, { isLoading }] = useSetNewPasswordScreenMutation();
 
   const handleUpdatePassword = async () => {
+    if (!email || !otp) {
+      alert("Missing email or OTP. Please try the reset process again.");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       alert("Passwords do not match");
       return;
@@ -36,8 +41,8 @@ const SetNewPasswordScreen: React.FC = () => {
     }
 
     try {
-      // Prepare payload with email, password, and possibly OTP if the backend requires it for the reset token
-      await resetPassword({ email, password: newPassword, otp }).unwrap();
+      // Prepare payload with email, newPassword, and confirmPassword as required by the backend
+      await resetPassword({ email, otp, newPassword, confirmPassword }).unwrap();
       alert("Password updated successfully!");
       router.push("/(auth)/login");
     } catch (err) {
