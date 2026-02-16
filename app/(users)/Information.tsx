@@ -402,10 +402,10 @@ export default function InformationScreen() {
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
 
   // Form States
-  const [fullName, setFullName] = useState(user?.name || "");
+  const [fullName, setFullName] = useState((user as any)?.buyer?.fullName || user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [address1, setAddress1] = useState("");
+  const [phone, setPhone] = useState((user as any)?.buyer?.phone || user?.phone || "");
+  const [address1, setAddress1] = useState((user as any)?.evanAddress || "");
   const [address2, setAddress2] = useState("");
   const [city, setCity] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -418,9 +418,11 @@ export default function InformationScreen() {
 
   useEffect(() => {
     if (user) {
-      if (user.name) setFullName(user.name);
+      const b = (user as any)?.buyer;
+      if (b?.fullName || user.name) setFullName(b?.fullName || user.name);
       if (user.email) setEmail(user.email);
-      if (user.phone) setPhone(user.phone);
+      if (b?.phone || user.phone) setPhone(b?.phone || user.phone);
+      if ((user as any)?.evanAddress) setAddress1((user as any).evanAddress);
     }
   }, [user]);
 
@@ -431,12 +433,12 @@ export default function InformationScreen() {
   };
 
   const handleContinue = async () => {
-    if (!fullName.trim() || !email.trim() || !address1.trim() || !stateValue || !zipCode.trim()) {
-      Alert.alert("Error", "Please fill all required fields");
+    if (!fullName.trim() || !email.trim() || !address1.trim() || !address2.trim() || !city.trim() || !stateValue || !zipCode.trim()) {
+      Alert.alert("Error", "Please fill all required fields (including Address 2)");
       return;
     }
 
-    const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+    const rawItems = cartData?.items || cartData?.data?.items || (Array.isArray(cartData) ? cartData : []);
 
     if (rawItems.length === 0) {
       Alert.alert("Error", "Your cart is empty");
@@ -471,24 +473,11 @@ export default function InformationScreen() {
 
       // Create orders for each vendor
       for (const vendorId of vendors) {
-        const vendorItems = vendorGroups[vendorId];
-
-        const orderItems = vendorItems.map((item: any) => {
-          const product = item.product || item.productId;
-          return {
-            product: product._id || product.id,
-            quantity: item.quantity,
-            price: product.price
-          };
-        });
-
         const orderData = {
           vendorId,
           shippingAddress,
-          orderItems,
-          email,
-          phone,
-          fullName,
+          optionalAddress: address2.trim(),
+          country: countryName,
         };
 
         console.log('Creating order with data:', JSON.stringify(orderData, null, 2));
@@ -647,7 +636,6 @@ export default function InformationScreen() {
                 onChange={item => setStateValue(item.value)}
               />
             </View>
-
             <View style={[styles.formGroup, { flex: 0.8 }]}>
               <Text style={styles.label}>Zip Code</Text>
               <TextInput
@@ -659,6 +647,7 @@ export default function InformationScreen() {
               />
             </View>
           </View>
+
 
           {/* Continue Button */}
           <TouchableOpacity

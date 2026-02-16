@@ -36,6 +36,7 @@ export const orderApiSlice = apiSlice.injectEndpoints({
             ],
         }),
     }),
+    overrideExisting: true,
 });
 
 export const {

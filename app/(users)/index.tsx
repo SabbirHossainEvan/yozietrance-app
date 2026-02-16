@@ -335,12 +335,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DUMMY_ORDERS } from "./order";
 
 const { width } = Dimensions.get("window");
 
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
+import { DUMMY_ORDERS } from "./order";
 
 const Dashboard: React.FC = () => {
   const user = useAppSelector(selectCurrentUser);

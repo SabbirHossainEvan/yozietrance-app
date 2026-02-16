@@ -5,8 +5,8 @@ export const cartApiSlice = apiSlice.injectEndpoints({
         getCart: builder.query<any, void>({
             query: () => '/cart',
             transformResponse: (response: any) => {
-                console.log('Cart API Response:', JSON.stringify(response, null, 2));
-                return response;
+                console.log('Cart API Response Logic:', JSON.stringify(response, null, 2));
+                return response?.data || response;
             },
             providesTags: (result) => {
                 const tags: any[] = [{ type: 'Cart' as const, id: 'LIST' }];

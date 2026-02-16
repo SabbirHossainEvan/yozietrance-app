@@ -214,7 +214,10 @@ const ChatBox: React.FC = () => {
   const tabs = isVendorSide
     ? [
       { name: "Chat", action: () => setActiveTab("Chat") },
-
+      {
+        name: "Categories",
+        action: () => router.push("/(users)/categoriesScreen")
+      },
       {
         name: "Order History",
         action: () => setActiveTab("Order History")
@@ -224,7 +227,7 @@ const ChatBox: React.FC = () => {
       { name: "Chat", action: () => setActiveTab("Chat") },
       {
         name: "Categories",
-        action: () => setActiveTab("Categories")
+        action: () => router.push("/(users)/categoriesScreen")
       },
       {
         name: "Order History",
