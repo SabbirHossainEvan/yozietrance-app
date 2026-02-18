@@ -63,14 +63,16 @@ const ProfileScreen = () => {
 
   const handleConnectStripe = async () => {
     try {
+      console.log("Stripe Status:", stripeStatus);
       // 1. Check if account exists, if not create one
       if (!stripeStatus?.stripeAccountId) {
         await createVendorAccount({}).unwrap();
       }
 
+
       // 2. Create account link
       const linkResponse = await createAccountLink({}).unwrap();
-
+      console.log("Link Response:", linkResponse);
       if (linkResponse?.url) {
         const supported = await Linking.canOpenURL(linkResponse.url);
         if (supported) {
