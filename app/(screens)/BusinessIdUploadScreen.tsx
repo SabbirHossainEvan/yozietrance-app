@@ -27,6 +27,9 @@ const BusinessIdUploadScreen: React.FC = () => {
   const dispatch = useDispatch();
   const vendorData = useSelector((state: RootState) => state.registration.vendor);
   const [registerVendor, { isLoading }] = useRegisterVendorMutation();
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
 
   // States
   const [businessId, setBusinessId] = useState<string>("");
@@ -47,7 +50,7 @@ const BusinessIdUploadScreen: React.FC = () => {
 
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: imageMediaTypes,
         allowsEditing: true,
         aspect: [4, 3],
         quality: 1,
@@ -93,15 +96,15 @@ const BusinessIdUploadScreen: React.FC = () => {
         }
       };
 
-      safeAppend('fullName', latestData.fullName);
-      safeAppend('phone', latestData.phone);
-      // safeAppend('email', latestData.email);
-      safeAppend('address', latestData.address);
-      safeAppend('storename', latestData.storename); // This maps to businessName in frontend usually
-      safeAppend('storeDescription', latestData.storeDescription);
-      safeAppend('gender', latestData.gender || 'Other');
-      safeAppend('nationalIdNumber', latestData.nationalIdNumber);
-      safeAppend('bussinessRegNumber', latestData.bussinessRegNumber || businessId); // Using businessId input as reg number if provided there
+      safeAppend('fullName', String(latestData.fullName || ''));
+      safeAppend('phone', String(latestData.phone || ''));
+      safeAppend('address', String(latestData.address || ''));
+      safeAppend('storename', String(latestData.storename || ''));
+      safeAppend('storeDescription', String(latestData.storeDescription || ''));
+      safeAppend('gender', String(latestData.gender || 'Other'));
+      safeAppend('nationalIdNumber', String(latestData.nationalIdNumber || ''));
+      safeAppend('bussinessRegNumber', String(latestData.bussinessRegNumber || businessId || ''));
+      safeAppend('country', String(latestData.country || 'United States'));
 
       // Append files
       if (latestData.logo) {
@@ -140,23 +143,26 @@ const BusinessIdUploadScreen: React.FC = () => {
         } as any);
       }
 
-      console.log('Registering Vendor with Latest Data (FormData)');
+      console.log('Registering Vendor with FormData:', JSON.stringify(Object.fromEntries((formData as any)._parts)));
 
       const response = await registerVendor(formData).unwrap();
+      console.log('Vendor registration success result:', response);
       const updatedUser = response?.data?.user || response?.user || response?.data;
 
       if (updatedUser) {
+        const mergedUser = { ...updatedUser, userType: "vendor" };
         // Update Redux
         const accessToken = await AsyncStorage.getItem('accessToken');
         const refreshToken = await AsyncStorage.getItem('refreshToken');
         dispatch(setCredentials({
-          user: updatedUser,
+          user: mergedUser,
           accessToken: accessToken || '',
           refreshToken: refreshToken || ''
         }));
 
         // Update AsyncStorage
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        await AsyncStorage.setItem('user', JSON.stringify(mergedUser));
+        await AsyncStorage.setItem('userRole', 'vendor');
       }
 
       Alert.alert("Success", "Vendor registration successful!", [
@@ -164,8 +170,14 @@ const BusinessIdUploadScreen: React.FC = () => {
       ]);
 
     } catch (error: any) {
-      console.error("Vendor registration failed:", error);
-      Alert.alert("Error", error?.data?.message || "Registration failed");
+      console.error("Vendor registration failed raw error:", error);
+      let errorMessage = "Registration failed";
+      if (error?.status === 'FETCH_ERROR') {
+        errorMessage = "Network error: Could not reach server. Please check your connection.";
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+      Alert.alert("Error", errorMessage);
     }
   };
 

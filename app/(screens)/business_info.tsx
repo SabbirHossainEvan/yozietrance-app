@@ -17,7 +17,12 @@ const VerificationCard = () => {
   const displayUser = profileData?.data || currentUser;
   const [user, setUser] = useState({
     businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
-    avatar: displayUser?.vendor?.logoUrl || "N/A",
+    avatar:
+      displayUser?.vendor?.logoUrl ||
+      displayUser?.vendor?.logo ||
+      displayUser?.logo ||
+      displayUser?.image ||
+      "N/A",
     dob: displayUser?.dob || "N/A",
     email: displayUser?.email || "N/A",
     phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",
@@ -30,7 +35,12 @@ const VerificationCard = () => {
     if (displayUser) {
       setUser({
         businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
-        avatar: displayUser?.vendor?.logoUrl || "N/A",
+        avatar:
+          displayUser?.vendor?.logoUrl ||
+          displayUser?.vendor?.logo ||
+          displayUser?.logo ||
+          displayUser?.image ||
+          "N/A",
         dob: displayUser?.dob || "N/A",
         email: displayUser?.email || "N/A",
         phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",

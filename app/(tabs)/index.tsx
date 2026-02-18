@@ -3,17 +3,36 @@ import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Feather } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import React from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { commonData, quickActions, recentOrders } from "../../constants/common";
 
 export default function HomeScreen() {
   const user = useAppSelector(selectCurrentUser);
-  const userName = user?.name || user?.fullName || user?.fulllName || user?.storename || "User";
+
+  const userName = React.useMemo(() => {
+    const displayName =
+      (user as any)?.fullName ||
+      (user as any)?.fulllName ||
+      (user as any)?.name ||
+      (user as any)?.buyer?.fullName ||
+      (user as any)?.vendor?.fullName ||
+      (user as any)?.storename ||
+      (user as any)?.businessName;
+
+    if (displayName && String(displayName).trim()) return String(displayName).trim();
+
+    const email = (user as any)?.email;
+    if (email && String(email).includes("@")) return String(email).split("@")[0];
+
+    return "User";
+  }, [user]);
+
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   return (
-    <SafeAreaView style={{ backgroundColor: "white" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
       <View>
         {/* THIS IS FOR HOME HEADER */}
         <View
@@ -34,11 +53,22 @@ export default function HomeScreen() {
                 fontWeight: "600",
               }}
             >
-              Hi, {userName}
+              Welcome back
             </Text>
             <Text
               style={{
-                fontSize: 14,
+                fontSize: 16,
+                fontWeight: "500",
+                color: "#1A1A1A",
+                marginTop: 2,
+              }}
+            >
+              {userName}
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#5f6470",
               }}
             >
               {today}

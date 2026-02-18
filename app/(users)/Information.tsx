@@ -405,7 +405,7 @@ export default function InformationScreen() {
   const [fullName, setFullName] = useState((user as any)?.buyer?.fullName || user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState((user as any)?.buyer?.phone || user?.phone || "");
-  const [address1, setAddress1] = useState((user as any)?.evanAddress || "");
+  const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
   const [city, setCity] = useState("");
   const [zipCode, setZipCode] = useState("");
@@ -422,7 +422,7 @@ export default function InformationScreen() {
       if (b?.fullName || user.name) setFullName(b?.fullName || user.name);
       if (user.email) setEmail(user.email);
       if (b?.phone || user.phone) setPhone(b?.phone || user.phone);
-      if ((user as any)?.evanAddress) setAddress1((user as any).evanAddress);
+      if (b?.phone || user.phone) setPhone(b?.phone || user.phone);
     }
   }, [user]);
 
@@ -578,9 +578,9 @@ export default function InformationScreen() {
           <View style={styles.formGroup}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { opacity: 0.6 }]}
               value={email}
-              onChangeText={setEmail}
+              editable={false}
               placeholder="example@email.com"
               keyboardType="email-address"
               autoCapitalize="none"

@@ -2,7 +2,7 @@ import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -36,6 +36,9 @@ const InfoItem = ({ icon, label, value, isLast }: InfoItemProps) => (
 const ProfileInfoScreen = () => {
   const { data: profileData } = useGetProfileQuery({});
   const userData = profileData?.data;
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
 
   // Helper to safely get user properties with fallbacks for weird backend keys
   const getName = () => userData?.buyer?.fullName || userData?.name || userData?.fulllName || "User";
@@ -44,8 +47,16 @@ const ProfileInfoScreen = () => {
   const getIdType = () => userData?.buyer?.idType || "National ID";
   const getIdNumber = () => userData?.buyer?.nidNumber || userData?.idNumber || "N/A";
 
-  const [profileImage, setProfileImage] = useState(
-    userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const serverAvatarUri = useMemo(
+    () =>
+      userData?.buyer?.profilePhotoUrl ||
+      userData?.buyer?.avatar ||
+      userData?.avatar ||
+      userData?.image ||
+      userData?.logo ||
+      "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+    [userData]
   );
 
   const pickImage = async () => {
@@ -60,7 +71,7 @@ const ProfileInfoScreen = () => {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: imageMediaTypes,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -100,7 +111,7 @@ const ProfileInfoScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: userData?.buyer?.profilePhotoUrl || userData?.buyer?.profilePhotoUrl || profileImage }} style={styles.avatar} />
+            <Image source={{ uri: profileImage || serverAvatarUri }} style={styles.avatar} />
 
             <TouchableOpacity style={styles.cameraBadge} onPress={pickImage}>
               <MaterialCommunityIcons

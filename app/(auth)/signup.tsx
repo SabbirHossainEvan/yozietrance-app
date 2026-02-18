@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +18,7 @@ import {
 import { useRegisterMutation } from "@/store/api/authApiSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/slices/authSlice";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Apple, Chrome, Facebook } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -49,11 +51,28 @@ const SignUpScreen: React.FC = () => {
     }
 
     try {
+      let resolvedAddress = "N/A";
+      if (locationData) {
+        try {
+          const parsedLocation = JSON.parse(locationData);
+          resolvedAddress =
+            parsedLocation?.address ||
+            `${parsedLocation?.latitude || ""}, ${parsedLocation?.longitude || ""}`.trim() ||
+            "N/A";
+        } catch {
+          resolvedAddress = String(locationData);
+        }
+      }
+
+      if (!resolvedAddress || resolvedAddress.trim().length < 2) {
+        resolvedAddress = "Unknown";
+      }
+
       const payload = {
         email: email,
         password: password,
         confirmPassword: confirmPassword,
-        evanAddress: "sdfdf",
+        evanAddress: resolvedAddress,
       };
 
       console.log(payload);
@@ -62,13 +81,25 @@ const SignUpScreen: React.FC = () => {
 
       const { data } = response;
       if (data && data.accessToken) {
-        dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken || null }));
+        // Correctly handle the nested data structure from backend
+        const user = data.user;
+        const accessToken = data.accessToken;
+        const refreshToken = data.refreshToken || response.refreshToken || null;
+
+        dispatch(setCredentials({ user, accessToken, refreshToken }));
+
+        // Save to AsyncStorage for persistence
+        await AsyncStorage.setItem('accessToken', accessToken);
+        if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
 
         // Save role to AsyncStorage for role-based UI
-        if (data.user?.userType) {
-          await AsyncStorage.setItem('userRole', data.user.userType);
+        const userType = user?.userType;
+        if (userType) {
+          await AsyncStorage.setItem('userRole', userType);
         }
 
+        console.log('Signup successful, redirecting to role selection. UserType:', userType);
         router.replace("/(onboarding)/user-selection");
       } else {
         console.error("Signup response missing data/token", response);
@@ -77,12 +108,22 @@ const SignUpScreen: React.FC = () => {
       }
     } catch (err) {
       console.error('Signup failed', err);
-      alert("Signup failed: " + ((err as any)?.data?.message || "Something went wrong"));
+      const fetchStatus = (err as any)?.status;
+      const serverMessage = (err as any)?.data?.message;
+      if (fetchStatus === 'FETCH_ERROR') {
+        alert("Signup failed: Unable to reach server. Check EXPO_PUBLIC_API_URL and backend availability.");
+        return;
+      }
+      alert("Signup failed: " + (serverMessage || "Something went wrong"));
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar />
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={28} color="#333" />
+      </TouchableOpacity>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -114,7 +155,7 @@ const SignUpScreen: React.FC = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="********"
               placeholderTextColor="#999"
               secureTextEntry
               value={password}
@@ -123,7 +164,7 @@ const SignUpScreen: React.FC = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="Confirm Password"
+              placeholder="********"
               placeholderTextColor="#999"
               secureTextEntry
               value={confirmPassword}
@@ -182,6 +223,7 @@ const SignUpScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  backButton: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: -20 },
   container: {
     flex: 1,
     backgroundColor: "#F8FAF9",

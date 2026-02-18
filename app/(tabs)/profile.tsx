@@ -92,8 +92,10 @@ const ProfileScreen = () => {
       await AsyncStorage.removeItem('accessToken');
       await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('userRole');
+      await AsyncStorage.removeItem('userType');
 
-      // Clear Redux state
+      // Clear Redux state (this now triggers a global reset)
       dispatch(logOut());
 
       // Navigate to login
@@ -196,8 +198,20 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: displayUser?.vendor?.fullName || displayUser?.name || displayUser?.storename || displayUser?.businessName || "User",
-    avatar: displayUser?.vendor?.logoUrl || displayUser?.image || displayUser?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name:
+      displayUser?.vendor?.fullName ||
+      displayUser?.fullName ||
+      displayUser?.name ||
+      displayUser?.storename ||
+      displayUser?.businessName ||
+      "User",
+    avatar:
+      displayUser?.vendor?.logoUrl ||
+      displayUser?.vendor?.logo ||
+      displayUser?.logo ||
+      displayUser?.image ||
+      displayUser?.avatar ||
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   const isStripeConnected = stripeStatus?.chargesEnabled && stripeStatus?.payoutsEnabled;

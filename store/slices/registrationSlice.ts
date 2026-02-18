@@ -6,7 +6,7 @@ interface BuyerRegistrationData {
     phone?: string;
     gender?: string;
     nidNumber?: string;
-
+    country?: string;
     nidFrontPhotoUrl?: string; // URI
     nidBackPhotoUrl?: string;  // URI
     profilePhotoUrl?: string;  // URI
@@ -26,6 +26,7 @@ interface VendorRegistrationData {
     nidBack?: string;
     businessId?: string;
     gender?: string;
+    country?: string;
 }
 
 interface RegistrationState {

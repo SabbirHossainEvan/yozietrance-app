@@ -273,11 +273,12 @@ const EditPersonalInfoScreen = () => {
                   flex: 1,
                   height: "100%",
                   letterSpacing: -0.3,
+                  opacity: 0.6
                 }}
                 placeholder="Enter email address"
                 placeholderTextColor="#999999"
                 value={formData.email}
-                onChangeText={(text) => handleInputChange("email", text)}
+                editable={false}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}

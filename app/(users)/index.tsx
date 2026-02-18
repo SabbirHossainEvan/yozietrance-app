@@ -340,10 +340,38 @@ const { width } = Dimensions.get("window");
 
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
-import { DUMMY_ORDERS } from "./order";
+import { recentOrders as DUMMY_ORDERS } from "../../constants/common";
 
 const Dashboard: React.FC = () => {
   const user = useAppSelector(selectCurrentUser);
+
+  const userName = React.useMemo(() => {
+    const displayName =
+      (user as any)?.fullName ||
+      (user as any)?.fulllName ||
+      (user as any)?.name ||
+      (user as any)?.buyer?.fullName ||
+      (user as any)?.vendor?.fullName ||
+      (user as any)?.storename ||
+      (user as any)?.businessName;
+
+    if (displayName && String(displayName).trim()) return String(displayName).trim();
+
+    const email = (user as any)?.email;
+    if (email && String(email).includes("@")) return String(email).split("@")[0];
+
+    return "User";
+  }, [user]);
+
+  const avatarUri =
+    (user as any)?.buyer?.profilePhotoUrl ||
+    (user as any)?.vendor?.logoUrl ||
+    (user as any)?.vendor?.logo ||
+    (user as any)?.avatar ||
+    (user as any)?.image ||
+    (user as any)?.logo ||
+    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg";
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -354,14 +382,14 @@ const Dashboard: React.FC = () => {
           >
             <Image
               source={{
-                uri: "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+                uri: avatarUri,
               }}
               style={styles.avatar}
             />
           </TouchableOpacity>
           <View style={styles.userText}>
-            <Text style={styles.welcomeTitle}>Welcome Back</Text>
-            <Text style={styles.userName}>{user?.name || user?.fullName || user?.fulllName || "User"}</Text>
+            <Text style={styles.welcomeTitle}>Welcome back</Text>
+            <Text style={styles.userName}>{userName}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
@@ -438,14 +466,14 @@ const Dashboard: React.FC = () => {
         <Text style={styles.sectionTitleMain}>Recent order</Text>
 
         <View style={{ gap: 15 }}>
-          {DUMMY_ORDERS.slice(0, 3).map((order) => (
+          {DUMMY_ORDERS.slice(0, 3).map((order: any) => (
             <TouchableOpacity
               key={order.id}
               style={styles.orderCard}
               onPress={() =>
                 router.push({
                   pathname: "/(user_screen)/OrderDetails",
-                  params: { status: order.status, id: order.id },
+                  params: { status: order.orderStatus?.status, id: order.id },
                 })
               }
               activeOpacity={0.9}
@@ -453,32 +481,31 @@ const Dashboard: React.FC = () => {
               <View style={styles.orderTopRow}>
                 <Image
                   source={{
-                    uri: order.image,
+                    uri: order.orderItems?.[0]?.image || order.image || "https://via.placeholder.com/150",
                   }}
                   style={styles.orderImage}
                 />
                 <View style={styles.orderInfoContainer}>
                   <View style={styles.orderHeaderRow}>
-                    <Text style={styles.orderIdText}>{order.orderNo}</Text>
+                    <Text style={styles.orderIdText}>{order.orderNumber || order.orderNo}</Text>
                     <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>{order.status}</Text>
+                      <Text style={styles.statusText}>{order.orderStatus?.status || order.status}</Text>
                     </View>
                   </View>
 
                   <Text style={styles.orderAddress} numberOfLines={1}>
-                    {order.address}
+                    {order.orderStatus?.location || order.address}
                   </Text>
 
                   <View style={styles.ratingRow}>
                     <Star color="#FFD700" size={16} fill="#FFD700" />
                     <Text style={styles.ratingText}>
                       {" "}
-                      {order.rating
-                        .split(" ")[0]
-                        .replace("(", "")
-                        .replace(")", "")}{" "}
+                      {typeof (order as any).rating === 'string'
+                        ? (order as any).rating.split(" ")[0].replace("(", "").replace(")", "")
+                        : "4.5"}{" "}
                       <Text style={styles.reviewCount}>
-                        ({order.rating.split(" ")[1] || "1.2k"})
+                        ({order.customer?.customerId || "#1.2k"})
                       </Text>
                     </Text>
                   </View>
@@ -487,12 +514,12 @@ const Dashboard: React.FC = () => {
 
               <View style={styles.orderBottomRow}>
                 <View>
-                  <Text style={styles.customerName}>{order.customer}</Text>
+                  <Text style={styles.customerName}>{order.customer?.name || order.customer}</Text>
                   <Text style={styles.itemDetail}>
-                    {order.itemSummary || "Items info..."}
+                    {order.orderItems?.[0]?.title || order.itemSummary || "Items info..."}
                   </Text>
                 </View>
-                <Text style={styles.orderPrice}>${order.price.toFixed(2)}</Text>
+                <Text style={styles.orderPrice}>${(order.payment?.grandTotal || order.price || 0).toFixed(2)}</Text>
               </View>
             </TouchableOpacity>
           ))}

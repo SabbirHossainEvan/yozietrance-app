@@ -23,24 +23,13 @@ export default function UserSelection() {
   );
 
   const userType = (user as any)?.userType;
-  console.log('UserSelection - entered. User:', JSON.stringify(user));
-  console.log('UserSelection - userType:', userType);
 
   const handleSelection = (role: "user" | "vendor") => {
     setSelectedRole(role);
-
     if (role === "user") {
-      if (userType === "buyer") {
-        router.replace("/(users)");
-      } else {
-        router.push("/(user_screen)/CompleteProfileScreen");
-      }
+      router.replace("/(user_screen)/CompleteProfileScreen");
     } else {
-      if (userType === "vendor") {
-        router.replace("/(tabs)");
-      } else {
-        router.push("/(screens)/CompleteProfileScreen");
-      }
+      router.replace("/(screens)/CompleteProfileScreen");
     }
   };
 

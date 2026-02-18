@@ -167,9 +167,10 @@ export default function LocationAccess() {
           address: fullAddress,
         })
       );
+      await AsyncStorage.setItem("onboardingCompleted", "true");
 
       // 5️⃣ Go next
-      router.push("/(auth)/login");
+      router.replace("/(auth)/login");
     } catch (error) {
       console.log("Location error:", error);
       Alert.alert("Error", "Failed to get location");

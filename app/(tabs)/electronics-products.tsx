@@ -1,4 +1,5 @@
 import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -52,11 +53,18 @@ type Product = {
 const Product = () => {
   const { categoryId: paramCategoryId, categoryName } = useLocalSearchParams();
   const user = useAppSelector(selectCurrentUser);
-  const vendorId = user?.id || (user as any)?._id;
-  const categoryId = (paramCategoryId as string) || "df336259-5279-407c-9467-cd4c5cda409d";
+  const { data: profileData } = useGetProfileQuery({});
+  const vendorId =
+    profileData?.data?.vendor?.id ||
+    profileData?.data?.vendor?._id ||
+    (user as any)?.vendor?.id ||
+    (user as any)?.vendor?._id ||
+    user?.id ||
+    (user as any)?._id;
+  const categoryId = paramCategoryId ? String(paramCategoryId) : undefined;
 
   const { data: productsData, isLoading, isError, refetch, isFetching } = useGetProductsByVendorQuery(
-    { vendorId: vendorId || "", categoryId },
+    { vendorId: vendorId || "", ...(categoryId ? { categoryId } : {}) },
     { skip: !vendorId }
   );
 

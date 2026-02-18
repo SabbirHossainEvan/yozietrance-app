@@ -23,11 +23,14 @@ const IDUploadScreen = () => {
   const [nidNumber, setIdNumber] = useState<string>("");
   const [nidFontPhotoUrl, setFrontImage] = useState<string | null>(null);
   const [nidBackPhotoUrl, setBackImage] = useState<string | null>(null);
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
 
   // Type-safe pickImage function
   const pickImage = async (type: "front" | "back") => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: imageMediaTypes,
       allowsEditing: true,
       aspect: [16, 9],
       quality: 1,

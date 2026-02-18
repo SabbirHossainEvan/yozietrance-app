@@ -689,6 +689,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ActivityIndicator,
   Alert,
@@ -707,12 +708,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const EditProduct: React.FC = () => {
   const router = useRouter();
-  const { id, categoryId: categoryIdFromParams } = useLocalSearchParams();
+  const { id, categoryId: categoryIdFromParamsRaw } = useLocalSearchParams();
+  const productId = Array.isArray(id) ? id[0] : id;
+  const categoryIdFromParams = Array.isArray(categoryIdFromParamsRaw)
+    ? categoryIdFromParamsRaw[0]
+    : categoryIdFromParamsRaw;
   const user = useAppSelector(selectCurrentUser);
+  const mediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
 
   const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(
-    id as string,
-    { skip: !id }
+    productId as string,
+    { skip: !productId }
   );
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
@@ -741,6 +749,7 @@ const EditProduct: React.FC = () => {
   const [isSpecModalVisible, setIsSpecModalVisible] = useState(false);
   const [newSpecLabel, setNewSpecLabel] = useState("");
   const [newSpecValue, setNewSpecValue] = useState("");
+  const getEntityId = (item: any) => item?.id || item?._id;
 
   useEffect(() => {
     if (productData) {
@@ -748,6 +757,13 @@ const EditProduct: React.FC = () => {
       setDescription(productData.description || "");
       setPrice(productData.price?.toString() || "");
       setStockQuantity(productData.stockQuantity?.toString() || "");
+      setMinimumQuantity(
+        (
+          productData.minimulAuantity ??
+          productData.minimumQuantity ??
+          0
+        ).toString()
+      );
       setIsActive(productData.isAvailable ?? true);
       setSelectedImages(productData.images || (productData.imageUrl ? [productData.imageUrl] : []));
 
@@ -762,13 +778,21 @@ const EditProduct: React.FC = () => {
   }, [productData]);
 
   useEffect(() => {
-    if (productData?.categoryId) {
-      setSelectedCategoryId(productData.categoryId);
-      const cat = categories.find((c: any) => c.id === productData.categoryId);
+    const selectedFromProduct = productData?.categoryId || productData?.category?.id || productData?.category?._id;
+    if (selectedFromProduct) {
+      setSelectedCategoryId(String(selectedFromProduct));
+      const cat = categories.find(
+        (c: any) => String(getEntityId(c)) === String(selectedFromProduct)
+      );
       if (cat) setSelectedCategoryName(cat.name);
-    } else if (categoryIdFromParams) {
-      setSelectedCategoryId(categoryIdFromParams as string);
-      const cat = categories.find((c: any) => c.id === categoryIdFromParams);
+      return;
+    }
+
+    if (categoryIdFromParams) {
+      setSelectedCategoryId(String(categoryIdFromParams));
+      const cat = categories.find(
+        (c: any) => String(getEntityId(c)) === String(categoryIdFromParams)
+      );
       if (cat) setSelectedCategoryName(cat.name);
     }
   }, [productData, categoryIdFromParams, categories]);
@@ -795,7 +819,7 @@ const EditProduct: React.FC = () => {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -816,6 +840,11 @@ const EditProduct: React.FC = () => {
       Alert.alert("Error", "Please fill in all required fields, including category.");
       return;
     }
+    const normalizedMinimumQuantity = Number(minimumQuantity || "0");
+    if (Number.isNaN(normalizedMinimumQuantity) || normalizedMinimumQuantity < 0) {
+      Alert.alert("Error", "Minimum quantity must be a valid non-negative number.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("name", name);
@@ -824,8 +853,7 @@ const EditProduct: React.FC = () => {
     formData.append("stockQuantity", stockQuantity);
     formData.append("isAvailable", String(isActive));
     formData.append("categoryId", selectedCategoryId);
-    // formData.append("minimumQuantity", minimumQuantity || "0");
-    formData.append("minimulAuantity", minimumQuantity || "0");
+    formData.append("minimulAuantity", String(normalizedMinimumQuantity));
 
 
     if (selectedImages.length === 0) {
@@ -849,22 +877,70 @@ const EditProduct: React.FC = () => {
     // formData.append("specification", JSON.stringify(specObj));
 
     try {
-      if (id) {
-        await updateProduct({ id, formData }).unwrap();
+      if (productId) {
+        try {
+          await updateProduct({ id: productId, formData }).unwrap();
+        } catch (err: any) {
+          if (err?.status === "FETCH_ERROR") {
+            const accessToken = await AsyncStorage.getItem("accessToken");
+            const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+            if (!apiUrl) throw err;
+
+            const resp = await fetch(`${apiUrl}/products/${productId}`, {
+              method: "PATCH",
+              headers: {
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
+              body: formData,
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+              throw { status: resp.status, data: json };
+            }
+          } else {
+            throw err;
+          }
+        }
         Alert.alert("Success", "Product updated successfully!");
       } else {
-        await createProduct(formData).unwrap();
+        try {
+          await createProduct(formData).unwrap();
+        } catch (err: any) {
+          if (err?.status === "FETCH_ERROR") {
+            const accessToken = await AsyncStorage.getItem("accessToken");
+            const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+            if (!apiUrl) throw err;
+
+            const resp = await fetch(`${apiUrl}/products`, {
+              method: "POST",
+              headers: {
+                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+              },
+              body: formData,
+            });
+            const json = await resp.json().catch(() => ({}));
+            if (!resp.ok) {
+              throw { status: resp.status, data: json };
+            }
+          } else {
+            throw err;
+          }
+        }
         Alert.alert("Success", "Product created successfully!");
       }
       router.back();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Save Error:", error);
-      Alert.alert("Error", "Failed to save product");
+      const msg =
+        error?.data?.messages?.[0] ||
+        error?.data?.message ||
+        (error?.status === "FETCH_ERROR" ? "Network request failed." : "Failed to save product");
+      Alert.alert("Error", msg);
     }
   };
 
 
-  if (id && isLoadingProduct) {
+  if (productId && isLoadingProduct) {
     return (
       <SafeAreaView style={styles.container}>
         <ActivityIndicator size="large" color="#349488" style={{ marginTop: 50 }} />
@@ -1021,9 +1097,18 @@ const EditProduct: React.FC = () => {
             </View>
             <ScrollView style={{ maxHeight: 400 }}>
               {categories.map((cat: any) => (
-                <TouchableOpacity key={cat.id} style={styles.categoryItem} onPress={() => { setSelectedCategoryId(cat.id); setSelectedCategoryName(cat.name); setIsCategoryModalVisible(false); }}>
-                  <Text style={[styles.categoryItemText, selectedCategoryId === cat.id && styles.selectedCategoryText]}>{cat.name}</Text>
-                  {selectedCategoryId === cat.id && <Ionicons name="checkmark-circle" size={20} color="#349488" />}
+                <TouchableOpacity
+                  key={String(getEntityId(cat))}
+                  style={styles.categoryItem}
+                  onPress={() => {
+                    const catId = String(getEntityId(cat));
+                    setSelectedCategoryId(catId);
+                    setSelectedCategoryName(cat.name);
+                    setIsCategoryModalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.categoryItemText, selectedCategoryId === String(getEntityId(cat)) && styles.selectedCategoryText]}>{cat.name}</Text>
+                  {selectedCategoryId === String(getEntityId(cat)) && <Ionicons name="checkmark-circle" size={20} color="#349488" />}
                 </TouchableOpacity>
               ))}
             </ScrollView>

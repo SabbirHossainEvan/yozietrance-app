@@ -18,18 +18,19 @@ const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 48) / 2;
 
 import { ActivityIndicator, Alert, RefreshControl } from "react-native";
-import { useSelector } from "react-redux";
+import { useGetProfileQuery } from "../../store/api/authApiSlice";
 import { useDeleteCategoryMutation, useGetCategoriesByVendorQuery } from "../../store/api/categoryApiSlice";
-import { RootState } from "../../store/store";
 
 const ProductScreen = () => {
-  const user = useSelector((state: RootState) => state.auth.user);
-  const vendorId = (user as any)?.id || (user as any)?._id;
+  const { data: profileData } = useGetProfileQuery({});
+  const vendorId = profileData?.data?.vendor?.id || profileData?.data?.vendor?._id;
   const [searchQuery, setSearchQuery] = useState("");
 
   console.log('ProductScreen - vendorId:', vendorId);
 
-  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetCategoriesByVendorQuery(vendorId);
+  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetCategoriesByVendorQuery(vendorId, {
+    skip: !vendorId
+  });
 
   console.log('ProductScreen - categoryResponse:', categoryResponse);
 

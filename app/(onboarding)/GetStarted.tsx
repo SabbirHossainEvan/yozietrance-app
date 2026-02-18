@@ -1,6 +1,6 @@
 import { images } from "@/constants/import_images";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import {
@@ -15,6 +15,14 @@ const { width, height } = Dimensions.get("window");
 
 export default function GetStarted() {
   const router = useRouter();
+  const { role } = useLocalSearchParams();
+
+  const handleGetStarted = () => {
+    router.push({
+      pathname: "/(onboarding)/location-access",
+      params: role ? { role: String(role) } : undefined,
+    });
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -81,7 +89,7 @@ export default function GetStarted() {
               shadowRadius: 5,
               elevation: 8,
             }}
-            onPress={() => router.push("/(onboarding)/location-access")}
+            onPress={handleGetStarted}
             activeOpacity={0.8}
           >
             <Feather

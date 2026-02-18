@@ -1,14 +1,23 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { apiSlice } from './api/apiSlice';
 import authReducer from './slices/authSlice';
 import registrationReducer from './slices/registrationSlice';
 
+const combinedReducer = combineReducers({
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    registration: registrationReducer,
+    auth: authReducer,
+});
+
+const rootReducer = (state: any, action: any) => {
+    if (action.type === 'auth/logOut') {
+        state = undefined;
+    }
+    return combinedReducer(state, action);
+};
+
 export const store = configureStore({
-    reducer: {
-        [apiSlice.reducerPath]: apiSlice.reducer,
-        registration: registrationReducer,
-        auth: authReducer,
-    },
+    reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(apiSlice.middleware),
 });

@@ -1,25 +1,45 @@
 import { useGetProfileQuery } from "@/store/api/authApiSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { logOut } from "@/store/slices/authSlice";
 import {
   AntDesign,
   Feather,
   Ionicons,
   MaterialIcons
 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, Modal, ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ProfileScreen = () => {
+  const dispatch = useAppDispatch();
   const [isBusinessProfile, setIsBusinessProfile] = useState(false);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { data: profileData } = useGetProfileQuery({});
   const displayUser = profileData?.data;
 
-  const onLogout = () => {
+  const onLogout = async () => {
     setShowLogoutModal(false);
-    router.replace("/(onboarding)/GetStarted");
+    try {
+      // Clear AsyncStorage
+      await AsyncStorage.removeItem('accessToken');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('userRole');
+      await AsyncStorage.removeItem('userType');
+
+      // Clear Redux state
+      dispatch(logOut());
+
+      // Navigate to onboarding
+      router.replace("/(onboarding)/GetStarted");
+    } catch (error) {
+      console.error("Logout error:", error);
+      router.replace("/(onboarding)/GetStarted");
+    }
   };
 
   const toggleSwitch = () => {
@@ -69,8 +89,14 @@ const ProfileScreen = () => {
     </Modal>
   );
   const userData = {
-    name: displayUser?.buyer?.fullName || displayUser?.name || "User",
-    avatar: displayUser?.buyer?.profilePhotoUrl || displayUser?.image || displayUser?.logo || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    name: displayUser?.buyer?.fullName || displayUser?.fullName || displayUser?.name || displayUser?.fulllName || "User",
+    avatar:
+      displayUser?.buyer?.profilePhotoUrl ||
+      displayUser?.buyer?.avatar ||
+      displayUser?.avatar ||
+      displayUser?.image ||
+      displayUser?.logo ||
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
   };
 
   return (

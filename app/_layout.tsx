@@ -4,7 +4,7 @@ import {
   DefaultTheme,
   Theme
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import React from 'react';
 import "react-native-reanimated";
 import { Provider, useSelector } from 'react-redux';
@@ -17,28 +17,32 @@ import "./global.css";
 const AuthSync = () => {
   const dispatch = store.dispatch;
   const user = useSelector((state: RootState) => state.auth.user);
-  const userId = user?.userId;
   const token = useSelector((state: RootState) => state.auth.accessToken);
   const refreshToken = useSelector((state: RootState) => state.auth.refreshToken);
 
   const { data: profileData } = useGetProfileQuery(undefined, {
-    skip: !token || !!userId
+    skip: !token
   });
 
   React.useEffect(() => {
     if (profileData?.data && token) {
       const resolvedUserId = profileData.data.userId || profileData.data.vendor?.userId || profileData.data.buyer?.userId || profileData.data.id;
+      const updatedUser = { ...user, ...profileData.data, userId: resolvedUserId || user?.userId };
+      const currentUserJson = JSON.stringify(user || {});
+      const updatedUserJson = JSON.stringify(updatedUser || {});
 
-      if (resolvedUserId && userId !== resolvedUserId) {
-        console.log('Syncing profile: Found Account ID:', resolvedUserId);
-        dispatch(setCredentials({
-          user: { ...user, ...profileData.data, userId: resolvedUserId },
-          accessToken: token,
-          refreshToken: refreshToken || ''
-        }));
-      }
+      if (currentUserJson === updatedUserJson) return;
+
+      console.log('Syncing profile data into auth state');
+      AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+
+      dispatch(setCredentials({
+        user: updatedUser,
+        accessToken: token,
+        refreshToken: refreshToken || ''
+      }));
     }
-  }, [profileData, token, userId, refreshToken, dispatch]);
+  }, [profileData, token, refreshToken, dispatch, user]);
 
   return null;
 };
@@ -58,24 +62,23 @@ export default function RootLayout() {
   // Auto-login logic
   React.useEffect(() => {
     const checkLogin = async () => {
-      try {
-        const accessToken = await AsyncStorage.getItem('accessToken');
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-        const userString = await AsyncStorage.getItem('user');
+      let shouldRedirect = false;
+      let targetPath = "/(onboarding)";
 
-        if (accessToken && userString) {
-          const user = JSON.parse(userString);
-          console.log('Auto-login: Restoring session');
-          store.dispatch(setCredentials({
-            user,
-            accessToken,
-            refreshToken: refreshToken || ''
-          }));
-        }
+      try {
+        // Force startup flow to always begin from onboarding.
+        targetPath = "/(onboarding)";
+        shouldRedirect = true;
       } catch (e) {
         console.error('Auto-login failed:', e);
       } finally {
         setIsReady(true);
+        // Delay redirect slightly so navigator is mounted before route change.
+        if (shouldRedirect) {
+          setTimeout(() => {
+            router.replace(targetPath as any);
+          }, 500);
+        }
       }
     };
 
@@ -93,7 +96,7 @@ export default function RootLayout() {
         {/* <ThemeProvider
         value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
       > */}
-        <Stack>
+        <Stack initialRouteName="(onboarding)">
           <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
           <Stack.Screen name="(users)" options={{ headerShown: false }} />
           <Stack.Screen name="(user_screen)" options={{ headerShown: false }} />

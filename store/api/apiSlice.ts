@@ -1,11 +1,18 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { Mutex } from 'async-mutex';
 import { logOut, setCredentials } from '../slices/authSlice';
 
 const mutex = new Mutex();
+const rawApiUrl = process.env.EXPO_PUBLIC_API_URL ?? '';
+const apiUrl = rawApiUrl.trim().replace(/\/+$/, '');
+
+if (!apiUrl) {
+    console.error('EXPO_PUBLIC_API_URL is missing. Auth requests will fail until it is set.');
+}
 
 const baseQuery = fetchBaseQuery({
-    baseUrl: process.env.EXPO_PUBLIC_API_URL,
+    baseUrl: apiUrl,
     prepareHeaders: (headers, { getState }) => {
         const state = getState() as any;
         const token = state.auth?.accessToken;
@@ -54,6 +61,14 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
                 if (refreshResult.data) {
                     const data = refreshResult.data as any;
                     const user = (api.getState() as any).auth.user;
+
+                    // Sync with AsyncStorage for persistence
+                    if (data.accessToken) {
+                        AsyncStorage.setItem('accessToken', data.accessToken);
+                    }
+                    if (data.refreshToken) {
+                        AsyncStorage.setItem('refreshToken', data.refreshToken);
+                    }
 
                     api.dispatch(setCredentials({
                         user,

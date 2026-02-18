@@ -57,25 +57,32 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('user', JSON.stringify(data.user));
       }
 
-      // Auto-navigate based on userType
+      // Auto-navigate based on registered role
       const userType = data.user?.userType;
+      const storedRole = await AsyncStorage.getItem('userRole');
+      const effectiveRole =
+        userType === 'buyer' || userType === 'vendor'
+          ? userType
+          : (storedRole === 'buyer' || storedRole === 'vendor' ? storedRole : 'user');
       console.log('User type detected:', userType);
 
-      dispatch(setCredentials({ user: data.user, accessToken: data.accessToken, refreshToken: data.refreshToken }));
+      const normalizedUser = { ...data.user, userType: effectiveRole };
+      dispatch(setCredentials({ user: normalizedUser, accessToken: data.accessToken, refreshToken: data.refreshToken }));
+      await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
 
       // Save role to AsyncStorage for role-based UI
-      if (userType) {
-        await AsyncStorage.setItem('userRole', userType);
+      if (effectiveRole) {
+        await AsyncStorage.setItem('userRole', effectiveRole);
       }
 
-      if (userType === 'vendor') {
+      if (effectiveRole === 'vendor') {
         console.log('Redirecting vendor to (tabs)...');
         router.replace("/(tabs)");
-      } else if (userType === 'buyer') {
+      } else if (effectiveRole === 'buyer') {
         console.log('Redirecting buyer to (users)...');
         router.replace("/(users)");
       } else {
-        console.log('Unknown userType, redirecting to user-selection...');
+        console.log('No final role yet, redirecting to role selection...');
         router.replace("/(onboarding)/user-selection");
       }
     } catch (err) {
@@ -98,10 +105,10 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Enter Your E-mail Or Number</Text>
+          <Text style={styles.label}>Enter Your E-mail</Text>
           <TextInput
             style={styles.input}
-            placeholder="E-mail address or number"
+            placeholder="E-mail address"
             placeholderTextColor="#999"
             value={emailOrPhone}
             onChangeText={setEmailOrPhone}

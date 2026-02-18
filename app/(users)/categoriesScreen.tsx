@@ -23,38 +23,7 @@ interface Category {
   image: ImageSourcePropType;
 }
 
-const CATEGORIES: Category[] = [
-  {
-    id: "1",
-    title: "Electronics",
-    image: require("../../assets/users/Mask group.png"),
-  },
-  {
-    id: "2",
-    title: "Clothing",
-    image: require("../../assets/users/Mask group (1).png"),
-  },
-  {
-    id: "3",
-    title: "Accessories",
-    image: require("../../assets/users/Mask group (2).png"),
-  },
-  {
-    id: "4",
-    title: "Footwear",
-    image: require("../../assets/users/Mask group (3).png"),
-  },
-  {
-    id: "5",
-    title: "Groceries",
-    image: require("../../assets/users/Mask group (4).png"),
-  },
-  {
-    id: "6",
-    title: "Gadgets",
-    image: require("../../assets/users/unsplash_Wut0F41K9ZU.png"),
-  },
-];
+
 
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 48) / 2;
@@ -64,7 +33,7 @@ const CategoriesScreen: React.FC = () => {
 
   const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
   const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
-
+  console.log("Active Vendor ID:", activeVendorId);
   const { data: categoriesData, isLoading: isCategoriesLoading } = useGetCategoriesByVendorQuery(
     activeVendorId,
     { skip: !activeVendorId }
@@ -76,6 +45,8 @@ const CategoriesScreen: React.FC = () => {
     return title.toLowerCase().includes(search.toLowerCase());
   });
 
+  console.log("Categories:", categories);
+  console.log("Raw Categories:", categoriesData);
   const handleCategoryPress = (category: any) => {
     router.push({
       pathname: "/(user_screen)/ElectronicsScreen",

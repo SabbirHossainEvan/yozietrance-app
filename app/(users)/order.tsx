@@ -13,63 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export const DUMMY_ORDERS = [
-  {
-    id: "1",
-    orderNo: "#ORD-2025",
-    status: "Processing",
-    price: 259.0,
-    address: "6391 Elgin St. Celina, Delaware 10299",
-    rating: "4.8 (1.2k)",
-    customer: "Alice freeman",
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff",
-    itemSummary: "4 items • Wireless Headphones 3x...",
-  },
-  {
-    id: "2",
-    orderNo: "#ORD-2026",
-    status: "Pending",
-    price: 150.0,
-    address: "6391 Elgin St. Celina, Delaware 10299",
-    rating: "4.5 (800)",
-    customer: "John Doe",
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e",
-    itemSummary: "2 items • Smart Watch 1x...",
-  },
-  {
-    id: "3",
-    orderNo: "#ORD-2027",
-    status: "Delivered",
-    price: 320.0,
-    address: "6391 Elgin St. Celina, Delaware 10299",
-    rating: "4.9 (2.1k)",
-    customer: "Sarah Smith",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30",
-    itemSummary: "1 item • Laptop Stand 1x...",
-  },
-  {
-    id: "4",
-    orderNo: "#ORD-2028",
-    status: "Shipped",
-    price: 89.0,
-    address: "6391 Elgin St. Celina, Delaware 10299",
-    rating: "4.7 (1.5k)",
-    customer: "Mike Ross",
-    image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb",
-    itemSummary: "3 items • Bluetooth Speaker 2x...",
-  },
-  {
-    id: "5",
-    orderNo: "#ORD-2029",
-    status: "Canceled",
-    price: 45.0,
-    address: "6391 Elgin St. Celina, Delaware 10299",
-    rating: "4.2 (500)",
-    customer: "Emily Blunt",
-    image: "https://images.unsplash.com/photo-1581094794329-e8f4acd3d9b7",
-    itemSummary: "1 item • Mouse 1x...",
-  },
-];
 
 export default function OrdersScreen() {
   const router = useRouter();
