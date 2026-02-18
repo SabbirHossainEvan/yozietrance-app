@@ -25,15 +25,18 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
                 url: '/payments/vendor/stripe/account',
                 method: 'POST',
             }),
+            transformResponse: (response: any) => response?.data || response,
         }),
         createAccountLink: builder.mutation({
             query: () => ({
                 url: '/payments/vendor/stripe/account-link',
                 method: 'POST',
             }),
+            transformResponse: (response: any) => response?.data || response,
         }),
         getVendorAccountStatus: builder.query({
             query: () => '/payments/vendor/stripe/status',
+            transformResponse: (response: any) => response?.data || response,
         }),
     }),
     overrideExisting: true,

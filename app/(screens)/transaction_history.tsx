@@ -1,18 +1,66 @@
-import { useGetAllPaymentsQuery } from '@/store/api/paymentApiSlice';
-import { useRouter } from 'expo-router';
+import {
+  useCreateAccountLinkMutation,
+  useCreateVendorAccountMutation,
+  useGetAllPaymentsQuery,
+  useGetVendorAccountStatusQuery,
+} from '@/store/api/paymentApiSlice';
+import * as WebBrowser from 'expo-web-browser';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { ArrowDownLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
-import React from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionHistory() {
   const router = useRouter();
   const { data: paymentsData, isLoading, refetch } = useGetAllPaymentsQuery(undefined);
+  const {
+    data: stripeStatus,
+    isLoading: isStripeStatusLoading,
+    refetch: refetchStripeStatus,
+  } = useGetVendorAccountStatusQuery(undefined);
+  const [createVendorAccount, { isLoading: isCreatingStripeAccount }] = useCreateVendorAccountMutation();
+  const [createAccountLink, { isLoading: isCreatingStripeLink }] = useCreateAccountLinkMutation();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetchStripeStatus();
+    }, [refetchStripeStatus])
+  );
 
   // Handle different response structures based on user provided examples
   const transactions = Array.isArray(paymentsData)
     ? paymentsData
     : (paymentsData?.data || []);
+  const isStripeConnected = Boolean(stripeStatus?.chargesEnabled && stripeStatus?.payoutsEnabled);
+  const isConnectingStripe = isCreatingStripeAccount || isCreatingStripeLink;
+
+  const handleConnectStripe = async () => {
+    try {
+      if (!stripeStatus?.stripeAccountId) {
+        await createVendorAccount(undefined).unwrap();
+      }
+
+      const linkData = await createAccountLink(undefined).unwrap();
+      const onboardingUrl = linkData?.url;
+      if (!onboardingUrl) {
+        Alert.alert("Error", "Stripe onboarding link was not returned.");
+        return;
+      }
+
+      await WebBrowser.openBrowserAsync(onboardingUrl, {
+        controlsColor: '#1E7B73',
+        dismissButtonStyle: 'close',
+        readerMode: false,
+      });
+
+      setTimeout(() => {
+        refetchStripeStatus();
+      }, 1500);
+    } catch (error: any) {
+      Alert.alert("Error", error?.data?.message || "Failed to connect Stripe.");
+    }
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.historyCard}>
@@ -49,12 +97,26 @@ export default function TransactionHistory() {
         {/* Payment Method Section */}
         <View>
           <Text style={styles.sectionTitle}>Payment method</Text>
-          <TouchableOpacity style={styles.paymentCard}>
+          <TouchableOpacity
+            style={styles.paymentCard}
+            onPress={handleConnectStripe}
+            disabled={isConnectingStripe || isStripeStatusLoading}
+          >
             <View style={styles.paymentLeft}>
-              <Plus color="#333" size={20} />
-              <Text style={styles.paymentText}>Add debit/credit card</Text>
+              {isStripeConnected ? (
+                <Plus color="#1E7B73" size={20} />
+              ) : (
+                <Plus color="#333" size={20} />
+              )}
+              <Text style={styles.paymentText}>
+                {isStripeConnected ? "Stripe connected" : "Add Stripe"}
+              </Text>
             </View>
-            <ChevronRight color="#CCC" size={20} />
+            {isConnectingStripe || isStripeStatusLoading ? (
+              <ActivityIndicator size="small" color="#1E7B73" />
+            ) : (
+              <ChevronRight color="#CCC" size={20} />
+            )}
           </TouchableOpacity>
         </View>
 

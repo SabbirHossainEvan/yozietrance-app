@@ -9,7 +9,7 @@
     "scheme": "yozietranceapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-   "developmentClient": {
+    "developmentClient": {
       "silentLaunch": true
     },
     "ios": {
@@ -33,6 +33,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.yozietranceapp",
+          "enableGooglePay": true
+        }
+      ],
       [
         "expo-splash-screen",
         {

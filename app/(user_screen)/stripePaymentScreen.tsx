@@ -1,12 +1,13 @@
 
 import { useGetOrderByIdQuery } from '@/store/api/orderApiSlice';
 import { useCreatePaymentIntentMutation } from '@/store/api/paymentApiSlice';
+import * as ExpoLinking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
-    Linking,
     Platform,
     StyleSheet,
     Text,
@@ -50,12 +51,15 @@ const PaymentScreen = () => {
             const response = await createPaymentIntent({ orderId }).unwrap();
 
             if (response?.paymentLink) {
-                // Open Stripe Checkout
-                const supported = await Linking.canOpenURL(response.paymentLink);
-                if (supported) {
-                    await Linking.openURL(response.paymentLink);
-                } else {
-                    Alert.alert("Error", "Cannot open payment link.");
+                const redirectUri = ExpoLinking.createURL('payment');
+                const result = await WebBrowser.openAuthSessionAsync(response.paymentLink, redirectUri);
+
+                if (result.type === 'success' && result.url) {
+                    if (result.url.includes('payment/success')) {
+                        router.replace("/(user_screen)/OrderAcceptedScreen");
+                    } else if (result.url.includes('payment/cancel')) {
+                        Alert.alert("Payment Canceled", "You canceled the payment.");
+                    }
                 }
             } else {
                 Alert.alert("Error", "Failed to generate payment link.");
@@ -69,27 +73,11 @@ const PaymentScreen = () => {
         }
     };
 
-    // Deep link listener for success/cancel
     useEffect(() => {
-        const handleUrl = (event: { url: string }) => {
-            const { url } = event;
-            // E.g. myapp://payment/success?session_id=...
-            if (url.includes('payment/success')) {
-                router.replace("/(user_screen)/OrderAcceptedScreen");
-            } else if (url.includes('payment/cancel')) {
-                Alert.alert("Payment Canceled", "You canceled the payment.");
-            }
-        };
-
-        const subscription = Linking.addEventListener('url', handleUrl);
-
-        // Check initial URL if app was opened via link
-        Linking.getInitialURL().then((url) => {
-            if (url) handleUrl({ url });
-        });
+        WebBrowser.warmUpAsync();
 
         return () => {
-            subscription.remove();
+            WebBrowser.coolDownAsync();
         };
     }, []);
 
@@ -182,7 +170,7 @@ const PaymentScreen = () => {
 const SummaryRow = ({ label, value }: { label: string; value: string }) => (
     <View style={styles.row}>
         <Text style={styles.label}>{label}</Text>
-        <Text style={styles.value} numberOfLines={1} style={[{ maxWidth: '60%', textAlign: 'right' }, styles.value]}>{value}</Text>
+        <Text style={[{ maxWidth: '60%', textAlign: 'right' }, styles.value]} numberOfLines={1}>{value}</Text>
     </View>
 );
 
