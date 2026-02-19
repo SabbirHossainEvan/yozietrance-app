@@ -4,7 +4,6 @@ import {
   useGetAllPaymentsQuery,
   useGetVendorAccountStatusQuery,
 } from '@/store/api/paymentApiSlice';
-import * as WebBrowser from 'expo-web-browser';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ArrowDownLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import React, { useCallback } from 'react';
@@ -48,15 +47,15 @@ export default function TransactionHistory() {
         return;
       }
 
-      await WebBrowser.openBrowserAsync(onboardingUrl, {
-        controlsColor: '#1E7B73',
-        dismissButtonStyle: 'close',
-        readerMode: false,
+      router.push({
+        pathname: '/(screens)/stripe_webview',
+        params: {
+          url: encodeURIComponent(onboardingUrl),
+          flow: 'connect',
+          title: 'Stripe Connect',
+        },
       });
 
-      setTimeout(() => {
-        refetchStripeStatus();
-      }, 1500);
     } catch (error: any) {
       Alert.alert("Error", error?.data?.message || "Failed to connect Stripe.");
     }

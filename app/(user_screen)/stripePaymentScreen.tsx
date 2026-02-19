@@ -1,10 +1,9 @@
 
 import { useGetOrderByIdQuery } from '@/store/api/orderApiSlice';
 import { useCreatePaymentIntentMutation } from '@/store/api/paymentApiSlice';
-import * as ExpoLinking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -20,6 +19,8 @@ const PaymentScreen = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+    const stripePublishableKey = (process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '').trim();
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     const [selectedMethod, setSelectedMethod] = useState<string>('stripe');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -45,26 +46,71 @@ const PaymentScreen = () => {
             Alert.alert("Error", "Order ID not found.");
             return;
         }
+        if (!stripePublishableKey) {
+            Alert.alert("Error", "Stripe key is missing. Set EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY.");
+            return;
+        }
 
         try {
             setIsProcessing(true);
             const response = await createPaymentIntent({ orderId }).unwrap();
+            const paymentIntentClientSecret =
+                response?.paymentIntentClientSecret ||
+                response?.clientSecret ||
+                response?.data?.paymentIntentClientSecret ||
+                response?.data?.clientSecret;
+            const customerId =
+                response?.customerId ||
+                response?.data?.customerId;
+            const customerEphemeralKeySecret =
+                response?.customerEphemeralKeySecret ||
+                response?.ephemeralKeySecret ||
+                response?.data?.customerEphemeralKeySecret ||
+                response?.data?.ephemeralKeySecret;
 
-            if (response?.paymentLink) {
-                const redirectUri = ExpoLinking.createURL('payment');
-                const result = await WebBrowser.openAuthSessionAsync(response.paymentLink, redirectUri);
+            if (paymentIntentClientSecret) {
+                const initResult = await initPaymentSheet({
+                    merchantDisplayName: 'Yozietrance',
+                    paymentIntentClientSecret,
+                    ...(customerId && customerEphemeralKeySecret
+                        ? {
+                            customerId,
+                            customerEphemeralKeySecret,
+                          }
+                        : {}),
+                    returnURL: 'yozietranceapp://stripe-redirect',
+                });
 
-                if (result.type === 'success' && result.url) {
-                    if (result.url.includes('payment/success')) {
-                        router.replace("/(user_screen)/OrderAcceptedScreen");
-                    } else if (result.url.includes('payment/cancel')) {
-                        Alert.alert("Payment Canceled", "You canceled the payment.");
-                    }
+                if (initResult.error) {
+                    Alert.alert("Error", initResult.error.message);
+                    return;
                 }
-            } else {
-                Alert.alert("Error", "Failed to generate payment link.");
+
+                const presentResult = await presentPaymentSheet();
+                if (presentResult.error) {
+                    if (presentResult.error.code !== 'Canceled') {
+                        Alert.alert("Error", presentResult.error.message);
+                    }
+                    return;
+                }
+
+                router.replace("/(user_screen)/OrderAcceptedScreen");
+                return;
             }
 
+            if (response?.paymentLink) {
+                router.push({
+                    pathname: '/(screens)/stripe_webview',
+                    params: {
+                        url: encodeURIComponent(response.paymentLink),
+                        flow: 'payment',
+                        title: 'Stripe Payment',
+                    },
+                });
+                return;
+            }
+
+            Alert.alert("Error", "Failed to create Stripe SDK payment session.");
         } catch (error: any) {
             console.error("Payment intent error:", error);
             Alert.alert("Error", error?.data?.message || "Failed to initiate payment.");
@@ -72,14 +118,6 @@ const PaymentScreen = () => {
             setIsProcessing(false);
         }
     };
-
-    useEffect(() => {
-        WebBrowser.warmUpAsync();
-
-        return () => {
-            WebBrowser.coolDownAsync();
-        };
-    }, []);
 
     if (isOrderLoading) {
         return (

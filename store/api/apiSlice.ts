@@ -23,7 +23,6 @@ const baseQuery = fetchBaseQuery({
         }
         return headers;
     },
-    timeout: 120000,
 });
 
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {

@@ -17,7 +17,7 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
         }),
         getAllPayments: builder.query({
             query: () => '/payments',
-            providesTags: ['Payment'],
+            providesTags: ['Payment']
         }),
         // Vendor Endpoints
         createVendorAccount: builder.mutation({

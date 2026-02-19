@@ -1,12 +1,8 @@
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  DefaultTheme,
-  Theme
-} from "@react-navigation/native";
 import { Stack, router } from "expo-router";
 import React from 'react';
 import "react-native-reanimated";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { Provider, useSelector } from 'react-redux';
 import { SocketProvider } from "../context/SocketContext";
 import { useGetProfileQuery } from "../store/api/authApiSlice";
@@ -47,17 +43,9 @@ const AuthSync = () => {
   return null;
 };
 
-const CustomLightTheme: Theme = {
-  ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: "#F3F8F4",
-  },
-};
-
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [isReady, setIsReady] = React.useState(false);
+  const stripePublishableKey = (process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '').trim();
 
   // Auto-login logic
   React.useEffect(() => {
@@ -91,30 +79,36 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <AuthSync />
-      <SocketProvider>
-        {/* <ThemeProvider
+      <StripeProvider
+        publishableKey={stripePublishableKey}
+        merchantIdentifier="merchant.com.yozietranceapp"
+        urlScheme="yozietranceapp"
+      >
+        <AuthSync />
+        <SocketProvider>
+          {/* <ThemeProvider
         value={colorScheme === "dark" ? DarkTheme : CustomLightTheme}
       > */}
-        <Stack initialRouteName="(onboarding)">
-          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-          <Stack.Screen name="(users)" options={{ headerShown: false }} />
-          <Stack.Screen name="(user_screen)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(screens)" options={{ headerShown: false }} />
-          {/* <Stack.Screen
+          <Stack initialRouteName="(onboarding)">
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+            <Stack.Screen name="(users)" options={{ headerShown: false }} />
+            <Stack.Screen name="(user_screen)" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(screens)" options={{ headerShown: false }} />
+            {/* <Stack.Screen
             name="modal"
             options={{ presentation: "modal", title: "Modal" }}
           /> */}
-        </Stack>
-        {/* <StatusBar
+          </Stack>
+          {/* <StatusBar
         barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
         backgroundColor="transparent"
         translucent
         /> */}
-        {/* </ThemeProvider> */}
-      </SocketProvider>
+          {/* </ThemeProvider> */}
+        </SocketProvider>
+      </StripeProvider>
     </Provider >
   );
 }

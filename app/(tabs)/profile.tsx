@@ -15,7 +15,6 @@ import {
   MaterialIcons,
 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as WebBrowser from 'expo-web-browser';
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -74,10 +73,13 @@ const ProfileScreen = () => {
       const linkResponse = await createAccountLink({}).unwrap();
       console.log("Link Response:", linkResponse);
       if (linkResponse?.url) {
-        await WebBrowser.openBrowserAsync(linkResponse.url, {
-          controlsColor: '#635BFF',
-          dismissButtonStyle: 'close',
-          readerMode: false,
+        router.push({
+          pathname: "/(screens)/stripe_webview",
+          params: {
+            url: encodeURIComponent(linkResponse.url),
+            flow: "connect",
+            title: "Stripe Connect",
+          },
         });
       }
     } catch (error: any) {
