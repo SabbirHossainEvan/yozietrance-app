@@ -9,9 +9,24 @@ const combinedReducer = combineReducers({
     auth: authReducer,
 });
 
+const resolveUserId = (user: any) =>
+    user?.userId || user?.id || user?._id || user?.buyer?.userId || user?.vendor?.userId;
+
 const rootReducer = (state: any, action: any) => {
     if (action.type === 'auth/logOut') {
         state = undefined;
+    }
+
+    // If credentials switch to another account, clear RTK Query cache to avoid data bleed.
+    if (action.type === 'auth/setCredentials') {
+        const prevUserId = resolveUserId(state?.auth?.user);
+        const nextUserId = resolveUserId(action?.payload?.user);
+        if (prevUserId && nextUserId && String(prevUserId) !== String(nextUserId)) {
+            state = {
+                ...state,
+                [apiSlice.reducerPath]: undefined,
+            };
+        }
     }
     return combinedReducer(state, action);
 };

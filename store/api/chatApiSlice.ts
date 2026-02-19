@@ -1,10 +1,33 @@
 import socketService from '../../services/socket';
 import { apiSlice } from './apiSlice';
 
+const normalizeId = (value: any): string | undefined => {
+    if (value === undefined || value === null) return undefined;
+    return String(value);
+};
+
+const resolveEntityId = (entity: any): string | undefined => {
+    return normalizeId(
+        entity?.userId ??
+        entity?._id ??
+        entity?.id ??
+        entity?.user?.userId ??
+        entity?.user?._id ??
+        entity?.user?.id
+    );
+};
+
+const resolveMessageSideId = (value: any): string | undefined => {
+    if (value && typeof value === 'object') {
+        return resolveEntityId(value);
+    }
+    return normalizeId(value);
+};
+
 export const chatApiSlice = apiSlice.injectEndpoints({
     overrideExisting: true,
     endpoints: (builder) => ({
-        getConversations: builder.query<any, void>({
+        getConversations: builder.query<any, string | undefined>({
             query: () => '/messages/conversations',
             transformResponse: (response: { data: any[] }) => {
                 console.log('Conversations Response:', JSON.stringify(response.data, null, 2));
@@ -39,7 +62,7 @@ export const chatApiSlice = apiSlice.injectEndpoints({
             providesTags: (result, error, partnerId) => [{ type: 'Chat', id: partnerId }],
             async onCacheEntryAdded(
                 partnerId,
-                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved, getState }
             ) {
                 try {
                     await cacheDataLoaded;
@@ -48,14 +71,26 @@ export const chatApiSlice = apiSlice.injectEndpoints({
 
                     const listener = (newMessage: any) => {
                         console.log('New message received via socket:', newMessage.id || newMessage._id);
-                        const senderId = newMessage.senderId || newMessage.sender;
-                        const receiverIdFromMsg = newMessage.receiverId || newMessage.receiver;
+                        const senderId = resolveMessageSideId(newMessage.senderId ?? newMessage.sender);
+                        const receiverIdFromMsg = resolveMessageSideId(newMessage.receiverId ?? newMessage.receiver);
+                        const partnerKey = normalizeId(partnerId);
+                        const state = getState() as any;
+                        const myId = resolveEntityId(state?.auth?.user);
 
-                        // Only add if it's relevant to this conversation
-                        if (senderId === partnerId || receiverIdFromMsg === partnerId) {
+                        const isRelevant = !!partnerKey && (
+                            myId
+                                ? (
+                                    (senderId === partnerKey && receiverIdFromMsg === myId) ||
+                                    (senderId === myId && receiverIdFromMsg === partnerKey)
+                                )
+                                : (senderId === partnerKey || receiverIdFromMsg === partnerKey)
+                        );
+
+                        if (isRelevant) {
                             updateCachedData((draft) => {
                                 // Check if message already exists to avoid duplicates (e.g. from optimistic updates)
-                                const exists = draft.some((m: any) => (m._id || m.id) === (newMessage._id || newMessage.id));
+                                const incomingId = normalizeId(newMessage._id || newMessage.id);
+                                const exists = draft.some((m: any) => normalizeId(m._id || m.id) === incomingId);
                                 if (!exists) {
                                     draft.push(newMessage);
                                 }
@@ -84,7 +119,8 @@ export const chatApiSlice = apiSlice.injectEndpoints({
                 // Optimistic Update
                 const state = getState() as any;
                 const currentUser = state.auth.user;
-                console.log('SendMessage onQueryStarted - senderId (currentUser.id):', currentUser?.id);
+                const currentUserId = resolveEntityId(currentUser) || '';
+                console.log('SendMessage onQueryStarted - senderId:', currentUserId);
                 const tempId = Date.now().toString();
 
                 const optimisitcMessage = {
@@ -92,8 +128,8 @@ export const chatApiSlice = apiSlice.injectEndpoints({
                     _id: tempId,
                     receiverId,
                     messageText,
-                    senderId: currentUser.id,
-                    sender: currentUser.id,
+                    senderId: currentUserId,
+                    sender: currentUserId,
                     createdAt: new Date().toISOString(),
                     isOptimistic: true,
                 };

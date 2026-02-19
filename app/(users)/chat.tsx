@@ -18,9 +18,35 @@ import { useSelector } from 'react-redux';
 export default function ChatScreen() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
-  const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery();
-  const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  const currentUserId = user?.userId || user?.id || (user as any)?._id;
+  const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
+  const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
   console.log('Connections Data:', JSON.stringify(connectionsData, null, 2));
+
+  const normalizeId = (value: any) => (value === undefined || value === null ? undefined : String(value));
+  const getCandidateIds = (entity: any) =>
+    [
+      entity?.userId,
+      entity?._id,
+      entity?.id,
+      entity?.user?.userId,
+      entity?.user?._id,
+      entity?.user?.id,
+    ]
+      .map(normalizeId)
+      .filter(Boolean) as string[];
+  const getPrimaryId = (entity: any) => getCandidateIds(entity)[0];
+  const myIds = new Set([
+    ...getCandidateIds(user),
+    ...getCandidateIds((user as any)?.buyer),
+    ...getCandidateIds((user as any)?.vendor),
+  ]);
 
   const conversations = useMemo(() => {
     console.log('Calculating merged conversations...');
@@ -32,44 +58,58 @@ export default function ChatScreen() {
     // Map conversation partner IDs
     const existingPartnerIds = new Set(
       chatList.map(conv => {
-        const partner = conv.participants?.find((p: any) => (p._id || p.id) !== user?.id)
-          || conv.participant
+        const partner = conv.participant
+          || conv.participants?.find((p: any) => !getCandidateIds(p).some((id) => myIds.has(id)))
           || conv.participants?.[0];
-        return partner?.userId || partner?._id || partner?.id;
+        return getPrimaryId(partner);
       }).filter(Boolean)
     );
 
     // Add connections that don't have a conversation yet
     connections.forEach((conn: any) => {
-      const vendor = conn.vendor;
-      const partnerId = vendor?.userId || vendor?._id || vendor?.id;
-      if (vendor && partnerId && !existingPartnerIds.has(partnerId)) {
+      const partner = conn.vendor || conn.user || conn.buyer;
+      const partnerId = getPrimaryId(partner);
+      if (partner && partnerId && !existingPartnerIds.has(partnerId)) {
         chatList.push({
           _id: partnerId,
           id: partnerId,
-          participants: [vendor],
+          participants: [partner],
           lastMessage: null,
           unreadCount: 0,
           isConnectionOnly: true,
-          participant: vendor
+          participant: partner
         });
       }
     });
 
-    return chatList;
-  }, [conversationsData, connectionsData, user?.id, user?.userId]);
+    // Ensure every row has a stable key for FlatList rendering.
+    return chatList.map((item: any, index: number) => {
+      const participant = item.participant
+        || item.participants?.find((p: any) => !getCandidateIds(p).some((id) => myIds.has(id)))
+        || item.participants?.[0]
+        || {};
+      const partnerId = getPrimaryId(participant);
+      const baseId = item.id || item._id || partnerId;
+      const fallbackName = participant.storename || participant.name || participant.businessName || 'unknown';
+
+      return {
+        ...item,
+        __key: String(baseId || `${fallbackName}-${index}`),
+      };
+    });
+  }, [conversationsData, connectionsData, user]);
 
   const isLoading = isConversationsLoading || isConnectionsLoading;
   console.log('Merged Chat List Count:', conversations.length);
 
   const renderItem = ({ item }: { item: any }) => {
-    const participant = item.participants?.find((p: any) => (p._id || p.id) !== user?.id)
-      || item.participant
+    const participant = item.participant
+      || item.participants?.find((p: any) => !getCandidateIds(p).some((id) => myIds.has(id)))
       || item.participants?.[0]
       || {};
 
     console.log('Chat List Item:', {
-      id: item.id,
+      id: item.id || item._id || item.__key,
       participantName: participant.storename || participant.name || participant.businessName || 'Unknown',
       userId: participant.userId,
       profileId: participant._id || participant.id
@@ -78,7 +118,11 @@ export default function ChatScreen() {
       <TouchableOpacity
         style={styles.chatCard}
         onPress={() => {
-          const partnerId = participant.userId || participant._id || participant.id;
+          const partnerId = getPrimaryId(participant);
+          if (!partnerId) {
+            console.warn('Missing partnerId for chat item:', item);
+            return;
+          }
           console.log('Navigating to ChatBox with partnerId:', partnerId, 'Vendor ID:', participant.id);
           router.push({
             pathname: "/chat_box",
@@ -135,7 +179,7 @@ export default function ChatScreen() {
       <FlatList
         data={conversations}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id || item._id}
+        keyExtractor={(item) => item.__key}
         contentContainerStyle={{ paddingBottom: 20 }}
         ListEmptyComponent={
           <View style={{ padding: 20, alignItems: 'center' }}>

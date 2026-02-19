@@ -1,5 +1,6 @@
 import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
 import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
+import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 interface Category {
   id: string;
@@ -30,8 +32,13 @@ const COLUMN_WIDTH = (width - 48) / 2;
 
 const CategoriesScreen: React.FC = () => {
   const [search, setSearch] = useState("");
+  const user = useSelector((state: RootState) => state.auth.user);
+  const currentUserId = user?.userId || user?.id || (user as any)?._id;
 
-  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
   const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
   console.log("Active Vendor ID:", activeVendorId);
   const { data: categoriesData, isLoading: isCategoriesLoading } = useGetCategoriesByVendorQuery(

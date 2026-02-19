@@ -20,6 +20,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const [isConnected, setIsConnected] = useState(false);
     const token = useSelector((state: RootState) => state.auth.accessToken);
     const user = useSelector((state: RootState) => state.auth.user);
+    const roomIds = Array.from(
+        new Set(
+            [user?.userId, user?.id, (user as any)?._id]
+                .filter((v) => v !== undefined && v !== null)
+                .map((v) => String(v))
+        )
+    );
 
     useEffect(() => {
         const socket = socketService.init(token || undefined);
@@ -27,10 +34,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const onConnect = () => {
             console.log("Socket connected:", socket.id);
             setIsConnected(true);
-            const roomUserId = user?.userId || user?.id;
-            if (roomUserId) {
-                socket.emit('join_room', `user:${roomUserId}`);
-            }
+            roomIds.forEach((id) => socket.emit('join_room', `user:${id}`));
         };
 
         const onDisconnect = () => setIsConnected(false);
@@ -46,11 +50,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // If already connected, join room now (since onConnect might not fire again)
         if (socket.connected) {
-            const roomUserId = user?.userId || user?.id;
-            if (roomUserId) {
-                console.log("Socket already connected, joining room for:", roomUserId);
-                socket.emit('join_room', `user:${roomUserId}`);
-            }
+            roomIds.forEach((id) => {
+                console.log("Socket already connected, joining room for:", id);
+                socket.emit('join_room', `user:${id}`);
+            });
         }
 
         return () => {
@@ -60,7 +63,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // Optional: socket.disconnect() if you want to close on unmount
             // but often we keep it open for background tasks if needed
         };
-    }, [token, user]);
+    }, [token, roomIds.join('|')]);
 
     return (
         <SocketContext.Provider value={{ socket: socketService.getSocket(), isConnected }}>

@@ -12,11 +12,18 @@ import { useSelector } from 'react-redux';
 const ChatTabs = () => {
     const router = useRouter();
     const user = useSelector((state: RootState) => state.auth.user);
+    const currentUserId = user?.userId || user?.id || (user as any)?._id;
     const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat');
     const [searchQuery, setSearchQuery] = useState('');
 
-    const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery();
-    const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+    const { data: conversationsData, isLoading: isConversationsLoading } = useGetConversationsQuery(currentUserId, {
+        skip: !currentUserId,
+        refetchOnMountOrArgChange: true,
+    });
+    const { data: connectionsData, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery(currentUserId, {
+        skip: !currentUserId,
+        refetchOnMountOrArgChange: true,
+    });
     const [markAsRead] = useMarkAsReadMutation();
 
     const conversations = useMemo(() => {

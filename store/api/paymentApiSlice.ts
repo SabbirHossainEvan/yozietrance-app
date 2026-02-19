@@ -16,7 +16,11 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
             query: (orderId) => `/payments/order/${orderId}`,
         }),
         getAllPayments: builder.query({
-            query: () => '/payments',
+            // Keep cache user-scoped and send userId so backend can filter if supported.
+            query: (userId?: string) => ({
+                url: '/payments',
+                ...(userId ? { params: { userId } } : {}),
+            }),
             providesTags: ['Payment']
         }),
         // Vendor Endpoints

@@ -135,13 +135,17 @@ const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
 
 const ChatBox: React.FC = () => {
   const user = useSelector((state: RootState) => state.auth.user);
+  const currentUserId = user?.userId || user?.id || (user as any)?._id;
   const router = useRouter();
   const { conversationId, name, fullname, partnerId: partnerIdParam } = useLocalSearchParams();
 
   // Use partnerIdParam if available, as everything (messages, coupons, etc.) depends on the User ID
   const [activePartnerId, setActivePartnerId] = useState((partnerIdParam || conversationId) as string);
 
-  const { data: conversationsData } = useGetConversationsQuery();
+  const { data: conversationsData } = useGetConversationsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
 
   // If we only have a conversationId, try to find the partner ID from conversations
   React.useEffect(() => {

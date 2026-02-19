@@ -1,6 +1,7 @@
 import { useAddToCartMutation, useGetCartQuery } from "@/store/api/cartApiSlice";
 import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
 import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
+import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -17,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -60,8 +62,13 @@ const ElectronicsScreen = () => {
   const router = useRouter();
   const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
   const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
+  const user = useSelector((state: RootState) => state.auth.user);
+  const currentUserId = user?.userId || user?.id || (user as any)?._id;
 
-  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery();
+  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
   const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
 
   const { data: products, isLoading: isProductsLoading } = useGetProductsByVendorQuery(

@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useLoginMutation } from "@/store/api/authApiSlice";
+import { apiSlice } from "@/store/api/apiSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { setCredentials } from "@/store/slices/authSlice";
 
@@ -67,6 +68,7 @@ export default function LoginScreen() {
       console.log('User type detected:', userType);
 
       const normalizedUser = { ...data.user, userType: effectiveRole };
+      dispatch(apiSlice.util.resetApiState());
       dispatch(setCredentials({ user: normalizedUser, accessToken: data.accessToken, refreshToken: data.refreshToken }));
       await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
 

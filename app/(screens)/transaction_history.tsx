@@ -4,15 +4,22 @@ import {
   useGetAllPaymentsQuery,
   useGetVendorAccountStatusQuery,
 } from '@/store/api/paymentApiSlice';
+import { useAppSelector } from '@/store/hooks';
+import { selectCurrentUser } from '@/store/slices/authSlice';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ArrowDownLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionHistory() {
   const router = useRouter();
-  const { data: paymentsData, isLoading, refetch } = useGetAllPaymentsQuery(undefined);
+  const currentUser = useAppSelector(selectCurrentUser);
+  const currentUserId = currentUser?.userId || currentUser?.id || (currentUser as any)?._id;
+  const { data: paymentsData, isLoading, refetch } = useGetAllPaymentsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
   const {
     data: stripeStatus,
     isLoading: isStripeStatusLoading,
@@ -23,14 +30,60 @@ export default function TransactionHistory() {
 
   useFocusEffect(
     useCallback(() => {
+      refetch();
       refetchStripeStatus();
-    }, [refetchStripeStatus])
+    }, [refetch, refetchStripeStatus])
   );
 
-  // Handle different response structures based on user provided examples
-  const transactions = Array.isArray(paymentsData)
-    ? paymentsData
-    : (paymentsData?.data || []);
+  const userType = (currentUser?.userType || '').toLowerCase();
+
+  // Collect possible IDs from mixed backend response shapes.
+  const getCandidateIds = (entity: any): string[] => {
+    if (!entity) return [];
+    const raw = [
+      entity,
+      entity.id,
+      entity._id,
+      entity.userId,
+      entity.user?.id,
+      entity.user?._id,
+      entity.user?.userId,
+    ].filter((v) => v !== undefined && v !== null && v !== '');
+
+    return Array.from(new Set(raw.map((v) => String(v))));
+  };
+
+  // Handle different response structures and enforce current-user filtering.
+  const transactions = useMemo(() => {
+    const rawTransactions = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.data || []);
+    if (!currentUserId) return [];
+
+    return rawTransactions.filter((payment: any) => {
+      const vendorIds = new Set<string>([
+        ...getCandidateIds(payment?.vendor),
+        ...getCandidateIds(payment?.vendorId),
+        ...getCandidateIds(payment?.order?.vendor),
+        ...getCandidateIds(payment?.order?.vendorId),
+      ]);
+
+      const buyerIds = new Set<string>([
+        ...getCandidateIds(payment?.buyer),
+        ...getCandidateIds(payment?.buyerId),
+        ...getCandidateIds(payment?.user),
+        ...getCandidateIds(payment?.userId),
+        ...getCandidateIds(payment?.customer),
+        ...getCandidateIds(payment?.customerId),
+        ...getCandidateIds(payment?.order?.buyer),
+        ...getCandidateIds(payment?.order?.buyerId),
+        ...getCandidateIds(payment?.order?.user),
+        ...getCandidateIds(payment?.order?.userId),
+      ]);
+
+      if (userType === 'vendor') return vendorIds.has(String(currentUserId));
+      if (userType === 'buyer' || userType === 'user') return buyerIds.has(String(currentUserId));
+      return vendorIds.has(String(currentUserId)) || buyerIds.has(String(currentUserId));
+    });
+  }, [paymentsData, currentUserId, userType]);
   const isStripeConnected = Boolean(stripeStatus?.chargesEnabled && stripeStatus?.payoutsEnabled);
   const isConnectingStripe = isCreatingStripeAccount || isCreatingStripeLink;
 

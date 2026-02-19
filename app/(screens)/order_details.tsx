@@ -10,6 +10,7 @@ const OrderDetails = () => {
     const { data: orderResponse, isLoading, error } = useGetOrderByIdQuery(id as string, { skip: !id });
     const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
+    console.log('status', updateStatus)
     const order = orderResponse?.data || orderResponse;
 
     const [showCancelModal, setShowCancelModal] = useState(false);
@@ -35,13 +36,13 @@ const OrderDetails = () => {
         );
     }
 
-    const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
+    const statuses = ['Pending', 'processing', 'Shipped', 'Delivered', 'Completed', 'Cancelled'];
 
     const getStatusColor = (status: any) => {
         switch (status) {
             case 'Completed': return '#4CAF50';
             case 'Pending': return '#FFA000';
-            case 'Processing': return '#2196F3';
+            case 'processing': return '#2196F3';
             case 'Shipped': return '#9C27B0';
             case 'Delivered': return '#4CAF50';
             case 'Cancelled': return '#F44336';
