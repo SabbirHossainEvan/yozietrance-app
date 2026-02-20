@@ -1,13 +1,13 @@
 
-
-
+import { useGetProfileQuery } from '@/store/api/authApiSlice';
+import { useGetVendorQrQuery } from '@/store/api/connectionApiSlice';
 import { useAppSelector } from '@/store/hooks';
 import { selectCurrentUser } from '@/store/slices/authSlice';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
 import React from 'react';
-import { Dimensions, Image, Share, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Dimensions, Image, Share, Text, TouchableOpacity, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,13 +15,36 @@ const { width } = Dimensions.get('window');
 
 const AbcdStoreCard = () => {
     const user = useAppSelector(selectCurrentUser);
-    const vendorCode = (user as any)?.vendorCode || (user as any)?.vendor_code || (user as any)?.vendorID || (user as any)?.code || "N/A";
+    const { data: profileData } = useGetProfileQuery(undefined, { refetchOnFocus: true });
+
+    const vendorId =
+        (profileData as any)?.data?.vendor?.id ||
+        (profileData as any)?.data?.vendor?._id ||
+        (user as any)?.vendor?.id ||
+        (user as any)?.vendor?._id ||
+        (user as any)?.id ||
+        (user as any)?._id;
+
+    const {
+        data: qrData,
+        isLoading: isQrLoading,
+        isError: isQrError,
+    } = useGetVendorQrQuery(vendorId, { skip: !vendorId });
+
+    const vendorCode =
+        qrData?.vendorCode ||
+        (user as any)?.vendorCode ||
+        (user as any)?.vendor_code ||
+        (user as any)?.vendorID ||
+        (user as any)?.code ||
+        "N/A";
     const businessName = user?.businessName || user?.storename || "Your Store";
     const storeUrl = `ABCD.store/v/${vendorCode}`;
+    const qrDataUrl = qrData?.qrDataUrl;
 
     const copyToClipboard = async () => {
         await Clipboard.setStringAsync(storeUrl);
-        alert('Link copied to clipboard!');
+        Alert.alert('Copied', 'Link copied to clipboard!');
     };
 
     // Function for the Share button
@@ -97,24 +120,30 @@ const AbcdStoreCard = () => {
                         justifyContent: 'center',
                         alignItems: 'center',
                     }}>
-                        <QRCode
-                            value={storeUrl}
-                            size={180}
-                            color="#000"
-                            backgroundColor="#FFFFFF"
-                        />
-                        <View style={{
-                            position: 'absolute',
-                            backgroundColor: 'white',
-                            padding: 4,
-                            borderRadius: 4
-                        }}>
+                        {isQrLoading ? (
+                            <View style={{ width: 180, height: 180, justifyContent: 'center', alignItems: 'center' }}>
+                                <ActivityIndicator size="large" color="#328888" />
+                            </View>
+                        ) : qrDataUrl ? (
                             <Image
-                                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2972/2972322.png' }}
-                                style={{ width: 35, height: 35, tintColor: '#000' }}
+                                source={{ uri: qrDataUrl }}
+                                style={{ width: 180, height: 180 }}
+                                resizeMode="contain"
                             />
-                        </View>
+                        ) : (
+                            <QRCode
+                                value={storeUrl}
+                                size={180}
+                                color="#000"
+                                backgroundColor="#FFFFFF"
+                            />
+                        )}
                     </View>
+                    {isQrError ? (
+                        <Text style={{ color: '#B45309', fontSize: 12, marginBottom: 12 }}>
+                            Could not load server QR. Showing local fallback QR.
+                        </Text>
+                    ) : null}
 
                     {/* --- ADDED SHARE BUTTON --- */}
                     <TouchableOpacity

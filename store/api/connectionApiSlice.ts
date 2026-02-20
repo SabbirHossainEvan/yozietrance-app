@@ -24,6 +24,13 @@ export const connectionApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['Connection', 'Chat', 'Product', 'Category'],
         }),
+        getVendorQr: builder.query<any, string>({
+            query: (vendorId) => ({
+                url: `/connections/qr/${vendorId}`,
+                method: 'GET',
+            }),
+            transformResponse: (response: any) => response?.data || response,
+        }),
     }),
     overrideExisting: true,
 });
@@ -32,4 +39,5 @@ export const {
     useConnectToVendorMutation,
     useGetMyConnectionsQuery,
     useDisconnectFromVendorMutation,
+    useGetVendorQrQuery,
 } = connectionApiSlice;
