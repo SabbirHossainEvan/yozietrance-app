@@ -1,11 +1,9 @@
 import {
   useCreateAccountLinkMutation,
   useCreateVendorAccountMutation,
-  useGetAllPaymentsQuery,
+  useGetVendorTransactionHistoryQuery,
   useGetVendorAccountStatusQuery,
 } from '@/store/api/paymentApiSlice';
-import { useAppSelector } from '@/store/hooks';
-import { selectCurrentUser } from '@/store/slices/authSlice';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ArrowDownLeft, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import React, { useCallback, useMemo } from 'react';
@@ -14,10 +12,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TransactionHistory() {
   const router = useRouter();
-  const currentUser = useAppSelector(selectCurrentUser);
-  const currentUserId = currentUser?.userId || currentUser?.id || (currentUser as any)?._id;
-  const { data: paymentsData, isLoading, refetch } = useGetAllPaymentsQuery(currentUserId, {
-    skip: !currentUserId,
+  const queryParams = useMemo(
+    () => ({
+      page: 1,
+      limit: 10,
+      sortBy: 'createdAt',
+      sortOrder: 'desc' as const,
+    }),
+    []
+  );
+  const { data: paymentsData, isLoading, isFetching, refetch } = useGetVendorTransactionHistoryQuery(queryParams, {
     refetchOnMountOrArgChange: true,
   });
   const {
@@ -35,14 +39,8 @@ export default function TransactionHistory() {
     }, [refetch, refetchStripeStatus])
   );
 
-  // Backend already returns user-scoped payments. Avoid strict client-side ID filtering
-  // because app user IDs and buyer/vendor profile IDs may not be the same entity.
   const transactions = useMemo(() => {
-    const raw = Array.isArray(paymentsData)
-      ? paymentsData
-      : Array.isArray(paymentsData?.data)
-        ? paymentsData.data
-        : [];
+    const raw = Array.isArray(paymentsData?.items) ? paymentsData.items : [];
 
     return [...raw].sort((a: any, b: any) => {
       const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -154,7 +152,7 @@ export default function TransactionHistory() {
               <Text style={styles.emptyText}>No transaction history found.</Text>
             }
             refreshControl={
-              <RefreshControl refreshing={isLoading} onRefresh={refetch} colors={['#1E7B73']} />
+              <RefreshControl refreshing={isFetching && !isLoading} onRefresh={refetch} colors={['#1E7B73']} />
             }
           />
         )}

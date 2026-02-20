@@ -25,6 +25,46 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
             }),
             providesTags: ['Payment']
         }),
+        getBuyerTransactionHistory: builder.query({
+            query: (params?: {
+                page?: number;
+                limit?: number;
+                sortBy?: string;
+                sortOrder?: 'asc' | 'desc';
+            }) => ({
+                url: '/transaction-history/buyer',
+                params: {
+                    page: params?.page ?? 1,
+                    limit: params?.limit ?? 10,
+                    sortBy: params?.sortBy ?? 'createdAt',
+                    sortOrder: params?.sortOrder ?? 'desc',
+                },
+            }),
+            transformResponse: (response: any) => response?.data || response,
+            providesTags: ['Payment'],
+        }),
+        getVendorTransactionHistory: builder.query({
+            query: (params?: {
+                page?: number;
+                limit?: number;
+                search?: string;
+                status?: string;
+                sortBy?: string;
+                sortOrder?: 'asc' | 'desc';
+            }) => ({
+                url: '/transaction-history/vendor',
+                params: {
+                    page: params?.page ?? 1,
+                    limit: params?.limit ?? 10,
+                    ...(params?.search ? { search: params.search } : {}),
+                    ...(params?.status ? { status: params.status } : {}),
+                    sortBy: params?.sortBy ?? 'createdAt',
+                    sortOrder: params?.sortOrder ?? 'desc',
+                },
+            }),
+            transformResponse: (response: any) => response?.data || response,
+            providesTags: ['Payment'],
+        }),
         // Vendor Endpoints
         createVendorAccount: builder.mutation({
             query: () => ({
@@ -53,6 +93,8 @@ export const {
     useGetPaymentStatusQuery,
     useGetPaymentByOrderIdQuery,
     useGetAllPaymentsQuery,
+    useGetBuyerTransactionHistoryQuery,
+    useGetVendorTransactionHistoryQuery,
     useCreateVendorAccountMutation,
     useCreateAccountLinkMutation,
     useGetVendorAccountStatusQuery,

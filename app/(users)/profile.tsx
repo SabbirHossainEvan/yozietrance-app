@@ -178,7 +178,7 @@ const ProfileScreen = () => {
             <MaterialIcons name="arrow-forward-ios" size={16} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => router.push("/(screens)/transaction_history")}
+            onPress={() => router.push("/(user_screen)/BuyerTransactionHistoryScreen")}
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
