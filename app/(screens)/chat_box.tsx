@@ -1,5 +1,5 @@
 import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
-import { useGetConversationsQuery, useGetMessagesQuery, useSendMessageMutation } from "@/store/api/chatApiSlice";
+import { useGetConversationsQuery, useGetMessagesQuery, useMarkAsReadMutation, useSendMessageMutation } from "@/store/api/chatApiSlice";
 import { useAssignCouponMutation, useGetCouponsByVendorQuery } from "@/store/api/couponApiSlice";
 import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
 import { RootState } from "@/store/store";
@@ -158,7 +158,7 @@ const ChatBox: React.FC = () => {
         setActivePartnerId(pId);
       }
     }
-  }, [conversationId, partnerIdParam, conversationsData, user?.id]);
+  }, [conversationId, partnerIdParam, conversationsData, user?.id, activePartnerId]);
 
   const partnerData = useMemo(() => {
     const fromParams = {
@@ -193,6 +193,7 @@ const ChatBox: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Chat");
   const [storedRole, setStoredRole] = useState<string | null>(null);
   const [assignCoupon] = useAssignCouponMutation();
+  const [markAsRead] = useMarkAsReadMutation();
   const flatListRef = useRef<FlatList>(null);
 
   // Load role from AsyncStorage on mount
@@ -218,10 +219,10 @@ const ChatBox: React.FC = () => {
   const tabs = isVendorSide
     ? [
       { name: "Chat", action: () => setActiveTab("Chat") },
-      {
-        name: "Categories",
-        action: () => router.push("/(users)/categoriesScreen")
-      },
+      // {
+      //   name: "Categories",
+      //   action: () => router.push("/(users)/categoriesScreen")
+      // },
       {
         name: "Order History",
         action: () => setActiveTab("Order History")
@@ -283,13 +284,36 @@ const ChatBox: React.FC = () => {
     }
     return messagesData.map((msg: any) => ({
       id: msg._id || msg.id,
-      text: msg.messageText || msg.text,
+      text: msg.messageText || msg.text || "",
       timestamp: msg.createdAt,
       isOwn: msg.senderId === user?.userId || msg.senderId === user?.id || (msg.sender?._id || msg.sender?.id || msg.sender) === (user?.userId || user?.id),
       type: msg.type || "text",
       couponDetails: msg.couponDetails,
     }));
-  }, [messagesData, user?.id]);
+  }, [messagesData, user?.id, user?.userId]);
+
+  React.useEffect(() => {
+    if (!Array.isArray(messagesData) || !currentUserId) return;
+
+    const unreadIncoming = messagesData.filter((msg: any) => {
+      const receiverId = msg?.receiverId?.id || msg?.receiverId?._id || msg?.receiverId;
+      const senderId = msg?.senderId?.id || msg?.senderId?._id || msg?.senderId;
+      return (
+        String(receiverId || "") === String(currentUserId) &&
+        String(senderId || "") === String(activePartnerId) &&
+        !msg?.isRead
+      );
+    });
+
+    if (!unreadIncoming.length) return;
+
+    unreadIncoming.forEach((msg: any) => {
+      const messageId = msg?.id || msg?._id;
+      if (messageId) {
+        markAsRead(String(messageId));
+      }
+    });
+  }, [messagesData, currentUserId, activePartnerId, markAsRead]);
 
   const filteredOrders = useMemo(() => {
     return (ordersData || []).filter((order: any) => {
@@ -399,7 +423,7 @@ const ChatBox: React.FC = () => {
         color: details[1]?.includes("CASHBACK") ? "#FF4D67" : "#FF9100",
         discount: details[1]?.match(/\d+[%$]/)?.[0] || "10%",
       };
-    } catch (e) {
+    } catch {
       return null;
     }
   };

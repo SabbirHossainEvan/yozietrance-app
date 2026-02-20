@@ -24,14 +24,40 @@ const resolveMessageSideId = (value: any): string | undefined => {
     return normalizeId(value);
 };
 
+const normalizeConversation = (conv: any) => {
+    const partner = conv?.partner || conv?.participant || null;
+    const partnerId =
+        normalizeId(conv?.partnerId) ||
+        resolveEntityId(partner) ||
+        normalizeId(conv?.conversationPartnerId);
+
+    const lastMessage = conv?.lastMessage
+        ? {
+            ...conv.lastMessage,
+            id: conv.lastMessage.id || conv.lastMessage._id,
+            messageText: conv.lastMessage.messageText || conv.lastMessage.text || '',
+        }
+        : null;
+
+    return {
+        ...conv,
+        id: conv?.id || conv?._id || partnerId,
+        partnerId,
+        partner,
+        participant: partner,
+        lastMessage,
+        unreadCount: Number(conv?.unreadCount || 0),
+    };
+};
+
 export const chatApiSlice = apiSlice.injectEndpoints({
     overrideExisting: true,
     endpoints: (builder) => ({
         getConversations: builder.query<any, string | undefined>({
             query: () => '/messages/conversations',
             transformResponse: (response: { data: any[] }) => {
-                console.log('Conversations Response:', JSON.stringify(response.data, null, 2));
-                return response.data;
+                const raw = Array.isArray(response?.data) ? response.data : [];
+                return raw.map(normalizeConversation);
             },
             providesTags: ['Chat'],
             async onCacheEntryAdded(
@@ -56,8 +82,12 @@ export const chatApiSlice = apiSlice.injectEndpoints({
         getMessages: builder.query<any, string>({
             query: (partnerId) => `/messages/conversation/${partnerId}`,
             transformResponse: (response: { data: any[] }) => {
-                console.log('Messages Response:', JSON.stringify(response.data, null, 2));
-                return response.data;
+                const raw = Array.isArray(response?.data) ? response.data : [];
+                return raw.map((msg: any) => ({
+                    ...msg,
+                    id: msg?.id || msg?._id,
+                    messageText: msg?.messageText || msg?.text || '',
+                }));
             },
             providesTags: (result, error, partnerId) => [{ type: 'Chat', id: partnerId }],
             async onCacheEntryAdded(
