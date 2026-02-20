@@ -1,15 +1,55 @@
+import { useGetUserVendorStatisticsQuery } from "@/store/api/authApiSlice";
+import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
 import { useAppSelector } from "@/store/hooks";
 import { selectCurrentUser } from "@/store/slices/authSlice";
 import { Feather } from "@expo/vector-icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import React from "react";
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { commonData, quickActions, recentOrders } from "../../constants/common";
+import { quickActions } from "../../constants/common";
+
+const toNumber = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const formatMoney = (value: any) => `$${toNumber(value).toFixed(2)}`;
+const normalizeStatus = (value: any) => String(value || "pending").toLowerCase();
+
+const getStatusTheme = (status: string) => {
+  const map: Record<string, { bg: string; text: string }> = {
+    pending: { bg: "#FFF3E0", text: "#E65100" },
+    processing: { bg: "#E3F2FD", text: "#0D47A1" },
+    shipped: { bg: "#E1F5FE", text: "#01579B" },
+    delivered: { bg: "#F3E5F5", text: "#4A148C" },
+    completed: { bg: "#E3F9E7", text: "#1B5E20" },
+    cancelled: { bg: "#FDEBEC", text: "#D43C49" },
+  };
+  return map[status] || { bg: "#EEF2F4", text: "#56636B" };
+};
+
+const toTitle = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
 export default function HomeScreen() {
   const user = useAppSelector(selectCurrentUser);
+  const currentUserId =
+    (user as any)?.userId ||
+    (user as any)?.id ||
+    (user as any)?._id ||
+    (user as any)?.buyer?.userId ||
+    (user as any)?.vendor?.userId;
+  const { data: statsData, isLoading: isStatsLoading, isError: isStatsError } = useGetUserVendorStatisticsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const { data: ordersData = [], isLoading: isOrdersLoading } = useGetOrdersQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
   const userName = React.useMemo(() => {
     const displayName =
@@ -28,6 +68,57 @@ export default function HomeScreen() {
 
     return "User";
   }, [user]);
+
+  const statCards = React.useMemo(() => {
+    const payload = (statsData as any)?.data || statsData || {};
+    const role = String(payload?.role || "").toLowerCase();
+    if (role === "vendor") {
+      return [
+        {
+          metric: "Sales",
+          value: formatMoney(payload?.totalSales?.value),
+          growth: toNumber(payload?.totalSales?.growth),
+        },
+        {
+          metric: "Active Orders",
+          value: String(toNumber(payload?.activeOrders?.value)),
+          growth: toNumber(payload?.activeOrders?.growth),
+        },
+        {
+          metric: "Products",
+          value: String(toNumber(payload?.products?.value)),
+          growth: toNumber(payload?.products?.growth),
+        },
+        {
+          metric: "New Clients",
+          value: String(toNumber(payload?.newClients?.value)),
+          growth: toNumber(payload?.newClients?.growth),
+        },
+      ];
+    }
+
+    return [
+      {
+        metric: "Active Orders",
+        value: String(toNumber(payload?.activeOrders)),
+        growth: null,
+      },
+      {
+        metric: "Completed Orders",
+        value: String(toNumber(payload?.completedOrders)),
+        growth: null,
+      },
+    ];
+  }, [statsData]);
+
+  const recentOrders = React.useMemo(() => {
+    const sorted = [...ordersData].sort((a: any, b: any) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+    return sorted.slice(0, 3);
+  }, [ordersData]);
 
   const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -133,68 +224,83 @@ export default function HomeScreen() {
                 marginBottom: 12,
               }}
             >
-              {commonData.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: 16,
-                    padding: 16,
-                    width: "48%",
-                    gap: 6,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 8,
-                    elevation: 2,
-                  }}
-                >
-                  <Text
+              {statCards.map((item, index) => {
+                const growth = typeof item.growth === "number" ? item.growth : null;
+                const isUp = growth === null ? true : growth >= 0;
+                return (
+                  <TouchableOpacity
+                    key={`${item.metric}-${index}`}
                     style={{
-                      fontSize: 14,
-                      marginBottom: 4,
-                      fontWeight: "500",
+                      backgroundColor: "white",
+                      borderRadius: 16,
+                      padding: 16,
+                      width: "48%",
+                      gap: 6,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 8,
+                      elevation: 2,
                     }}
+                    activeOpacity={0.9}
                   >
-                    {item.metric}
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {item.value}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: 12,
-                    }}
-                  >
-                    <Feather
-                      name={
-                        item.trend === "up" ? "trending-up" : "trending-down"
-                      }
-                      size={12}
-                      color={item.trend === "up" ? "#088738" : "#E83808"}
-                      style={{ marginRight: 2 }}
-                    />
                     <Text
                       style={{
-                        fontSize: 10,
-                        color: item.trend === "up" ? "#088738" : "#E83808",
+                        fontSize: 14,
+                        marginBottom: 4,
                         fontWeight: "500",
                       }}
                     >
-                      {item.change}
+                      {item.metric}
                     </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {item.value}
+                    </Text>
+                    {growth !== null ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          paddingHorizontal: 6,
+                          paddingVertical: 2,
+                          borderRadius: 12,
+                        }}
+                      >
+                        <Feather
+                          name={isUp ? "trending-up" : "trending-down"}
+                          size={12}
+                          color={isUp ? "#088738" : "#E83808"}
+                          style={{ marginRight: 2 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            color: isUp ? "#088738" : "#E83808",
+                            fontWeight: "500",
+                          }}
+                        >
+                          {`${isUp ? "+" : "-"}${Math.abs(growth)}%`}
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={{ height: 16 }} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+              {isStatsLoading ? (
+                <ActivityIndicator size="small" color="#278687" style={{ marginTop: 8, marginLeft: 4 }} />
+              ) : null}
+              {isStatsError ? (
+                <Text style={{ fontSize: 12, color: "#B45309", marginTop: 4 }}>
+                  Could not refresh stats. Showing fallback values.
+                </Text>
+              ) : null}
             </View>
             {/* THIS IS FOR Quick Actions */}
             <View>
@@ -284,15 +390,37 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
               <View style={{ marginTop: 12, gap: 12 }}>
-                {recentOrders.slice(0, 3).map((order) => (
+                {isOrdersLoading ? (
+                  <ActivityIndicator size="small" color="#278687" style={{ marginTop: 8 }} />
+                ) : recentOrders.length ? (
+                  recentOrders.map((order: any) => {
+                    const orderId = order?.id || order?._id;
+                    const status = normalizeStatus(order?.status);
+                    const statusTheme = getStatusTheme(status);
+                    const firstItem = Array.isArray(order?.orderItems) ? order.orderItems[0] : null;
+                    const coverImage =
+                      firstItem?.product?.images?.[0] ||
+                      firstItem?.product?.imageUrl ||
+                      "https://via.placeholder.com/80";
+                    const customerName =
+                      order?.buyer?.fullName ||
+                      order?.vendor?.fullName ||
+                      order?.vendor?.storename ||
+                      "Customer";
+                    const customerId = order?.buyer?.id || order?.vendor?.id || "N/A";
+                    const itemSummary = Array.isArray(order?.orderItems) && order.orderItems.length
+                      ? `${order.orderItems.length} items`
+                      : "No items";
+
+                    return (
                   <TouchableOpacity
                     onPress={() =>
                       router.push({
                         pathname: "/(screens)/order_details",
-                        params: { id: order.id },
+                        params: { id: orderId },
                       })
                     }
-                    key={order.id}
+                    key={orderId}
                     style={{
                       backgroundColor: "white",
                       borderRadius: 12,
@@ -306,7 +434,7 @@ export default function HomeScreen() {
                   >
                     <View style={{ flexDirection: "row", marginBottom: 8 }}>
                       <Image
-                        source={{ uri: order.customer.avatar }}
+                        source={{ uri: coverImage }}
                         style={{
                           width: 80,
                           height: 80,
@@ -324,22 +452,11 @@ export default function HomeScreen() {
                           }}
                         >
                           <Text style={{ color: "#2B2B2B", fontSize: 16 }}>
-                            {order.orderNumber}
+                            {order?.orderNumber || `#${orderId}`}
                           </Text>
                           <View
                             style={{
-                              backgroundColor:
-                                order.orderStatus.status === "Completed"
-                                  ? "#E3F9E7"
-                                  : order.orderStatus.status === "Pending"
-                                    ? "#FFF3E0"
-                                    : order.orderStatus.status === "Processing"
-                                      ? "#E3F2FD"
-                                      : order.orderStatus.status === "Delivered"
-                                        ? "#F3E5F5"
-                                        : order.orderStatus.status === "Shipped"
-                                          ? "#E1F5FE"
-                                          : "#F3E5F5",
+                              backgroundColor: statusTheme.bg,
                               paddingHorizontal: 8,
                               paddingVertical: 2,
                               borderRadius: 12,
@@ -347,26 +464,12 @@ export default function HomeScreen() {
                           >
                             <Text
                               style={{
-                                color:
-                                  order.orderStatus.status === "Completed"
-                                    ? "#1B5E20"
-                                    : order.orderStatus.status === "Pending"
-                                      ? "#E65100"
-                                      : order.orderStatus.status ===
-                                        "Processing"
-                                        ? "#0D47A1"
-                                        : order.orderStatus.status ===
-                                          "Delivered"
-                                          ? "#4A148C"
-                                          : order.orderStatus.status ===
-                                            "Shipped"
-                                            ? "#01579B"
-                                            : "#4A148C",
+                                color: statusTheme.text,
                                 fontSize: 10,
                                 fontWeight: "500",
                               }}
                             >
-                              {order.orderStatus.status}
+                              {toTitle(status)}
                             </Text>
                           </View>
                         </View>
@@ -377,14 +480,14 @@ export default function HomeScreen() {
                             marginBottom: 8,
                           }}
                         >
-                          {order.customer.name}
+                          {order?.shippingAddress || "Address unavailable"}
                         </Text>
                         <View
                           style={{ flexDirection: "row", alignItems: "center" }}
                         >
                           <Ionicons name="star" size={12} color="#FFC107" />
                           <Text style={{ fontSize: 12, marginLeft: 4 }}>
-                            {order.customer.customerId}
+                            {customerId}
                           </Text>
                         </View>
                       </View>
@@ -412,10 +515,10 @@ export default function HomeScreen() {
                             color: "#278687",
                           }}
                         >
-                          {order.customer.name}
+                          {customerName}
                         </Text>
                         <Text style={{ fontSize: 12, color: "#278687" }}>
-                          {order.customer.customerId}
+                          {itemSummary}
                         </Text>
                       </View>
                       <Text
@@ -425,11 +528,15 @@ export default function HomeScreen() {
                           color: "#278687",
                         }}
                       >
-                        ${order.payment.grandTotal}
+                        {formatMoney(order?.totalAmount || order?.totalPrice)}
                       </Text>
                     </View>
                   </TouchableOpacity>
-                ))}
+                    );
+                  })
+                ) : (
+                  <Text style={{ color: "#6B7280", fontSize: 13 }}>No recent orders found.</Text>
+                )}
               </View>
             </View>
           </View>

@@ -61,6 +61,10 @@ export const authApiSlice = apiSlice.injectEndpoints({
             query: () => '/auth/me?profile=true',
             providesTags: ['User'],
         }),
+        getUserVendorStatistics: builder.query({
+            query: (_userId?: string) => '/auth/user-vendor-statistics',
+            transformResponse: (response: any) => response?.data || response,
+        }),
         updateProfile: builder.mutation({
             query: (data) => ({
                 url: '/auth/me',
@@ -89,6 +93,7 @@ export const {
     useOTPVerificationMutation,
     useSetNewPasswordScreenMutation,
     useGetProfileQuery,
+    useGetUserVendorStatisticsQuery,
     useUpdateProfileMutation,
     useChangePasswordMutation
 } = authApiSlice;

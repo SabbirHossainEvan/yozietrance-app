@@ -35,55 +35,21 @@ export default function TransactionHistory() {
     }, [refetch, refetchStripeStatus])
   );
 
-  const userType = (currentUser?.userType || '').toLowerCase();
-
-  // Collect possible IDs from mixed backend response shapes.
-  const getCandidateIds = (entity: any): string[] => {
-    if (!entity) return [];
-    const raw = [
-      entity,
-      entity.id,
-      entity._id,
-      entity.userId,
-      entity.user?.id,
-      entity.user?._id,
-      entity.user?.userId,
-    ].filter((v) => v !== undefined && v !== null && v !== '');
-
-    return Array.from(new Set(raw.map((v) => String(v))));
-  };
-
-  // Handle different response structures and enforce current-user filtering.
+  // Backend already returns user-scoped payments. Avoid strict client-side ID filtering
+  // because app user IDs and buyer/vendor profile IDs may not be the same entity.
   const transactions = useMemo(() => {
-    const rawTransactions = Array.isArray(paymentsData) ? paymentsData : (paymentsData?.data || []);
-    if (!currentUserId) return [];
+    const raw = Array.isArray(paymentsData)
+      ? paymentsData
+      : Array.isArray(paymentsData?.data)
+        ? paymentsData.data
+        : [];
 
-    return rawTransactions.filter((payment: any) => {
-      const vendorIds = new Set<string>([
-        ...getCandidateIds(payment?.vendor),
-        ...getCandidateIds(payment?.vendorId),
-        ...getCandidateIds(payment?.order?.vendor),
-        ...getCandidateIds(payment?.order?.vendorId),
-      ]);
-
-      const buyerIds = new Set<string>([
-        ...getCandidateIds(payment?.buyer),
-        ...getCandidateIds(payment?.buyerId),
-        ...getCandidateIds(payment?.user),
-        ...getCandidateIds(payment?.userId),
-        ...getCandidateIds(payment?.customer),
-        ...getCandidateIds(payment?.customerId),
-        ...getCandidateIds(payment?.order?.buyer),
-        ...getCandidateIds(payment?.order?.buyerId),
-        ...getCandidateIds(payment?.order?.user),
-        ...getCandidateIds(payment?.order?.userId),
-      ]);
-
-      if (userType === 'vendor') return vendorIds.has(String(currentUserId));
-      if (userType === 'buyer' || userType === 'user') return buyerIds.has(String(currentUserId));
-      return vendorIds.has(String(currentUserId)) || buyerIds.has(String(currentUserId));
+    return [...raw].sort((a: any, b: any) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
     });
-  }, [paymentsData, currentUserId, userType]);
+  }, [paymentsData]);
   const isStripeConnected = Boolean(stripeStatus?.chargesEnabled && stripeStatus?.payoutsEnabled);
   const isConnectingStripe = isCreatingStripeAccount || isCreatingStripeLink;
 
@@ -180,7 +146,7 @@ export default function TransactionHistory() {
         ) : (
           <FlatList
             data={transactions}
-            keyExtractor={(item) => item.id || item._id || Math.random().toString()}
+            keyExtractor={(item, index) => String(item?.id || item?._id || index)}
             renderItem={renderItem}
             contentContainerStyle={{ paddingBottom: 20 }}
             showsVerticalScrollIndicator={false}

@@ -8,12 +8,14 @@ export const paymentApiSlice = apiSlice.injectEndpoints({
                 method: 'POST',
                 body: data,
             }),
+            transformResponse: (response: any) => response?.data || response,
         }),
         getPaymentStatus: builder.query({
             query: (sessionId) => `/payments/status/${sessionId}`,
         }),
         getPaymentByOrderId: builder.query({
             query: (orderId) => `/payments/order/${orderId}`,
+            transformResponse: (response: any) => response?.data || response,
         }),
         getAllPayments: builder.query({
             // Keep cache user-scoped and send userId so backend can filter if supported.
