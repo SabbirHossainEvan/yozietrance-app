@@ -1,949 +1,179 @@
-// import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
-// import {
-//   useCreateProductMutation,
-//   useGetProductByIdQuery,
-//   useUpdateProductMutation,
-// } from "@/store/api/product_api_slice";
-// import { useAppSelector } from "@/store/hooks";
-// import { selectCurrentUser } from "@/store/slices/authSlice";
-// import { Ionicons } from "@expo/vector-icons";
-// import * as ImagePicker from "expo-image-picker"; // Image Picker import
-// import { useLocalSearchParams, useRouter } from "expo-router";
-// import React, { useEffect, useState } from "react";
-// import {
-//   ActivityIndicator, Alert, Image,
-//   Modal,
-//   ScrollView,
-//   StatusBar,
-//   StyleSheet,
-//   Switch,
-//   Text,
-//   TextInput,
-//   TouchableOpacity,
-//   View,
-// } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
+import { useGetCategoriesByVendorQuery } from '@/store/api/categoryApiSlice';
+import { useCreateProductMutation, useGetProductByIdQuery, useUpdateProductMutation } from '@/store/api/product_api_slice';
+import { useAppSelector } from '@/store/hooks';
+import { selectCurrentUser } from '@/store/slices/authSlice';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StatusBar, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// const EditProduct: React.FC = () => {
-//   const router = useRouter();
-//   const { id, categoryId: categoryIdFromParams } = useLocalSearchParams();
-//   const user = useAppSelector(selectCurrentUser);
+type SpecItem = { label: string; value: string };
 
-//   const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(id as string, { skip: !id });
-//   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-//   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+const getEntityId = (entity: any) => entity?.id || entity?._id;
 
-//   const [name, setName] = useState("");
-//   const [description, setDescription] = useState("");
-//   const [price, setPrice] = useState("");
-//   const [stockQuantity, setStockQuantity] = useState("");
-//   const [isActive, setIsActive] = useState(true);
-//   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-//   const [specifications, setSpecifications] = useState<{ label: string; value: string }[]>([]);
-
-//   // Category selection states
-//   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-//   const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
-//   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
-
-//   const { data: categoriesData } = useGetCategoriesByVendorQuery(user?.id, { skip: !user?.id });
-//   const categories = categoriesData?.data || (Array.isArray(categoriesData) ? categoriesData : []);
-
-//   // Modal states
-//   const [isSpecModalVisible, setIsSpecModalVisible] = useState(false);
-//   const [newSpecLabel, setNewSpecLabel] = useState("");
-//   const [newSpecValue, setNewSpecValue] = useState("");
-
-//   useEffect(() => {
-//     if (productData) {
-//       setName(productData.name || "");
-//       setDescription(productData.description || "");
-//       setPrice(productData.price?.toString() || "");
-//       setStockQuantity(productData.stockQuantity?.toString() || "");
-//       setIsActive(productData.isAvailable ?? true);
-//       setSelectedImages(productData.images || (productData.imageUrl ? [productData.imageUrl] : []));
-
-//       if (productData.specification) {
-//         const specs = Object.entries(productData.specification).map(([key, value]) => ({
-//           label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
-//           value: Array.isArray(value) ? value.join(", ") : String(value),
-//         }));
-//         setSpecifications(specs);
-//       }
-//     }
-//   }, [productData]);
-
-//   useEffect(() => {
-//     if (productData?.categoryId) {
-//       setSelectedCategoryId(productData.categoryId);
-//       const cat = categories.find((c: any) => c.id === productData.categoryId);
-//       if (cat) setSelectedCategoryName(cat.name);
-//     } else if (categoryIdFromParams) {
-//       setSelectedCategoryId(categoryIdFromParams as string);
-//       const cat = categories.find((c: any) => c.id === categoryIdFromParams);
-//       if (cat) setSelectedCategoryName(cat.name);
-//     }
-//   }, [productData, categoryIdFromParams, categories]);
-
-//   const handleAddSpec = () => {
-//     if (newSpecLabel && newSpecValue) {
-//       setSpecifications([...specifications, { label: newSpecLabel, value: newSpecValue }]);
-//       setNewSpecLabel("");
-//       setNewSpecValue("");
-//       setIsSpecModalVisible(false);
-//     }
-//   };
-
-//   // 2. Image pick korar function
-//   const pickImage = async () => {
-//     if (selectedImages.length >= 5) {
-//       Alert.alert("Limit Reached", "You can only upload up to 5 images.");
-//       return;
-//     }
-
-//     // Permission check
-//     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-//     if (status !== "granted") {
-//       Alert.alert(
-//         "Permission Denied",
-//         "Sorry, we need camera roll permissions to make this work!"
-//       );
-//       return;
-//     }
-
-//     // Gallery open kora
-//     let result = await ImagePicker.launchImageLibraryAsync({
-//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-//       allowsEditing: true,
-//       aspect: [1, 1],
-//       quality: 0.7,
-//     });
-
-//     if (!result.canceled) {
-//       // New image-ti list e add kora
-//       setSelectedImages([...selectedImages, result.assets[0].uri]);
-//     }
-//   };
-
-//   // 3. Image remove korar function
-//   const removeImage = (index: number) => {
-//     const newList = selectedImages.filter((_, i) => i !== index);
-//     setSelectedImages(newList);
-//   };
-
-//   const handleSave = async () => {
-//     if (!name || !price || !stockQuantity || !selectedCategoryId) {
-//       Alert.alert("Error", "Please fill in all required fields, including category.");
-//       return;
-//     }
-
-//     const finalCategoryId = selectedCategoryId;
-
-//     const formData = new FormData();
-//     formData.append("name", name);
-//     formData.append("description", description);
-//     formData.append("price", price);
-//     formData.append("stockQuantity", stockQuantity);
-//     formData.append("isAvailable", String(isActive));
-//     formData.append("categoryId", finalCategoryId);
-
-//     if (selectedImages.length === 0) {
-//       Alert.alert("Error", "At least one product image is required.");
-//       return;
-//     }
-
-//     selectedImages.forEach((uri, index) => {
-//       if (uri.startsWith('http')) {
-//         formData.append("imageUrl", uri);
-//       } else {
-//         formData.append("images", {
-//           uri: uri,
-//           name: `product_${index}.jpg`,
-//           type: "image/jpeg",
-//         } as any);
-//       }
-//     });
-
-//     // Temporarily removing specification as the backend returns "property specification should not exist"
-//     // const specObj = specifications.reduce((acc: any, spec) => {
-//     //   const key = spec.label.split(' ').map((word, i) => i === 0 ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1)).join('');
-//     //   acc[key] = spec.value;
-//     //   return acc;
-//     // }, {});
-
-//     // formData.append("specification", JSON.stringify(specObj));
-
-//     try {
-//       if (id) {
-//         await updateProduct({ id, formData }).unwrap();
-//         Alert.alert("Success", "Product updated successfully!");
-//       } else {
-//         await createProduct(formData).unwrap();
-//         Alert.alert("Success", "Product created successfully!");
-//       }
-//       router.back();
-//     } catch (error) {
-//       console.error("Save Error:", error);
-//       Alert.alert("Error", "Failed to save product");
-//     }
-//   };
-
-//   if (id && isLoadingProduct) {
-//     return (
-//       <SafeAreaView style={styles.container}>
-//         <ActivityIndicator size="large" color="#349488" style={{ marginTop: 50 }} />
-//       </SafeAreaView>
-//     );
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <StatusBar barStyle="dark-content" />
-
-//       {/* Header */}
-//       <View style={styles.header}>
-//         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-//           <Ionicons name="chevron-back" size={24} color="#333" />
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>Edit Product</Text>
-//         <View style={{ width: 40 }} />
-//       </View>
-
-//       <ScrollView
-//         contentContainerStyle={styles.scrollContent}
-//         showsVerticalScrollIndicator={false}
-//       >
-//         {/* Media Section */}
-//         <View style={styles.card}>
-//           <View style={styles.rowBetween}>
-//             <Text style={styles.sectionTitle}>Media</Text>
-//             <Text style={styles.mediaCount}>{selectedImages.length}/5</Text>
-//           </View>
-
-//           <ScrollView
-//             horizontal
-//             showsHorizontalScrollIndicator={false}
-//             style={styles.mediaRow}
-//           >
-//             {/* Upload Button */}
-//             <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
-//               <View style={styles.uploadIconCircle}>
-//                 <Ionicons name="camera" size={24} color="#FFF" />
-//               </View>
-//             </TouchableOpacity>
-
-//             {/* Selected Images List */}
-//             {selectedImages.map((uri, index) => (
-//               <View key={index} style={styles.imageWrapper}>
-//                 <Image source={{ uri }} style={styles.mediaImage} />
-//                 <TouchableOpacity
-//                   style={styles.removeBadge}
-//                   onPress={() => removeImage(index)}
-//                 >
-//                   <Ionicons name="close-circle" size={20} color="#FF6B6B" />
-//                 </TouchableOpacity>
-//               </View>
-//             ))}
-//           </ScrollView>
-//         </View>
-
-//         {/* Product Details Section */}
-//         <View style={styles.card}>
-//           <Text style={styles.sectionTitle}>Product details</Text>
-
-//           <Text style={styles.inputLabel}>Product Name</Text>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="e.g. Headphones"
-//             placeholderTextColor="#999"
-//             value={name}
-//             onChangeText={setName}
-//           />
-
-//           <Text style={styles.inputLabel}>Description</Text>
-//           <TextInput
-//             style={[styles.input, styles.textArea]}
-//             placeholder="Describe your product..."
-//             multiline
-//             placeholderTextColor="#999"
-//             value={description}
-//             onChangeText={setDescription}
-//           />
-
-//           <Text style={styles.inputLabel}>Category</Text>
-//           <TouchableOpacity
-//             style={[styles.input, { justifyContent: "center" }]}
-//             onPress={() => setIsCategoryModalVisible(true)}
-//           >
-//             <Text style={{ color: selectedCategoryName ? "#333" : "#999" }}>
-//               {selectedCategoryName || "Select Category"}
-//             </Text>
-//           </TouchableOpacity>
-
-//           <Text style={styles.inputLabel}>Quantity</Text>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="123"
-//             placeholderTextColor="#999"
-//             keyboardType="numeric"
-//             value={stockQuantity}
-//             onChangeText={setStockQuantity}
-//           />
-//         </View>
-
-//         {/* Pricing Section */}
-//         <View style={styles.card}>
-//           <Text style={styles.sectionTitle}>Pricing</Text>
-//           <Text style={styles.inputLabel}>Price</Text>
-//           <TextInput
-//             style={styles.input}
-//             placeholder="e.g. $20"
-//             placeholderTextColor="#999"
-//             keyboardType="numeric"
-//             value={price}
-//             onChangeText={(text) => setPrice(text.replace("$", ""))}
-//           />
-//         </View>
-
-//         {/* Specification Section */}
-//         <View style={styles.card}>
-//           <View style={styles.rowBetween}>
-//             <Text style={styles.sectionTitle}>Specification</Text>
-//             <TouchableOpacity onPress={() => setIsSpecModalVisible(true)}>
-//               <Text style={styles.addSpecText}>Add Specification</Text>
-//             </TouchableOpacity>
-//           </View>
-//           {specifications.map((spec, index) => (
-//             <View key={index} style={styles.specCard}>
-//               <View style={{ flex: 1 }}>
-//                 <Text style={styles.specLabel}>{spec.label}</Text>
-//                 <Text style={styles.specValueText}>{spec.value}</Text>
-//               </View>
-//               <Ionicons name="chevron-forward" size={20} color="#CCC" />
-//             </View>
-//           ))}
-//         </View>
-
-//         {/* Settings Section */}
-//         <View style={styles.card}>
-//           <Text style={styles.sectionTitle}>Settings</Text>
-//           <View style={styles.rowBetween}>
-//             <View>
-//               <Text style={styles.activeStatusText}>Active Status</Text>
-//               <Text style={styles.statusSubText}>
-//                 Product will be visible in store
-//               </Text>
-//             </View>
-//             <Switch
-//               trackColor={{ false: "#D1D1D1", true: "#349488" }}
-//               thumbColor={"#FFF"}
-//               onValueChange={() => setIsActive(!isActive)}
-//               value={isActive}
-//             />
-//           </View>
-//         </View>
-
-//         <View style={styles.footerRow}>
-//           <TouchableOpacity
-//             style={styles.cancelBtn}
-//             onPress={() => router.back()}
-//           >
-//             <Text style={styles.cancelBtnText}>Cancel</Text>
-//           </TouchableOpacity>
-//           <TouchableOpacity
-//             style={styles.saveBtn}
-//             onPress={handleSave}
-//             disabled={isUpdating || isCreating}
-//           >
-//             <Text style={styles.saveBtnText}>
-//               {isUpdating || isCreating ? "Saving..." : "Save"}
-//             </Text>
-//           </TouchableOpacity>
-//         </View>
-//       </ScrollView>
-
-//       {/* Add Specification Modal */}
-//       <Modal
-//         visible={isSpecModalVisible}
-//         transparent
-//         animationType="fade"
-//         onRequestClose={() => setIsSpecModalVisible(false)}
-//       >
-//         <View style={styles.modalOverlay}>
-//           <View style={styles.modalContent}>
-//             <View style={styles.modalHeader}>
-//               <Text style={styles.modalTitle}>Add Specification</Text>
-//               <TouchableOpacity onPress={() => setIsSpecModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#003D4D" />
-//               </TouchableOpacity>
-//             </View>
-
-//             <View style={styles.modalBody}>
-//               <View style={styles.modalInputRow}>
-//                 <TextInput
-//                   style={styles.modalInput}
-//                   placeholder="e.g. Brand"
-//                   placeholderTextColor="#AAA"
-//                   value={newSpecLabel}
-//                   onChangeText={setNewSpecLabel}
-//                 />
-//                 <TextInput
-//                   style={styles.modalInput}
-//                   placeholder="e.g. JBL"
-//                   placeholderTextColor="#AAA"
-//                   value={newSpecValue}
-//                   onChangeText={setNewSpecValue}
-//                 />
-//               </View>
-
-//               <View style={styles.modalFooter}>
-//                 <TouchableOpacity
-//                   style={styles.modalCancelBtn}
-//                   onPress={() => setIsSpecModalVisible(false)}
-//                 >
-//                   <Text style={styles.modalCancelText}>Cancel</Text>
-//                 </TouchableOpacity>
-//                 <TouchableOpacity
-//                   style={styles.modalSaveBtn}
-//                   onPress={handleAddSpec}
-//                 >
-//                   <Text style={styles.modalSaveText}>Save</Text>
-//                 </TouchableOpacity>
-//               </View>
-//             </View>
-//           </View>
-//         </View>
-//       </Modal>
-
-//       {/* Category Selection Modal */}
-//       <Modal
-//         visible={isCategoryModalVisible}
-//         transparent
-//         animationType="slide"
-//         onRequestClose={() => setIsCategoryModalVisible(false)}
-//       >
-//         <View style={styles.modalOverlay}>
-//           <View style={styles.modalContent}>
-//             <View style={styles.modalHeader}>
-//               <Text style={styles.modalTitle}>Select Category</Text>
-//               <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)}>
-//                 <Ionicons name="close" size={24} color="#003D4D" />
-//               </TouchableOpacity>
-//             </View>
-
-//             <ScrollView style={{ maxHeight: 400 }}>
-//               {categories.map((cat: any) => (
-//                 <TouchableOpacity
-//                   key={cat.id}
-//                   style={styles.categoryItem}
-//                   onPress={() => {
-//                     setSelectedCategoryId(cat.id);
-//                     setSelectedCategoryName(cat.name);
-//                     setIsCategoryModalVisible(false);
-//                   }}
-//                 >
-//                   <Text style={[
-//                     styles.categoryItemText,
-//                     selectedCategoryId === cat.id && styles.selectedCategoryText
-//                   ]}>
-//                     {cat.name}
-//                   </Text>
-//                   {selectedCategoryId === cat.id && (
-//                     <Ionicons name="checkmark-circle" size={20} color="#349488" />
-//                   )}
-//                 </TouchableOpacity>
-//               ))}
-//             </ScrollView>
-//           </View>
-//         </View>
-//       </Modal>
-//     </SafeAreaView>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: "#F8FBFB" },
-//   header: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     paddingHorizontal: 16,
-//     height: 60,
-//   },
-//   headerTitle: { fontSize: 18, fontWeight: "600", color: "#333" },
-//   backBtn: { width: 40, height: 40, justifyContent: "center" },
-//   scrollContent: { padding: 16 },
-//   card: {
-//     backgroundColor: "#FFF",
-//     borderRadius: 15,
-//     padding: 15,
-//     marginBottom: 15,
-//   },
-//   sectionTitle: {
-//     fontSize: 16,
-//     fontWeight: "bold",
-//     color: "#333",
-//     marginBottom: 12,
-//   },
-//   label: { fontSize: 14, fontWeight: "600", color: "#333" },
-//   mediaCount: { fontSize: 12, color: "#999" },
-//   mediaRow: { flexDirection: "row", marginTop: 10 },
-//   uploadBox: {
-//     width: 80,
-//     height: 80,
-//     borderRadius: 12,
-//     borderStyle: "dashed",
-//     borderWidth: 1.5,
-//     borderColor: "#349488",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     marginRight: 10,
-//   },
-//   imageWrapper: { position: "relative", marginRight: 10 },
-//   mediaImage: {
-//     width: 80,
-//     height: 80,
-//     borderRadius: 12,
-//     backgroundColor: "#E8F3F2",
-//   },
-//   removeBadge: {
-//     position: "absolute",
-//     top: -5,
-//     right: -5,
-//     backgroundColor: "#FFF",
-//     borderRadius: 10,
-//   },
-//   inputLabel: { fontSize: 13, color: "#666", marginBottom: 6, marginTop: 10 },
-//   input: {
-//     backgroundColor: "#F4F7F7",
-//     borderRadius: 10,
-//     height: 45,
-//     paddingHorizontal: 15,
-//     justifyContent: "center",
-//     color: "#333",
-//   },
-//   textArea: { height: 80, textAlignVertical: "top", paddingTop: 10 },
-//   rowBetween: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//   },
-//   row: { flexDirection: "row", alignItems: "center" },
-//   addSpecText: { color: "#349488", fontSize: 13, fontWeight: "600" },
-//   uploadIconCircle: {
-//     width: 40,
-//     height: 40,
-//     borderRadius: 20,
-//     backgroundColor: "#349488",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   specCard: {
-//     backgroundColor: "#F4F7F7",
-//     borderRadius: 12,
-//     padding: 12,
-//     flexDirection: "row",
-//     alignItems: "center",
-//     marginBottom: 10,
-//   },
-//   specLabel: { fontSize: 12, color: "#999", marginBottom: 2 },
-//   specValueText: { fontSize: 14, color: "#333", fontWeight: "600" },
-//   activeStatusText: { fontSize: 15, fontWeight: "600", color: "#333" },
-//   statusSubText: { fontSize: 12, color: "#999", marginTop: 2 },
-//   footerRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginTop: 10,
-//     paddingBottom: 30,
-//   },
-//   cancelBtn: {
-//     flex: 1,
-//     height: 50,
-//     borderRadius: 12,
-//     borderWidth: 1,
-//     borderColor: "#FF6B6B",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     marginRight: 10,
-//   },
-//   cancelBtnText: { color: "#FF6B6B", fontWeight: "bold" },
-//   saveBtn: {
-//     flex: 1,
-//     height: 50,
-//     borderRadius: 12,
-//     backgroundColor: "#349488",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   saveBtnText: { color: "#FFF", fontWeight: "bold" },
-//   // Modal Styles
-//   modalOverlay: {
-//     flex: 1,
-//     backgroundColor: "rgba(0,0,0,0.5)",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     padding: 20,
-//   },
-//   modalContent: {
-//     backgroundColor: "#FFF",
-//     borderRadius: 20,
-//     width: "100%",
-//     padding: 20,
-//     shadowColor: "#000",
-//     shadowOffset: { width: 0, height: 2 },
-//     shadowOpacity: 0.25,
-//     shadowRadius: 4,
-//     elevation: 5,
-//   },
-//   modalHeader: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     marginBottom: 20,
-//   },
-//   modalTitle: {
-//     fontSize: 20,
-//     fontWeight: "600",
-//     color: "#003D4D",
-//   },
-//   modalBody: {},
-//   modalInputRow: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     marginBottom: 20,
-//   },
-//   modalInput: {
-//     flex: 1,
-//     backgroundColor: "#FFF",
-//     borderWidth: 1,
-//     borderColor: "#E0E0E0",
-//     borderRadius: 12,
-//     height: 50,
-//     paddingHorizontal: 15,
-//     fontSize: 16,
-//     color: "#333",
-//     marginHorizontal: 5,
-//   },
-//   modalFooter: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//   },
-//   modalCancelBtn: {
-//     flex: 1,
-//     height: 50,
-//     borderRadius: 25,
-//     borderWidth: 1,
-//     borderColor: "#349488",
-//     justifyContent: "center",
-//     alignItems: "center",
-//     marginRight: 10,
-//   },
-//   modalCancelText: {
-//     color: "#349488",
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-//   modalSaveBtn: {
-//     flex: 1,
-//     height: 50,
-//     borderRadius: 25,
-//     backgroundColor: "#349488",
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   modalSaveText: {
-//     color: "#FFF",
-//     fontSize: 16,
-//     fontWeight: "600",
-//   },
-//   categoryItem: {
-//     flexDirection: "row",
-//     justifyContent: "space-between",
-//     alignItems: "center",
-//     paddingVertical: 15,
-//     borderBottomWidth: 1,
-//     borderBottomColor: "#F0F0F0",
-//   },
-//   categoryItemText: {
-//     fontSize: 16,
-//     color: "#333",
-//   },
-//   selectedCategoryText: {
-//     color: "#349488",
-//     fontWeight: "bold",
-//   },
-// });
-
-// export default EditProduct;
-
-
-import { useGetCategoriesByVendorQuery } from "@/store/api/categoryApiSlice";
-import {
-  useCreateProductMutation,
-  useGetProductByIdQuery,
-  useUpdateProductMutation,
-} from "@/store/api/product_api_slice";
-import { useAppSelector } from "@/store/hooks";
-import { selectCurrentUser } from "@/store/slices/authSlice";
-import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Modal,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-
-const EditProduct: React.FC = () => {
+export default function EditProduct() {
   const router = useRouter();
-  const { id, categoryId: categoryIdFromParamsRaw } = useLocalSearchParams();
-  const productId = Array.isArray(id) ? id[0] : id;
-  const categoryIdFromParams = Array.isArray(categoryIdFromParamsRaw)
-    ? categoryIdFromParamsRaw[0]
-    : categoryIdFromParamsRaw;
+  const { id, categoryId: categoryIdParam } = useLocalSearchParams();
+  const productId = id ? String(id) : '';
   const user = useAppSelector(selectCurrentUser);
-  const mediaTypes = (ImagePicker as any).MediaType?.Images
-    ? [(ImagePicker as any).MediaType.Images]
-    : ImagePicker.MediaTypeOptions.Images;
 
-  const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(
-    productId as string,
-    { skip: !productId }
-  );
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const vendorId =
+    (user as any)?.vendor?.id ||
+    (user as any)?.vendor?._id ||
+    user?.id ||
+    (user as any)?._id;
+
+  const { data: categories = [] } = useGetCategoriesByVendorQuery(vendorId, { skip: !vendorId });
+  const { data: productData, isLoading: isLoadingProduct } = useGetProductByIdQuery(productId, { skip: !productId });
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
-  // Product states
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [stockQuantity, setStockQuantity] = useState("");
-  const [minimumQuantity, setMinimumQuantity] = useState("0");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [stockQuantity, setStockQuantity] = useState('');
+  const [minimumQuantity, setMinimumQuantity] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedCategoryName, setSelectedCategoryName] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [specifications, setSpecifications] = useState<{ label: string; value: string }[]>([]);
+  const [specifications, setSpecifications] = useState<SpecItem[]>([]);
 
-
-
-  // Category selection states
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
-  const [selectedCategoryName, setSelectedCategoryName] = useState<string>("");
+  const [isSpecModalVisible, setIsSpecModalVisible] = useState(false);
+  const [newSpecLabel, setNewSpecLabel] = useState('');
+  const [newSpecValue, setNewSpecValue] = useState('');
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
 
-  const { data: categoriesData } = useGetCategoriesByVendorQuery(user?.id, { skip: !user?.id });
-  const categories = categoriesData?.data || (Array.isArray(categoriesData) ? categoriesData : []);
-
-  // Modal states
-  const [isSpecModalVisible, setIsSpecModalVisible] = useState(false);
-  const [newSpecLabel, setNewSpecLabel] = useState("");
-  const [newSpecValue, setNewSpecValue] = useState("");
-  const getEntityId = (item: any) => item?.id || item?._id;
-
   useEffect(() => {
-    if (productData) {
-      setName(productData.name || "");
-      setDescription(productData.description || "");
-      setPrice(productData.price?.toString() || "");
-      setStockQuantity(productData.stockQuantity?.toString() || "");
-      setMinimumQuantity(
-        (
-          productData.minimulAuantity ??
-          productData.minimumQuantity ??
-          0
-        ).toString()
-      );
-      setIsActive(productData.isAvailable ?? true);
-      setSelectedImages(productData.images || (productData.imageUrl ? [productData.imageUrl] : []));
+    if (!productData) return;
 
-      if (productData.specification) {
-        const specs = Object.entries(productData.specification).map(([key, value]) => ({
-          label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
-          value: Array.isArray(value) ? value.join(", ") : String(value),
-        }));
-        setSpecifications(specs);
-      }
-    }
+    setName(productData.name || '');
+    setDescription(productData.description || '');
+    setPrice(productData.price != null ? String(productData.price) : '');
+    setStockQuantity(productData.stockQuantity != null ? String(productData.stockQuantity) : '');
+    setMinimumQuantity(productData.minimulAuantity != null ? String(productData.minimulAuantity) : '');
+    setIsActive(productData.isAvailable ?? true);
+    setSelectedImages(Array.isArray(productData.images) ? productData.images : []);
+
+    // Only map actual existing specs from backend; nothing else is auto-inserted.
+    const mappedSpecs =
+      productData.specification && typeof productData.specification === 'object'
+        ? Object.entries(productData.specification)
+            .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+            .map(([key, value]) => ({
+              label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+              value: Array.isArray(value) ? value.join(', ') : String(value),
+            }))
+        : [];
+    setSpecifications(mappedSpecs);
   }, [productData]);
 
   useEffect(() => {
-    const selectedFromProduct = productData?.categoryId || productData?.category?.id || productData?.category?._id;
-    if (selectedFromProduct) {
-      setSelectedCategoryId(String(selectedFromProduct));
-      const cat = categories.find(
-        (c: any) => String(getEntityId(c)) === String(selectedFromProduct)
-      );
-      if (cat) setSelectedCategoryName(cat.name);
-      return;
-    }
+    const targetCategoryId = productData?.categoryId || categoryIdParam;
+    if (!targetCategoryId) return;
+    const found = categories.find((cat: any) => String(getEntityId(cat)) === String(targetCategoryId));
+    setSelectedCategoryId(String(targetCategoryId));
+    if (found) setSelectedCategoryName(found.name);
+  }, [productData, categoryIdParam, categories]);
 
-    if (categoryIdFromParams) {
-      setSelectedCategoryId(String(categoryIdFromParams));
-      const cat = categories.find(
-        (c: any) => String(getEntityId(c)) === String(categoryIdFromParams)
-      );
-      if (cat) setSelectedCategoryName(cat.name);
-    }
-  }, [productData, categoryIdFromParams, categories]);
-
-  const handleAddSpec = () => {
-    if (newSpecLabel && newSpecValue) {
-      setSpecifications([...specifications, { label: newSpecLabel, value: newSpecValue }]);
-      setNewSpecLabel("");
-      setNewSpecValue("");
-      setIsSpecModalVisible(false);
-    }
-  };
+  const categoryOptions = useMemo(() => (Array.isArray(categories) ? categories : []), [categories]);
 
   const pickImage = async () => {
     if (selectedImages.length >= 5) {
-      Alert.alert("Limit Reached", "You can only upload up to 5 images.");
+      Alert.alert('Limit Reached', 'You can upload up to 5 images.');
       return;
     }
-
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission Denied", "Camera roll permission is required.");
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Photo library permission is required.');
       return;
     }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes,
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
+      quality: 0.8,
     });
-
     if (!result.canceled) {
-      setSelectedImages([...selectedImages, result.assets[0].uri]);
+      setSelectedImages((prev) => [...prev, result.assets[0].uri]);
     }
   };
 
   const removeImage = (index: number) => {
-    const newList = selectedImages.filter((_, i) => i !== index);
-    setSelectedImages(newList);
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addSpec = () => {
+    const label = newSpecLabel.trim();
+    const value = newSpecValue.trim();
+    if (!label || !value) {
+      Alert.alert('Missing fields', 'Please enter both specification key and value.');
+      return;
+    }
+    setSpecifications((prev) => [...prev, { label, value }]);
+    setNewSpecLabel('');
+    setNewSpecValue('');
+    setIsSpecModalVisible(false);
+  };
+
+  const removeSpec = (index: number) => {
+    setSpecifications((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
-    if (!name || !price || !stockQuantity || !selectedCategoryId) {
-      Alert.alert("Error", "Please fill in all required fields, including category.");
+    if (!name.trim() || !price.trim() || !stockQuantity.trim() || !selectedCategoryId) {
+      Alert.alert('Missing fields', 'Please fill product name, price, quantity and category.');
       return;
     }
-    const normalizedMinimumQuantity = Number(minimumQuantity || "0");
-    if (Number.isNaN(normalizedMinimumQuantity) || normalizedMinimumQuantity < 0) {
-      Alert.alert("Error", "Minimum quantity must be a valid non-negative number.");
+    if (!selectedImages.length) {
+      Alert.alert('Missing media', 'Please add at least one product image.');
       return;
     }
 
     const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append("stockQuantity", stockQuantity);
-    formData.append("isAvailable", String(isActive));
-    formData.append("categoryId", selectedCategoryId);
-    formData.append("minimulAuantity", String(normalizedMinimumQuantity));
+    formData.append('name', name.trim());
+    formData.append('description', description.trim());
+    formData.append('price', String(price).trim());
+    formData.append('stockQuantity', String(stockQuantity).trim());
+    formData.append('isAvailable', String(isActive));
+    formData.append('categoryId', selectedCategoryId);
+    formData.append('minimulAuantity', String(minimumQuantity || '0'));
 
-
-    if (selectedImages.length === 0) {
-      Alert.alert("Error", "At least one product image is required.");
-      return;
-    }
-
+    // Preserve existing backend behavior: imageUrl for existing remote URLs, images for new files.
     selectedImages.forEach((uri, index) => {
       if (uri.startsWith('http')) {
-        formData.append("imageUrl", uri);
+        formData.append('imageUrl', uri);
       } else {
-        formData.append("images", {
-          uri: uri,
+        formData.append('images', {
+          uri,
           name: `product_${index}.jpg`,
-          type: "image/jpeg",
+          type: 'image/jpeg',
         } as any);
       }
     });
 
-    // ❌ Do NOT append 'specification' to formData
-    // formData.append("specification", JSON.stringify(specObj));
+    // Keep specs client-side display only until backend supports this field.
+    // This ensures "only added specs are shown" behavior in UI.
 
     try {
       if (productId) {
-        try {
-          await updateProduct({ id: productId, formData }).unwrap();
-        } catch (err: any) {
-          if (err?.status === "FETCH_ERROR") {
-            const accessToken = await AsyncStorage.getItem("accessToken");
-            const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-            if (!apiUrl) throw err;
-
-            const resp = await fetch(`${apiUrl}/products/${productId}`, {
-              method: "PATCH",
-              headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-              },
-              body: formData,
-            });
-            const json = await resp.json().catch(() => ({}));
-            if (!resp.ok) {
-              throw { status: resp.status, data: json };
-            }
-          } else {
-            throw err;
-          }
-        }
-        Alert.alert("Success", "Product updated successfully!");
+        await updateProduct({ id: productId, formData }).unwrap();
+        Alert.alert('Success', 'Product updated successfully.');
       } else {
-        try {
-          await createProduct(formData).unwrap();
-        } catch (err: any) {
-          if (err?.status === "FETCH_ERROR") {
-            const accessToken = await AsyncStorage.getItem("accessToken");
-            const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
-            if (!apiUrl) throw err;
-
-            const resp = await fetch(`${apiUrl}/products`, {
-              method: "POST",
-              headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-              },
-              body: formData,
-            });
-            const json = await resp.json().catch(() => ({}));
-            if (!resp.ok) {
-              throw { status: resp.status, data: json };
-            }
-          } else {
-            throw err;
-          }
-        }
-        Alert.alert("Success", "Product created successfully!");
+        await createProduct(formData).unwrap();
+        Alert.alert('Success', 'Product created successfully.');
       }
       router.back();
     } catch (error: any) {
-      console.error("Save Error:", error);
-      const msg =
-        error?.data?.messages?.[0] ||
-        error?.data?.message ||
-        (error?.status === "FETCH_ERROR" ? "Network request failed." : "Failed to save product");
-      Alert.alert("Error", msg);
+      Alert.alert('Error', error?.data?.message || 'Failed to save product.');
     }
   };
 
-
   if (productId && isLoadingProduct) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator size="large" color="#349488" style={{ marginTop: 50 }} />
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#278687" />
       </SafeAreaView>
     );
   }
@@ -952,339 +182,201 @@ const EditProduct: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#333" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="chevron-back" size={24} color="#1F2A30" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Product</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>{productId ? 'Edit Product' : 'Add Product'}</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Media Section */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>Media</Text>
             <Text style={styles.mediaCount}>{selectedImages.length}/5</Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
             <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
-              <View style={styles.uploadIconCircle}>
-                <Ionicons name="camera" size={24} color="#FFF" />
+              <View style={styles.cameraCircle}>
+                <Ionicons name="camera" size={20} color="#FFF" />
               </View>
             </TouchableOpacity>
             {selectedImages.map((uri, index) => (
-              <View key={index} style={styles.imageWrapper}>
+              <View key={`${uri}-${index}`} style={styles.imageWrap}>
                 <Image source={{ uri }} style={styles.mediaImage} />
                 <TouchableOpacity style={styles.removeBadge} onPress={() => removeImage(index)}>
-                  <Ionicons name="close-circle" size={20} color="#FF6B6B" />
+                  <Ionicons name="close-circle" size={20} color="#F15B63" />
                 </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
         </View>
 
-        {/* Product Details */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Product Details</Text>
+          <Text style={styles.sectionTitle}>Product details</Text>
           <Text style={styles.inputLabel}>Product Name</Text>
-          <TextInput style={styles.input} placeholder="e.g. Headphones" value={name} onChangeText={setName} placeholderTextColor="#999" />
+          <TextInput style={styles.input} placeholder="e.g. Headphones" value={name} onChangeText={setName} />
           <Text style={styles.inputLabel}>Description</Text>
-          <TextInput style={[styles.input, styles.textArea]} placeholder="Describe your product..." multiline value={description} onChangeText={setDescription} placeholderTextColor="#999" />
+          <TextInput style={[styles.input, styles.textArea]} placeholder="Describe your product..." multiline value={description} onChangeText={setDescription} />
           <Text style={styles.inputLabel}>Category</Text>
-          <TouchableOpacity style={[styles.input, { justifyContent: "center" }]} onPress={() => setIsCategoryModalVisible(true)}>
-            <Text style={{ color: selectedCategoryName ? "#333" : "#999" }}>{selectedCategoryName || "Select Category"}</Text>
+          <TouchableOpacity style={styles.inputPicker} onPress={() => setIsCategoryModalVisible(true)}>
+            <Text style={{ color: selectedCategoryName ? '#1F2A30' : '#8A969D' }}>{selectedCategoryName || 'Add Category'}</Text>
           </TouchableOpacity>
           <Text style={styles.inputLabel}>Quantity</Text>
-          <TextInput style={styles.input} placeholder="123" keyboardType="numeric" value={stockQuantity} onChangeText={setStockQuantity} placeholderTextColor="#999" />
-          <Text style={styles.inputLabel}>Minimum Quantity</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="0"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            value={minimumQuantity}
-            onChangeText={text => setMinimumQuantity(text)}
-          />
-
+          <TextInput style={styles.input} placeholder="123" keyboardType="numeric" value={stockQuantity} onChangeText={setStockQuantity} />
         </View>
 
-        {/* Pricing Section */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Pricing</Text>
           <Text style={styles.inputLabel}>Price</Text>
-          <TextInput style={styles.input} placeholder="e.g. $20" keyboardType="numeric" value={price} onChangeText={(text) => setPrice(text.replace("$", ""))} placeholderTextColor="#999" />
+          <TextInput style={styles.input} placeholder="e.g. $20" keyboardType="numeric" value={price} onChangeText={(text) => setPrice(text.replace('$', ''))} />
         </View>
 
-        {/* Specification Section */}
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>Specification</Text>
             <TouchableOpacity onPress={() => setIsSpecModalVisible(true)}>
-              <Text style={styles.addSpecText}>Add Specification</Text>
+              <Text style={styles.addSpec}>Add Specification</Text>
             </TouchableOpacity>
           </View>
           {specifications.map((spec, index) => (
-            <View key={index} style={styles.specCard}>
+            <View key={`${spec.label}-${index}`} style={styles.specCard}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.specLabel}>{spec.label}</Text>
-                <Text style={styles.specValueText}>{spec.value}</Text>
+                <Text style={styles.specValue}>{spec.value}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#CCC" />
+              <TouchableOpacity onPress={() => removeSpec(index)}>
+                <Ionicons name="close-circle-outline" size={20} color="#95A2AA" />
+              </TouchableOpacity>
             </View>
           ))}
+          {specifications.length === 0 ? <Text style={styles.emptySpec}>No specification added yet.</Text> : null}
         </View>
 
-        {/* Settings */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.rowBetween}>
             <View>
-              <Text style={styles.activeStatusText}>Active Status</Text>
-              <Text style={styles.statusSubText}>Product will be visible in store</Text>
+              <Text style={styles.activeLabel}>Active Status</Text>
+              <Text style={styles.activeSub}>Product will be visible in store</Text>
             </View>
-            <Switch trackColor={{ false: "#D1D1D1", true: "#349488" }} thumbColor={"#FFF"} value={isActive} onValueChange={() => setIsActive(!isActive)} />
+            <Switch trackColor={{ false: '#D8E0E4', true: '#2E908F' }} thumbColor="#FFF" value={isActive} onValueChange={setIsActive} />
           </View>
         </View>
 
-        {/* Footer */}
         <View style={styles.footerRow}>
           <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
-            <Text style={styles.cancelBtnText}>Cancel</Text>
+            <Text style={styles.cancelText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isUpdating || isCreating}>
-            <Text style={styles.saveBtnText}>{isUpdating || isCreating ? "Saving..." : "Save"}</Text>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={isCreating || isUpdating}>
+            {isCreating || isUpdating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.saveText}>Save</Text>}
           </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* Specification Modal */}
       <Modal visible={isSpecModalVisible} transparent animationType="fade" onRequestClose={() => setIsSpecModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Add Specification</Text>
               <TouchableOpacity onPress={() => setIsSpecModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#003D4D" />
               </TouchableOpacity>
             </View>
-            <View style={styles.modalBody}>
-              <View style={styles.modalInputRow}>
-                <TextInput style={styles.modalInput} placeholder="e.g. Brand" placeholderTextColor="#AAA" value={newSpecLabel} onChangeText={setNewSpecLabel} />
-                <TextInput style={styles.modalInput} placeholder="e.g. JBL" placeholderTextColor="#AAA" value={newSpecValue} onChangeText={setNewSpecValue} />
-              </View>
-              <View style={styles.modalFooter}>
-                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setIsSpecModalVisible(false)}>
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.modalSaveBtn} onPress={handleAddSpec}>
-                  <Text style={styles.modalSaveText}>Save</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.modalInputRow}>
+              <TextInput style={styles.modalInput} placeholder="e.g. Brand" value={newSpecLabel} onChangeText={setNewSpecLabel} />
+              <TextInput style={styles.modalInput} placeholder="e.g. JBL" value={newSpecValue} onChangeText={setNewSpecValue} />
+            </View>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setIsSpecModalVisible(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSave} onPress={addSpec}>
+                <Text style={styles.modalSaveText}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Category Modal */}
       <Modal visible={isCategoryModalVisible} transparent animationType="slide" onRequestClose={() => setIsCategoryModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Category</Text>
               <TouchableOpacity onPress={() => setIsCategoryModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#003D4D" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={{ maxHeight: 400 }}>
-              {categories.map((cat: any) => (
-                <TouchableOpacity
-                  key={String(getEntityId(cat))}
-                  style={styles.categoryItem}
-                  onPress={() => {
-                    const catId = String(getEntityId(cat));
-                    setSelectedCategoryId(catId);
-                    setSelectedCategoryName(cat.name);
-                    setIsCategoryModalVisible(false);
-                  }}
-                >
-                  <Text style={[styles.categoryItemText, selectedCategoryId === String(getEntityId(cat)) && styles.selectedCategoryText]}>{cat.name}</Text>
-                  {selectedCategoryId === String(getEntityId(cat)) && <Ionicons name="checkmark-circle" size={20} color="#349488" />}
-                </TouchableOpacity>
-              ))}
+            <ScrollView style={{ maxHeight: 350 }}>
+              {categoryOptions.map((cat: any) => {
+                const catId = String(getEntityId(cat));
+                const selected = selectedCategoryId === catId;
+                return (
+                  <TouchableOpacity
+                    key={catId}
+                    style={styles.categoryItem}
+                    onPress={() => {
+                      setSelectedCategoryId(catId);
+                      setSelectedCategoryName(cat.name);
+                      setIsCategoryModalVisible(false);
+                    }}
+                  >
+                    <Text style={[styles.categoryText, selected ? { color: '#2E908F', fontWeight: '700' } : null]}>{cat.name}</Text>
+                    {selected ? <Ionicons name="checkmark-circle" size={20} color="#2E908F" /> : null}
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         </View>
       </Modal>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FBFB" },
-
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    height: 60,
-  },
-  headerTitle: { fontSize: 18, fontWeight: "600", color: "#333" },
-  backBtn: { width: 40, height: 40, justifyContent: "center" },
-
-  // Scroll content
-  scrollContent: { padding: 16 },
-
-  // Card
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 15,
-  },
-
-  // Section title
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 12,
-  },
-
-  // Labels and input
-  inputLabel: { fontSize: 13, color: "#666", marginBottom: 6, marginTop: 10 },
-  input: {
-    backgroundColor: "#F4F7F7",
-    borderRadius: 10,
-    height: 45,
-    paddingHorizontal: 15,
-    justifyContent: "center",
-    color: "#333",
-  },
-  textArea: { height: 80, textAlignVertical: "top", paddingTop: 10 },
-
-  // Rows
-  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  row: { flexDirection: "row", alignItems: "center" },
-
-  // Add Specification Text
-  addSpecText: { color: "#349488", fontSize: 13, fontWeight: "600" },
-
-  // Media
-  mediaCount: { fontSize: 12, color: "#999" },
-  mediaRow: { flexDirection: "row", marginTop: 10 },
-  uploadBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    borderStyle: "dashed",
-    borderWidth: 1.5,
-    borderColor: "#349488",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  uploadIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#349488",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageWrapper: { position: "relative", marginRight: 10 },
-  mediaImage: { width: 80, height: 80, borderRadius: 12, backgroundColor: "#E8F3F2" },
-  removeBadge: {
-    position: "absolute",
-    top: -5,
-    right: -5,
-    backgroundColor: "#FFF",
-    borderRadius: 10,
-  },
-
-  // Specifications
-  specCard: {
-    backgroundColor: "#F4F7F7",
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  specLabel: { fontSize: 12, color: "#999", marginBottom: 2 },
-  specValueText: { fontSize: 14, color: "#333", fontWeight: "600" },
-
-  // Active status
-  activeStatusText: { fontSize: 15, fontWeight: "600", color: "#333" },
-  statusSubText: { fontSize: 12, color: "#999", marginTop: 2 },
-
-  // Footer buttons
-  footerRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10, paddingBottom: 30 },
-  cancelBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#FF6B6B",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  cancelBtnText: { color: "#FF6B6B", fontWeight: "bold" },
-  saveBtn: { flex: 1, height: 50, borderRadius: 12, backgroundColor: "#349488", justifyContent: "center", alignItems: "center" },
-  saveBtnText: { color: "#FFF", fontWeight: "bold" },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 20 },
-  modalContent: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    width: "100%",
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
-  modalTitle: { fontSize: 20, fontWeight: "600", color: "#003D4D" },
-  modalBody: {},
-  modalInputRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
-  modalInput: {
-    flex: 1,
-    backgroundColor: "#FFF",
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    borderRadius: 12,
-    height: 50,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: "#333",
-    marginHorizontal: 5,
-  },
-  modalFooter: { flexDirection: "row", justifyContent: "space-between" },
-  modalCancelBtn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: "#349488",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  modalCancelText: { color: "#349488", fontSize: 16, fontWeight: "600" },
-  modalSaveBtn: { flex: 1, height: 50, borderRadius: 25, backgroundColor: "#349488", justifyContent: "center", alignItems: "center" },
-  modalSaveText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
-
-  // Category Selection
-  categoryItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: "#F0F0F0" },
-  categoryItemText: { fontSize: 16, color: "#333" },
-  selectedCategoryText: { color: "#349488", fontWeight: "bold" },
+  container: { flex: 1, backgroundColor: '#F2F6F5' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F6F5' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1F2A30' },
+  content: { paddingHorizontal: 14, paddingBottom: 24 },
+  card: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#DDE6EA', borderRadius: 12, padding: 12, marginBottom: 10 },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#1F2A30' },
+  mediaCount: { fontSize: 12, color: '#8A969D' },
+  uploadBox: { width: 74, height: 74, borderRadius: 10, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#2E908F', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  cameraCircle: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#2E908F', justifyContent: 'center', alignItems: 'center' },
+  imageWrap: { marginRight: 10, position: 'relative' },
+  mediaImage: { width: 74, height: 74, borderRadius: 10, backgroundColor: '#E8EEF1' },
+  removeBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#FFF', borderRadius: 12 },
+  inputLabel: { marginTop: 9, marginBottom: 5, fontSize: 12, color: '#6E7B84' },
+  input: { height: 42, borderRadius: 8, backgroundColor: '#F2F6F6', borderWidth: 1, borderColor: '#E1E8EB', paddingHorizontal: 12, color: '#1F2A30' },
+  textArea: { height: 78, textAlignVertical: 'top', paddingTop: 10 },
+  inputPicker: { height: 42, borderRadius: 8, backgroundColor: '#F2F6F6', borderWidth: 1, borderColor: '#E1E8EB', paddingHorizontal: 12, justifyContent: 'center' },
+  addSpec: { fontSize: 12, color: '#2E908F', fontWeight: '600' },
+  specCard: { borderRadius: 8, borderWidth: 1, borderColor: '#E6ECEF', backgroundColor: '#F7FAFA', paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  specLabel: { fontSize: 12, color: '#6E7B84' },
+  specValue: { fontSize: 13, color: '#1F2A30', fontWeight: '600', marginTop: 1 },
+  emptySpec: { marginTop: 8, fontSize: 12, color: '#8A969D' },
+  activeLabel: { fontSize: 14, fontWeight: '600', color: '#1F2A30' },
+  activeSub: { fontSize: 11, color: '#8A969D', marginTop: 2 },
+  footerRow: { flexDirection: 'row', marginTop: 2 },
+  cancelBtn: { flex: 1, height: 44, borderRadius: 10, borderWidth: 1.3, borderColor: '#F09AA0', justifyContent: 'center', alignItems: 'center', marginRight: 8, backgroundColor: '#FFF7F7' },
+  cancelText: { color: '#E36570', fontWeight: '700' },
+  saveBtn: { flex: 1, height: 44, borderRadius: 10, backgroundColor: '#2E908F', justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
+  saveText: { color: '#FFF', fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', paddingHorizontal: 20 },
+  modalCard: { backgroundColor: '#FFF', borderRadius: 14, padding: 16 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#003D4D' },
+  modalInputRow: { flexDirection: 'row', marginTop: 14, gap: 10 },
+  modalInput: { flex: 1, height: 56, borderRadius: 12, borderWidth: 1, borderColor: '#CFD9DE', paddingHorizontal: 12, fontSize: 17, color: '#1F2A30' },
+  modalActions: { flexDirection: 'row', marginTop: 16, gap: 10 },
+  modalCancel: { flex: 1, height: 52, borderRadius: 20, borderWidth: 1.5, borderColor: '#2E908F', justifyContent: 'center', alignItems: 'center' },
+  modalCancelText: { color: '#2E908F', fontSize: 16, fontWeight: '700' },
+  modalSave: { flex: 1, height: 52, borderRadius: 20, backgroundColor: '#2E908F', justifyContent: 'center', alignItems: 'center' },
+  modalSaveText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  categoryItem: { height: 48, borderBottomWidth: 1, borderBottomColor: '#EDF2F4', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  categoryText: { fontSize: 15, color: '#1F2A30' },
 });
-
-
-export default EditProduct;
-

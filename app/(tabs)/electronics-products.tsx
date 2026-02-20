@@ -1,59 +1,29 @@
-import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
-import { useGetProfileQuery } from "@/store/api/authApiSlice";
-import { useAppSelector } from "@/store/hooks";
-import { selectCurrentUser } from "@/store/slices/authSlice";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-type Product = {
-  id: string;
-  name: string;
-  sku: string;
-  price: string;
-  stock: number;
-  status: "active" | "draft" | "low_stock";
+import { useGetProfileQuery } from '@/store/api/authApiSlice';
+import { useGetProductsByVendorQuery } from '@/store/api/product_api_slice';
+import { useAppSelector } from '@/store/hooks';
+import { selectCurrentUser } from '@/store/slices/authSlice';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-  images: string[];
+const FALLBACK = 'https://via.placeholder.com/150';
 
-  rating: number;
-  reviewsCount: number;
-
-  stats: {
-    onStock: number;
-    processing: number;
-    totalSold: number;
-  };
-
-  description: string;
-
-  specification: {
-    brand: string;
-    model: string;
-    connectivity: string;
-    bluetooth: string;
-    colors: string[];
-    weight: string;
-    size: string;
-    chargingTime: string;
-    playtime: string;
-  };
+const statusMeta = (product: any) => {
+  const low = Number(product?.stockQuantity || 0) < 10;
+  if (!product?.isAvailable) return { label: 'Unpublish', bg: '#FFF4D9', text: '#A56700', dot: '#A56700' };
+  if (low) return { label: `${product.stockQuantity} in stock`, bg: '#FDEEEE', text: '#D54444', dot: '#D54444' };
+  return { label: `${product.stockQuantity} in stock`, bg: '#E8F8EE', text: '#248D5A', dot: '#248D5A' };
 };
 
-const Product = () => {
-  const { categoryId: paramCategoryId, categoryName } = useLocalSearchParams();
+const money = (value: any) => `$${Number(value || 0).toFixed(2)}`;
+
+export default function ElectronicsProducts() {
+  const { categoryId: routeCategoryId, categoryName } = useLocalSearchParams();
   const user = useAppSelector(selectCurrentUser);
   const { data: profileData } = useGetProfileQuery({});
+
   const vendorId =
     profileData?.data?.vendor?.id ||
     profileData?.data?.vendor?._id ||
@@ -61,401 +31,177 @@ const Product = () => {
     (user as any)?.vendor?._id ||
     user?.id ||
     (user as any)?._id;
-  const categoryId = paramCategoryId ? String(paramCategoryId) : undefined;
 
-  const { data: productsData, isLoading, isError, refetch, isFetching } = useGetProductsByVendorQuery(
-    { vendorId: vendorId || "", ...(categoryId ? { categoryId } : {}) },
+  const categoryId = routeCategoryId ? String(routeCategoryId) : undefined;
+  const [search, setSearch] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'drafts' | 'low_stock'>('all');
+
+  const {
+    data: products = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetProductsByVendorQuery(
+    { vendorId: String(vendorId || ''), ...(categoryId ? { categoryId } : {}) },
     { skip: !vendorId }
   );
 
+  const totalValue = useMemo(() => {
+    const sum = products.reduce((acc: number, p: any) => acc + (Number(p.price || 0) * Number(p.stockQuantity || 0)), 0);
+    return sum.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 });
+  }, [products]);
 
+  const lowCount = useMemo(() => products.filter((p: any) => Number(p.stockQuantity || 0) < 10).length, [products]);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
-
-  const extractProducts = (data: any) => {
-    if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.products)) return data.products;
-    if (data.data && Array.isArray(data.data.products)) return data.data.products;
-    return [];
-  };
-
-  useEffect(() => {
-    const products = extractProducts(productsData);
-    let result = [...products];
-
-    if (searchQuery) {
-      result = result.filter((product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    if (activeFilter !== "all") {
-      result = result.filter((product) => {
-        const isLowStock = product.stockQuantity < 10;
-        if (activeFilter === "low_stock") return isLowStock;
-        if (activeFilter === "active") return product.isAvailable;
-        if (activeFilter === "drafts") return !product.isAvailable;
-        return true;
-      });
-    }
-
-    setFilteredProducts(result);
-  }, [searchQuery, activeFilter, productsData]);
-
-  const rawProducts = extractProducts(productsData);
-
-  const totalValue = rawProducts
-    .reduce(
-      (sum: number, product: any) =>
-        sum + (product.price || 0) * (product.stockQuantity || 0),
-      0
-    )
-    .toLocaleString("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
+  const filtered = useMemo(() => {
+    return products.filter((p: any) => {
+      const nameMatch = String(p.name || '').toLowerCase().includes(search.toLowerCase());
+      if (!nameMatch) return false;
+      if (activeFilter === 'active') return !!p.isAvailable;
+      if (activeFilter === 'drafts') return !p.isAvailable;
+      if (activeFilter === 'low_stock') return Number(p.stockQuantity || 0) < 10;
+      return true;
     });
+  }, [products, search, activeFilter]);
 
-  const lowStockCount = rawProducts.filter(
-    (p: any) => (p.stockQuantity || 0) < 10
-  ).length;
-
-  const renderStockStatus = (product: any) => {
-    if (!product.isAvailable) {
-      return (
-        <View
-          style={{
-            alignSelf: "flex-start",
-            paddingHorizontal: 8,
-            paddingVertical: 4,
-            backgroundColor: "#FFF3E0",
-            borderRadius: 4,
-          }}
-        >
-          <Text style={{ fontSize: 12, color: "#E65100", fontWeight: "500" }}>
-            Unpublish
-          </Text>
-        </View>
-      );
-    }
-
-    const isLowStock = product.stockQuantity < 10;
-    return (
-      <Text
-        style={{
-          fontSize: 12,
-          color: isLowStock ? "#D32F2F" : "#1B5E20",
-          fontWeight: "500",
-        }}
-      >
-        {product.stockQuantity} in stock
-      </Text>
-    );
-  };
-  // this is for handle add product
-  const handleAddProduct = () => {
-    router.push({
-      pathname: "/(screens)/EditProduct",
-      params: { categoryId }
-    });
-  };
-  const handleBack = () => {
-    router.back();
-  };
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1, paddingHorizontal: 20 }}>
-        {/* Header - Fixed at top */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            paddingVertical: 12,
-          }}
-        >
-          <TouchableOpacity onPress={() => handleBack()}>
-            <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
-          </TouchableOpacity>
-          <Text style={{ fontSize: 18, fontWeight: "600" }}>
-            {(categoryName as string) || "Electronics"}
-          </Text>
-          <View style={{ width: 24 }} />
-        </View>
-
-        {/* Scrollable Content */}
-        <ScrollView
-          style={{ flex: 1 }}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={isFetching} onRefresh={refetch} />
-          }
-        >
-          {/* Search Bar */}
-          <View style={{ marginVertical: 16 }}>
-            <TextInput
-              placeholder="Search by name"
-              style={{
-                borderWidth: 1,
-                borderColor: "#E3E6F0",
-                borderRadius: 12,
-                padding: 16,
-                backgroundColor: "#FFF",
-                fontSize: 14,
-              }}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          {/*Cards */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              marginBottom: 24,
-              marginHorizontal: 1,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                borderRadius: 12,
-                padding: 16,
-                width: "48%",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
-              }}
-            >
-              <Text style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
-                Total value
-              </Text>
-              <Text style={{ fontSize: 18, fontWeight: "600" }}>
-                {totalValue}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: "white",
-                borderRadius: 12,
-                padding: 16,
-                width: "48%",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ fontSize: 12, color: "#666" }}>
-                  Low stock items
-                </Text>
-                <Ionicons name="warning-outline" size={16} color="red" />
-              </View>
-              <Text style={{ fontSize: 18, fontWeight: "600" }}>
-                {lowStockCount}
-              </Text>
-            </View>
-          </View>
-
-          {/* Filter Tabs */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {["All", "Active", "Drafts", "Low Stock"].map((filter) => {
-              const filterValue = filter.toLowerCase().replace(" ", "_");
-              const isActive =
-                activeFilter ===
-                (filterValue === "low_stock" ? "low_stock" : filterValue);
-
-              return (
-                <TouchableOpacity
-                  key={filter}
-                  style={{
-                    paddingVertical: 8,
-                    paddingHorizontal: 16,
-                    borderRadius: 8,
-                    marginRight: 8,
-                    backgroundColor: isActive ? "#278687" : "#deede8",
-                  }}
-                  onPress={() =>
-                    setActiveFilter(
-                      filterValue === "all" ? "all" : (filterValue as any)
-                    )
-                  }
-                >
-                  <Text
-                    style={{
-                      color: isActive ? "white" : "#2B2B2B",
-                      fontSize: 14,
-                    }}
-                  >
-                    {filter}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Product List */}
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              marginBottom: 16,
-              marginTop: 16,
-            }}
-          >
-            Inventory Items
-          </Text>
-          <View>
-            {isLoading ? (
-              <ActivityIndicator size="large" color="#278687" style={{ marginTop: 20 }} />
-            ) : isError ? (
-              <Text style={{ textAlign: 'center', marginTop: 20, color: '#FF6B6B' }}>Error loading products</Text>
-            ) : filteredProducts.length === 0 ? (
-              <Text style={{ textAlign: 'center', marginTop: 20, color: '#666' }}>No products found</Text>
-            ) : (
-              filteredProducts.map((product: any) => (
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push({
-                      pathname: "/(screens)/product_details",
-                      params: { id: product.id || product._id },
-                    })
-                  }
-                  key={product.id || product._id}
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: 12,
-                    padding: 12,
-                    marginHorizontal: 1,
-                    marginBottom: 12,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 2,
-                    elevation: 1,
-                  }}
-                >
-                  <Image
-                    source={{ uri: product.imageUrl || (product.images && product.images[0]) || "https://via.placeholder.com/150" }}
-                    style={{
-                      width: 60,
-                      height: 60,
-                      borderRadius: 8,
-                      marginRight: 12,
-                    }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "600",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {product.name}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          color: "#6B7280",
-                          marginRight: 8,
-                        }}
-                      >
-                        {product.sku || 'N/A'}
-                      </Text>
-                      <View
-                        style={{
-                          paddingHorizontal: 8,
-                          paddingVertical: 2,
-                          borderRadius: 12,
-                          backgroundColor:
-                            product.isAvailable
-                              ? (product.stockQuantity < 10 ? "#FEF3C7" : "#D1FAE5")
-                              : "#E5E7EB",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            color:
-                              product.isAvailable
-                                ? (product.stockQuantity < 10 ? "#92400E" : "#065F46")
-                                : "#4B5563",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {product.isAvailable
-                            ? (product.stockQuantity < 10 ? "low stock" : "active")
-                            : "draft"}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                        fontWeight: "700",
-                        color: "#278687",
-                        marginBottom: 4,
-                      }}
-                    >
-                      ${product.price}
-                    </Text>
-                    <Text style={{ fontSize: 12, color: "#6B7280" }}>
-                      {product.stockQuantity} in stock
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))
-            )}
-          </View>
-        </ScrollView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back-ios-new" size={22} color="#1F2A30" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{(categoryName as string) || 'Electronics'}</Text>
+        <View style={{ width: 22 }} />
       </View>
 
-      {/* add product action Button */}
-      <TouchableOpacity
-        style={{
-          position: "absolute",
-          right: 24,
-          bottom: 24,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
-          backgroundColor: "#278687",
-          justifyContent: "center",
-          alignItems: "center",
-          elevation: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-        }}
-        onPress={() => handleAddProduct()}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} />}
+        showsVerticalScrollIndicator={false}
       >
-        <MaterialIcons name="add" size={24} color="white" />
+        <View style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color="#6E7B84" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name"
+            placeholderTextColor="#8A969D"
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        <View style={styles.statRow}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Total value</Text>
+            <Text style={styles.statValue}>{totalValue}</Text>
+          </View>
+          <View style={styles.statCard}>
+            <View style={styles.lowHeader}>
+              <Text style={styles.statLabel}>Low stock items</Text>
+              <Ionicons name="alert-circle-outline" size={18} color="#F15B63" />
+            </View>
+            <Text style={styles.statValue}>{lowCount}</Text>
+          </View>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+          {[
+            { key: 'all', label: 'All' },
+            { key: 'active', label: 'Active' },
+            { key: 'drafts', label: 'Drafts' },
+            { key: 'low_stock', label: 'Low Stock' },
+          ].map((f) => {
+            const active = activeFilter === (f.key as any);
+            return (
+              <TouchableOpacity
+                key={f.key}
+                style={[styles.filterChip, active ? styles.filterChipActive : null]}
+                onPress={() => setActiveFilter(f.key as any)}
+              >
+                <Text style={[styles.filterText, active ? styles.filterTextActive : null]}>{f.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <Text style={styles.sectionTitle}>Inventory Items</Text>
+
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#278687" style={{ marginTop: 24 }} />
+        ) : isError ? (
+          <Text style={styles.emptyText}>Failed to load products.</Text>
+        ) : filtered.length === 0 ? (
+          <Text style={styles.emptyText}>No products found.</Text>
+        ) : (
+          filtered.map((product: any) => {
+            const status = statusMeta(product);
+            return (
+              <TouchableOpacity
+                key={product.id}
+                style={styles.productCard}
+                onPress={() => router.push({ pathname: '/(screens)/product_details', params: { id: product.id } })}
+              >
+                <Image source={{ uri: product.images?.[0] || FALLBACK }} style={styles.productImage} />
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={1} style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productSku}>SKU: {product.sku || 'N/A'}</Text>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={13} color="#F0B429" />
+                    <Text style={styles.ratingText}>{Number(product.averageRating || 0).toFixed(1)} ({product.totalReviews || 0})</Text>
+                  </View>
+                  <View style={styles.cardBottom}>
+                    <Text style={styles.priceText}>{money(product.price)}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: status.bg }]}>
+                      <View style={[styles.statusDot, { backgroundColor: status.dot }]} />
+                      <Text style={[styles.statusText, { color: status.text }]}>{status.label}</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
+      </ScrollView>
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push({ pathname: '/(screens)/EditProduct', params: { ...(categoryId ? { categoryId } : {}) } })}
+      >
+        <MaterialIcons name="add" size={26} color="#FFF" />
       </TouchableOpacity>
     </SafeAreaView>
   );
-};
+}
 
-export default Product;
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F2F6F5' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12 },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#1F2A30' },
+  content: { paddingHorizontal: 14, paddingBottom: 20 },
+  searchBox: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#DCE4E8', backgroundColor: '#FFF', paddingHorizontal: 12, alignItems: 'center', flexDirection: 'row', marginBottom: 12 },
+  searchInput: { marginLeft: 8, flex: 1, fontSize: 15, color: '#223037' },
+  statRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  statCard: { width: '48%', backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#DEE6E9', padding: 12 },
+  statLabel: { color: '#6A7881', fontSize: 13 },
+  statValue: { color: '#1F2A30', fontSize: 24, fontWeight: '700', marginTop: 4 },
+  lowHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  filterChip: { height: 34, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: '#D4DEE2', backgroundColor: '#EAF0EF', justifyContent: 'center', marginRight: 8 },
+  filterChipActive: { backgroundColor: '#278687', borderColor: '#278687' },
+  filterText: { fontSize: 14, color: '#314148' },
+  filterTextActive: { color: '#FFF', fontWeight: '600' },
+  sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1F2A30', marginBottom: 10 },
+  productCard: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#DDE6EA', borderRadius: 12, padding: 10, flexDirection: 'row', marginBottom: 10 },
+  productImage: { width: 70, height: 70, borderRadius: 10, marginRight: 10, backgroundColor: '#E8EEF1' },
+  productName: { fontSize: 16, fontWeight: '700', color: '#1F2A30' },
+  productSku: { fontSize: 12, color: '#7C8991', marginTop: 2 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  ratingText: { fontSize: 12, color: '#4F5D66', marginLeft: 6 },
+  cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
+  priceText: { fontSize: 16, fontWeight: '700', color: '#278687' },
+  statusBadge: { borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, flexDirection: 'row', alignItems: 'center' },
+  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusText: { fontSize: 11, fontWeight: '600' },
+  emptyText: { textAlign: 'center', color: '#6A7881', marginTop: 24, fontSize: 15 },
+  fab: { position: 'absolute', right: 20, bottom: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: '#278687', justifyContent: 'center', alignItems: 'center', elevation: 5 },
+});

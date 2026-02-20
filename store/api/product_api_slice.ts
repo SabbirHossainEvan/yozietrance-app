@@ -1,5 +1,42 @@
 import { apiSlice } from './apiSlice';
 
+const toNumber = (value: any, fallback = 0) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeSpecification = (product: any) => {
+    // Backend may send specification object or array-like specifications entries.
+    if (product?.specification && typeof product.specification === 'object') {
+        return product.specification;
+    }
+
+    if (Array.isArray(product?.specifications)) {
+        return product.specifications.reduce((acc: any, item: any) => {
+            const key = item?.key || item?.label || item?.name;
+            const value = item?.value;
+            if (key) acc[String(key)] = value ?? '';
+            return acc;
+        }, {});
+    }
+
+    return {};
+};
+
+const normalizeProduct = (product: any) => {
+    if (!product || typeof product !== 'object') return product;
+    return {
+        ...product,
+        id: product.id || product._id,
+        images: Array.isArray(product.images) ? product.images : (product.imageUrl ? [product.imageUrl] : []),
+        price: toNumber(product.price),
+        stockQuantity: toNumber(product.stockQuantity),
+        averageRating: toNumber(product.averageRating),
+        totalReviews: toNumber(product.totalReviews),
+        specification: normalizeSpecification(product),
+    };
+};
+
 export const productApiSlice = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getProductsByVendor: builder.query<any, { vendorId: string; categoryId?: string }>({
@@ -8,12 +45,14 @@ export const productApiSlice = apiSlice.injectEndpoints({
                 method: 'GET',
             }),
             transformResponse: (response: any) => {
-                if (Array.isArray(response)) return response;
-                if (Array.isArray(response?.data)) return response.data;
-                if (Array.isArray(response?.data?.data)) return response.data.data;
-                if (Array.isArray(response?.products)) return response.products;
-                if (response?.data && Array.isArray(response.data.products)) return response.data.products;
-                return [];
+                const raw =
+                    (Array.isArray(response) && response) ||
+                    (Array.isArray(response?.data) && response.data) ||
+                    (Array.isArray(response?.data?.data) && response.data.data) ||
+                    (Array.isArray(response?.products) && response.products) ||
+                    (response?.data && Array.isArray(response.data.products) && response.data.products) ||
+                    [];
+                return raw.map(normalizeProduct);
             },
             providesTags: (result) => {
                 const tags: any[] = [{ type: 'Product' as const, id: 'LIST' }];
@@ -28,7 +67,7 @@ export const productApiSlice = apiSlice.injectEndpoints({
         }),
         getProductById: builder.query<any, string>({
             query: (id) => `/products/${id}`,
-            transformResponse: (response: any) => response?.data || response,
+            transformResponse: (response: any) => normalizeProduct(response?.data || response),
             providesTags: (result, error, id) => [{ type: 'Product', id }],
         }),
         createProduct: builder.mutation({
