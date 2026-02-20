@@ -1,324 +1,237 @@
-import { useGetOrdersQuery } from '@/store/api/orderApiSlice'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import React, { useState } from 'react'
-import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useGetOrdersQuery } from '@/store/api/orderApiSlice';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const IMAGE_FALLBACK = 'https://via.placeholder.com/80';
 
 const toNumber = (value: any, fallback = 0) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 };
 
 const formatMoney = (value: any) => `$${toNumber(value).toFixed(2)}`;
 
-const getOrderItems = (order: any) => Array.isArray(order?.orderItems) ? order.orderItems : [];
-const isProductPayload = (order: any) =>
-    !!order && !Array.isArray(order?.orderItems) && (order?.name || order?.price || order?.images?.length);
+const getStatus = (order: any) => String(order?.status || 'pending').toLowerCase();
+const getItems = (order: any) => (Array.isArray(order?.orderItems) ? order.orderItems : []);
 
-const getPrimaryItem = (order: any) => getOrderItems(order)[0];
-
-const getProductImage = (order: any) => {
-    const item = getPrimaryItem(order);
-    return (
-        order?.images?.[0] ||
-        order?.imageUrl ||
-        item?.product?.images?.[0] ||
-        item?.product?.imageUrl ||
-        item?.imageUrl ||
-        item?.image ||
-        IMAGE_FALLBACK
-    );
+const getCoverImage = (order: any) => {
+  const item = getItems(order)[0];
+  return item?.product?.images?.[0] || item?.product?.imageUrl || IMAGE_FALLBACK;
 };
 
-const getProductName = (order: any) => {
-    const item = getPrimaryItem(order);
-    return (
-        order?.name ||
-        order?.title ||
-        item?.product?.name ||
-        item?.productName ||
-        item?.name ||
-        item?.title ||
-        'Product'
-    );
+const getDisplayAddress = (order: any) => {
+  if (typeof order?.shippingAddress === 'string' && order.shippingAddress.trim()) return order.shippingAddress;
+  return 'Address unavailable';
 };
 
-const getOrderTotal = (order: any) => {
-    if (order?.price != null) return toNumber(order.price);
-    if (order?.totalPrice != null) return toNumber(order.totalPrice);
-    if (order?.grandTotal != null) return toNumber(order.grandTotal);
-
-    const calculated = getOrderItems(order).reduce((sum: number, item: any) => {
-        const qty = toNumber(item?.quantity, 1);
-        const unitPrice = item?.price ?? item?.unitPrice ?? item?.product?.price ?? 0;
-        return sum + toNumber(unitPrice) * qty;
-    }, 0);
-    return calculated;
-};
-
-const getCustomerName = (order: any) =>
-    order?.vendor?.name ||
-    order?.category?.name ||
-    order?.buyer?.name ||
-    order?.user?.name ||
-    order?.customer?.name ||
-    order?.shippingAddress?.fullName ||
-    "Customer";
-
-const getShippingAddress = (order: any) => {
-    if (isProductPayload(order)) {
-        return order?.description || `SKU: ${order?.sku || "N/A"}`;
-    }
-    if (typeof order?.shippingAddress === 'string' && order.shippingAddress.trim()) {
-        return order.shippingAddress;
-    }
-    const addr = order?.shippingAddress;
-    if (addr && typeof addr === 'object') {
-        return [addr.addressLine1, addr.addressLine2, addr.city, addr.state, addr.postalCode]
-            .filter(Boolean)
-            .join(', ') || 'N/A';
-    }
-    return 'N/A';
-};
-
-const getOrderCode = (order: any) => {
-    const rawId = String(order?._id || order?.id || '');
-    return rawId ? `#${rawId.slice(-6)}` : '#------';
-};
-
-const getDisplayStatus = (order: any) => {
-    if (order?.status) return order.status;
-    if (order?.isAvailable === true) return 'Processing';
-    if (order?.isAvailable === false) return 'Pending';
-    return 'Pending';
+const getTitleName = (order: any) => {
+  return order?.vendor?.fullName || order?.vendor?.storename || order?.buyer?.fullName || 'Customer';
 };
 
 const getItemSummary = (order: any) => {
-    const items = getOrderItems(order);
-    const count = items.length;
-    if (count === 0 && isProductPayload(order)) {
-        const stock = order?.stockQuantity ?? 0;
-        return `Stock: ${stock} • SKU: ${order?.sku || "N/A"}`;
-    }
-    if (count === 0) return '0 items';
-    const firstName = getProductName(order);
-    if (count === 1) return `1 item • ${firstName}`;
-    return `${count} items • ${firstName} +${count - 1} more`;
+  const items = getItems(order);
+  if (!items.length) return '0 items';
+  const firstName = items[0]?.product?.name || 'Item';
+  return `${items.length} items - ${firstName}`;
 };
 
-const OrderTabs = () => {
-    const [activeFilter, setActiveFilter] = useState<string>('All');
-    const [searchQuery, setSearchQuery] = useState<string>('');
+const statusPillStyle = (status: string) => {
+  const map: Record<string, { bg: string; text: string }> = {
+    pending: { bg: '#FFF4E5', text: '#CC7A00' },
+    processing: { bg: '#E8F1FF', text: '#2764C2' },
+    shipped: { bg: '#F2EFFF', text: '#6A3DBB' },
+    delivered: { bg: '#E8F8EC', text: '#1E8D4C' },
+    completed: { bg: '#E8F8EC', text: '#1E8D4C' },
+    cancelled: { bg: '#FDEBEC', text: '#D43C49' },
+  };
+  return map[status] || { bg: '#EEF1F2', text: '#5E6870' };
+};
 
-    const { data: ordersData, isLoading } = useGetOrdersQuery(undefined);
+const FILTERS = ['all', 'delivered', 'processing', 'shipped', 'cancelled'];
 
-    const filteredOrders = (ordersData || []).filter((order: any) => {
-        // Filter by status
-        const displayStatus = getDisplayStatus(order);
-        const statusMatch = activeFilter === 'All' || displayStatus === activeFilter;
+export default function OrderTabs() {
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-        // Filter by search query (customer name)
-        // Adjusting based on common API structure (customer name might be in buyer/user field)
-        const customerName = getCustomerName(order);
-        const productName = getProductName(order);
-        const orderCode = getOrderCode(order);
-        const searchMatch = searchQuery.trim() === '' ||
-            customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            orderCode.toLowerCase().includes(searchQuery.toLowerCase());
+  const { data: ordersData = [], isLoading } = useGetOrdersQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
 
-        return statusMatch && searchMatch;
+  const filteredOrders = useMemo(() => {
+    return ordersData.filter((order: any) => {
+      const status = getStatus(order);
+      const statusMatch = activeFilter === 'all' || status === activeFilter;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return statusMatch;
+      const orderNumber = String(order?.orderNumber || order?.id || '').toLowerCase();
+      const customer = String(getTitleName(order)).toLowerCase();
+      return statusMatch && (orderNumber.includes(q) || customer.includes(q));
     });
+  }, [ordersData, activeFilter, searchQuery]);
 
-    const handleBack = () => {
-        router.back();
-    };
-
-    if (isLoading) {
-        return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#278687" />
-            </SafeAreaView>
-        );
-    }
-
+  if (isLoading) {
     return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
-                {/* Header */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 }}>
-                    <TouchableOpacity onPress={() => handleBack()}>
-                        <MaterialIcons name="arrow-back-ios-new" size={24} color="black" />
-                    </TouchableOpacity>
-                    <Text style={{ fontSize: 18, fontWeight: '600' }}>Orders</Text>
-                    <View />
-                </View>
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#278687" />
+      </SafeAreaView>
+    );
+  }
 
-                {/* Order Search */}
-                <View style={{ marginVertical: 16 }}>
-                    <TextInput
-                        placeholder="Search by name"
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#E3E6F0',
-                            borderRadius: 12,
-                            padding: 16,
-                            backgroundColor: '#FFF',
-                            fontSize: 14
-                        }}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back-ios-new" size={22} color="#202427" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Orders</Text>
+        <View style={{ width: 22 }} />
+      </View>
 
-                {/* This is for order list filtering */}
-                <View style={{ height: 50 }}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ alignItems: 'center' }}
-                    >
-                        {['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Completed'].map((filter) => {
-                            const isActive = activeFilter === filter;
+      <View style={styles.searchWrap}>
+        <Ionicons name="search-outline" size={20} color="#66737D" />
+        <TextInput
+          placeholder="Search by name"
+          placeholderTextColor="#8A949B"
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
 
-                            return (
-                                <TouchableOpacity
-                                    key={filter}
-                                    style={{
-                                        paddingVertical: 8,
-                                        paddingHorizontal: 16,
-                                        borderRadius: 8,
-                                        marginRight: 8,
-                                        backgroundColor: isActive ? '#278687' : '#deede8',
-                                    }}
-                                    onPress={() => setActiveFilter(filter)}
-                                >
-                                    <Text style={{
-                                        color: isActive ? 'white' : '#2B2B2B',
-                                        fontSize: 14,
-                                        fontWeight: isActive ? '600' : '400'
-                                    }}>
-                                        {filter}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
-                </View>
+      <View style={styles.filterWrap}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {FILTERS.map((f) => {
+            const active = activeFilter === f;
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterChip, active ? styles.filterChipActive : null]}
+                onPress={() => setActiveFilter(f)}
+              >
+                <Text style={[styles.filterChipText, active ? styles.filterChipTextActive : null]}>
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
-                {/* this is for order list */}
-                <ScrollView
-                    style={{ flex: 1, marginTop: 16 }}
-                    contentContainerStyle={{ paddingBottom: 20 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    <View style={{ gap: 12 }}>
-                        {filteredOrders.map((order: any) => (
-                            <TouchableOpacity
-                                onPress={() => router.push({
-                                    pathname: '/(screens)/order_details',
-                                    params: { id: order._id || order.id }
-                                })}
-                                key={order._id || order.id}
-                                style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: 12,
-                                    padding: 12,
-                                    marginHorizontal: 1,
-                                    shadowColor: '#000',
-                                    shadowOffset: { width: 0, height: 1 },
-                                    shadowOpacity: 0.1,
-                                    shadowRadius: 3,
-                                    elevation: 2,
-                                }}
-                            >
-                                <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-                                    <Image
-                                        source={{ uri: getProductImage(order) }}
-                                        style={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: 8,
-                                            marginRight: 12,
-                                        }}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={{ flex: 1 }}>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-                                            <Text style={{ color: "#2B2B2B", fontSize: 16 }}>{getOrderCode(order)}</Text>
-                                            <View
-                                                style={{
-                                                    backgroundColor: getDisplayStatus(order) === 'Completed' ? '#E3F9E7' :
-                                                        getDisplayStatus(order) === 'Pending' ? '#FFF3E0' :
-                                                            getDisplayStatus(order) === 'Processing' ? '#E3F2FD' :
-                                                                getDisplayStatus(order) === 'Shipped' ? '#FFF3E0' :
-                                                                    getDisplayStatus(order) === 'Delivered' ? '#E8F5E9' : '#F3E5F5',
-                                                    paddingHorizontal: 8,
-                                                    paddingVertical: 2,
-                                                    borderRadius: 12,
-                                                }}
-                                            >
-                                                <Text
-                                                    style={{
-                                                        color: getDisplayStatus(order) === 'Completed' ? '#1B5E20' :
-                                                            getDisplayStatus(order) === 'Pending' ? '#E65100' :
-                                                                getDisplayStatus(order) === 'Processing' ? '#0D47A1' :
-                                                                    getDisplayStatus(order) === 'Shipped' ? '#F57C00' :
-                                                                        getDisplayStatus(order) === 'Delivered' ? '#2E7D32' : '#4A148C',
-                                                        fontSize: 10,
-                                                        fontWeight: '500',
-                                                    }}
-                                                >
-                                                    {getDisplayStatus(order)}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <Text style={{ fontSize: 12, color: '#4D4D4D', marginBottom: 8 }}>
-                                            {getShippingAddress(order)}
-                                        </Text>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <Ionicons name="time-outline" size={12} color="#666" />
-                                            <Text style={{ fontSize: 12, marginLeft: 4 }}>
-                                                {order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-'}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-
-                                <View style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    backgroundColor: "#eaf2f2",
-                                    paddingLeft: 12,
-                                    paddingRight: 12,
-                                    paddingBottom: 10,
-                                    paddingTop: 10,
-                                    borderRadius: 6,
-                                    marginTop: 8,
-                                }}>
-                                    <View>
-                                        <Text style={{ fontSize: 12, fontWeight: '500', color: "#278687" }}>
-                                            {getCustomerName(order)}
-                                        </Text>
-                                        <Text style={{ fontSize: 12, color: '#278687' }}>
-                                            {getItemSummary(order)}
-                                        </Text>
-                                    </View>
-                                    <Text style={{ fontSize: 14, fontWeight: '600', color: "#278687" }}>
-                                        {formatMoney(getOrderTotal(order))}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
+      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+        {filteredOrders.map((order: any) => {
+          const status = getStatus(order);
+          const pill = statusPillStyle(status);
+          return (
+            <TouchableOpacity
+              key={order?.id || order?._id}
+              style={styles.card}
+              onPress={() =>
+                router.push({
+                  pathname: '/(screens)/order_details',
+                  params: { id: order?.id || order?._id },
+                })
+              }
+            >
+              <View style={styles.cardTop}>
+                <Image source={{ uri: getCoverImage(order) }} style={styles.cover} />
+                <View style={{ flex: 1 }}>
+                  <View style={styles.orderTopRow}>
+                    <Text style={styles.orderNumber}>#{order?.orderNumber || order?.id}</Text>
+                    <View style={[styles.statusPill, { backgroundColor: pill.bg }]}>
+                      <Text style={[styles.statusPillText, { color: pill.text }]}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </Text>
                     </View>
-                </ScrollView>
-            </View>
-        </SafeAreaView>
-    )
+                  </View>
+                  <Text numberOfLines={1} style={styles.addressText}>{getDisplayAddress(order)}</Text>
+                  <View style={styles.ratingRow}>
+                    <Ionicons name="star" size={14} color="#F0B429" />
+                    <Text style={styles.ratingText}>4.8 (1.2k)</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.cardBottom}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.customerName}>{getTitleName(order)}</Text>
+                  <Text numberOfLines={1} style={styles.summaryText}>{getItemSummary(order)}</Text>
+                </View>
+                <Text style={styles.priceText}>{formatMoney(order?.totalAmount || order?.totalPrice)}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+        {!filteredOrders.length && (
+          <Text style={styles.emptyText}>No orders found.</Text>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
 
-export default OrderTabs
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F2F6F5', paddingHorizontal: 16 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F6F5' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14 },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#1F2A30' },
+  searchWrap: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#DDE4E8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    height: 52,
+  },
+  searchInput: { marginLeft: 8, flex: 1, fontSize: 15, color: '#1F2A30' },
+  filterWrap: { marginTop: 12, height: 44 },
+  filterChip: {
+    paddingHorizontal: 14,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D9E0E4',
+    backgroundColor: '#EEF2F3',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  filterChipActive: { backgroundColor: '#278687', borderColor: '#278687' },
+  filterChipText: { fontSize: 14, color: '#34434C', fontWeight: '500' },
+  filterChipTextActive: { color: '#FFFFFF' },
+  listContent: { paddingTop: 12, paddingBottom: 24 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8EB',
+  },
+  cardTop: { flexDirection: 'row' },
+  cover: { width: 72, height: 72, borderRadius: 10, marginRight: 12, backgroundColor: '#E7EDF0' },
+  orderTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  orderNumber: { fontSize: 18, color: '#2A3237', fontWeight: '600', flex: 1, paddingRight: 8 },
+  statusPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  statusPillText: { fontSize: 12, fontWeight: '600' },
+  addressText: { color: '#7B868D', fontSize: 13, marginTop: 6 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  ratingText: { fontSize: 13, color: '#495860', marginLeft: 6 },
+  cardBottom: {
+    marginTop: 10,
+    backgroundColor: '#EAF2F1',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  customerName: { fontSize: 18, color: '#278687', fontWeight: '500' },
+  summaryText: { fontSize: 13, color: '#278687', marginTop: 2 },
+  priceText: { marginLeft: 8, fontSize: 30, color: '#278687', fontWeight: '700' },
+  emptyText: { textAlign: 'center', color: '#7B868D', marginTop: 32, fontSize: 15 },
+});

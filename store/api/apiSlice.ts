@@ -13,11 +13,11 @@ if (!apiUrl) {
 
 const baseQuery = fetchBaseQuery({
     baseUrl: apiUrl,
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: async (headers, { getState }) => {
         const state = getState() as any;
-        const token = state.auth?.accessToken;
-        console.log('Redux State Auth:', state.auth);
-        console.log('Access Token:', token);
+        const reduxToken = state.auth?.accessToken;
+        const persistedToken = await AsyncStorage.getItem('accessToken');
+        const token = reduxToken || persistedToken;
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
         }
