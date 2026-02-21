@@ -1,6 +1,6 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import {
   Dimensions,
   Image,
@@ -17,54 +17,73 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const { width } = Dimensions.get("window");
 const COLUMN_WIDTH = (width - 48) / 2;
 
-// Dummy Data
-const categories = [
-  {
-    id: "1",
-    name: "Electronics",
-    image:
-      "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?q=80&w=500",
-  },
-  {
-    id: "2",
-    name: "Clothing",
-    image:
-      "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?q=80&w=500",
-  },
-  {
-    id: "3",
-    name: "Accessories",
-    image:
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=500",
-  },
-  {
-    id: "4",
-    name: "Footwear",
-    image:
-      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=500",
-  },
-  {
-    id: "5",
-    name: "Groceries",
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500",
-  },
-  {
-    id: "6",
-    name: "Gadgets",
-    image:
-      "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=500",
-  },
-];
+import { ActivityIndicator, Alert, RefreshControl } from "react-native";
+import { useGetProfileQuery } from "../../store/api/authApiSlice";
+import { useDeleteCategoryMutation, useGetCategoriesByVendorQuery } from "../../store/api/categoryApiSlice";
 
 const ProductScreen = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const vendorId = profileData?.data?.vendor?.id || profileData?.data?.vendor?._id;
+  const [searchQuery, setSearchQuery] = useState("");
+
+  console.log('ProductScreen - vendorId:', vendorId);
+
+  const { data: categoryResponse, isLoading, error, refetch, isFetching } = useGetCategoriesByVendorQuery(vendorId, {
+    skip: !vendorId
+  });
+
+  console.log('ProductScreen - categoryResponse:', categoryResponse);
+
+
+
+  console.log('ProductScreen - categoryResponse:', JSON.stringify(categoryResponse));
+
+
+  console.log('ProductScreen - error:', JSON.stringify(error));
+
+  const [deleteCategory] = useDeleteCategoryMutation();
+
+  const categories = categoryResponse?.data || (Array.isArray(categoryResponse) ? categoryResponse : []);
+
+  console.log('ProductScreen - categories length:', categories.length);
+
+  const filteredCategories = categories.filter((item: any) => {
+    const nameMatch = item.name?.toLowerCase().includes(searchQuery.toLowerCase());
+    return nameMatch;
+  });
+
+  const handleDelete = (id: string, name: string) => {
+    Alert.alert(
+      "Delete Category",
+      `Are you sure you want to delete "${name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            console.log('ProductScreen - Deleting category ID:', id);
+            try {
+              const res = await deleteCategory(id).unwrap();
+              console.log('ProductScreen - Delete response:', JSON.stringify(res));
+              Alert.alert("Success", "Category deleted successfully");
+            } catch (err: any) {
+              console.error('ProductScreen - Delete ERROR:', JSON.stringify(err));
+              Alert.alert("Error", err?.data?.message || "Failed to delete category");
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header Section */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.iconBtn}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Product</Text>
@@ -88,6 +107,8 @@ const ProductScreen = () => {
           placeholder="Search by Category"
           placeholderTextColor="#999"
           style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
       </View>
 
@@ -95,28 +116,78 @@ const ProductScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={isFetching} onRefresh={refetch} />
+        }
       >
-        <View style={styles.grid}>
-          {categories.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.imageContainer}>
-                <Image source={{ uri: item.image }} style={styles.catImage} />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#349488" />
+          </View>
+        ) : error ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {(error as any)?.data?.message === "Vendor not found"
+                ? "Please complete your vendor profile to see categories."
+                : "Failed to load categories. Please try again."}
+            </Text>
+          </View>
+        ) : filteredCategories.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {searchQuery ? `No categories matching "${searchQuery}"` : "No categories found"}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {filteredCategories.map((item: any) => (
+              <View key={item.id} style={styles.card}>
+                <View style={styles.imageContainer}>
+                  <Image source={{ uri: item.thumbnail }} style={styles.catImage} />
+
+                  {/* Action Overlay */}
+                  <View style={styles.actionOverlay}>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => router.push({
+                        pathname: "/(screens)/addCategory",
+                        params: {
+                          id: item.id,
+                          name: item.name,
+                          description: item.description,
+                          catImage: item.thumbnail,
+                          displayOrder: item.displayOrder?.toString()
+                        }
+                      })}
+                    >
+                      <Ionicons name="create-outline" size={18} color="#349488" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => handleDelete(item.id, item.name)}
+                    >
+                      <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.nameBadge}
+                  onPress={() => router.push({
+                    pathname: "/(tabs)/electronics-products",
+                    params: { categoryId: item.id, categoryName: item.name }
+                  })}
+                >
+                  <Text style={styles.catName} numberOfLines={1}>{item.name}</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.nameBadge}
-                onPress={() => router.replace("/(tabs)/electronics-products")}
-              >
-                <Text style={styles.catName}>{item.name}</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-// Sub-component for Bottom Tab
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8FBFB" },
@@ -181,27 +252,39 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F9F8",
   },
   catName: { color: "#349488", fontWeight: "600", fontSize: 14 },
-  bottomTab: {
-    flexDirection: "row",
-    backgroundColor: "#FFF",
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#EEE",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    justifyContent: "space-around",
-    paddingBottom: 25, // For iPhone home indicator
+  loadingContainer: {
+    paddingTop: 50,
+    alignItems: "center",
   },
-  tabItem: { alignItems: "center" },
-  tabLabel: { fontSize: 12, color: "#666", marginTop: 4 },
-  activeTabLabel: { color: "#349488", fontWeight: "bold" },
-  activeIndicator: {
-    width: 25,
-    height: 3,
-    backgroundColor: "#349488",
-    marginTop: 4,
-    borderRadius: 2,
+  emptyContainer: {
+    paddingTop: 100,
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: 'center',
+  },
+  actionOverlay: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    flexDirection: "row",
+  },
+  actionBtn: {
+    backgroundColor: "rgba(255,255,255,0.9)",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
 

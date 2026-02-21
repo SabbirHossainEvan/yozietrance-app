@@ -1,291 +1,224 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '@/store/api/orderApiSlice';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const IMAGE_FALLBACK = 'https://via.placeholder.com/100';
+
+const toNumber = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const formatMoney = (value: any) => `$${toNumber(value).toFixed(2)}`;
+const normalizeStatus = (value: any) => String(value || 'pending').toLowerCase();
+const getItems = (order: any) => (Array.isArray(order?.orderItems) ? order.orderItems : []);
 
 const OrderDetails = () => {
   const router = useRouter();
-  const { status } = useLocalSearchParams();
-  const [modalVisible, setModalVisible] = useState(false);
+  const { id } = useLocalSearchParams();
+  const { data: order, isLoading, error, refetch } = useGetOrderByIdQuery(id as string, { skip: !id });
+  const [updateOrderStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [rating, setRating] = useState(5);
+  const [feedback, setFeedback] = useState('');
 
-  const orderItems = [
-    {
-      id: "1",
-      title: "#ORD-2025",
-      price: 20,
-      qty: 2,
-      desc: "Lorem ipsum ultricies in tortor...",
-    },
-    {
-      id: "2",
-      title: "#ORD-2025",
-      price: 20,
-      qty: 2,
-      desc: "Lorem ipsum ultricies in tortor...",
-    },
-  ];
+  const status = normalizeStatus(order?.status);
+  const items = useMemo(() => getItems(order), [order]);
 
-  const statusSteps = [
-    {
-      label: "Order Created",
-      date: "18 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Created",
-    },
-    {
-      label: "Processing",
-      date: "22 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Processing",
-    },
-    {
-      label: "Shipped",
-      date: "23 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Shipped",
-    },
-    {
-      label: "Ready For Pickup",
-      date: "23 May 2025",
-      location: "Mirpur 11, Dhaka",
-      key: "Shipped",
-    },
-    { label: "Pickup", date: "", location: "", key: "Delivered" },
-  ];
+  const subtotal = toNumber(order?.subtotal);
+  const tax = toNumber(order?.taxAmount, 0);
+  const shipping = toNumber(order?.shippingCost, 0);
+  const discount = toNumber(order?.discountAmount);
+  const total = toNumber(order?.totalAmount);
 
-  const checkCompleted = (stepKey: string) => {
-    const levels: any = { Processing: 1, Shipped: 2, Delivered: 4 };
-    const currentLevel = levels[status as string] || 0;
-    const stepLevel = levels[stepKey] || 0;
-    return stepLevel <= currentLevel;
+  const timeline = useMemo(() => {
+    const created = order?.createdAt ? new Date(order.createdAt) : null;
+    const updated = order?.updatedAt ? new Date(order.updatedAt) : created;
+    return [
+      { key: 'created', title: 'Order Created', time: created },
+      { key: 'processing', title: 'Processing', time: status === 'processing' || status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
+      { key: 'shipped', title: 'Shipped', time: status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
+      { key: 'ready', title: 'Ready For Pickup', time: status === 'delivered' || status === 'completed' ? updated : null },
+    ];
+  }, [order, status]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#2A8C8B" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!order || error) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <Text style={{ color: '#2A3035' }}>Order not found</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const handleConfirmPickup = async () => {
+    try {
+      await updateOrderStatus({ id: order?.id, status: 'completed' }).unwrap();
+      await refetch();
+      setShowFeedbackModal(true);
+    } catch (err: any) {
+      Alert.alert('Error', err?.data?.message || 'Failed to confirm pickup');
+    }
   };
+
+  const canConfirmPickup = status === 'delivered' || status === 'shipped' || status === 'processing';
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      {/* <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Orders #ORD-2025</Text>
-        <View style={{ width: 24 }} />
-      </View> */}
-
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={28} color="#181725" />
+          <Ionicons name="chevron-back" size={24} color="#1C252B" />
         </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>Orders #ORD-2025</Text>
-
-        {/* Added Download Button */}
+        <Text style={styles.headerTitle}>Orders #{order?.orderNumber || order?.id}</Text>
         <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={() => router.push("/(user_screen)/ExportInvoiceScreen")}
+          style={styles.downloadBtn}
+          onPress={() => router.push({ pathname: '/(user_screen)/ExportInvoiceScreen', params: { id: order?.id } })}
         >
-          <Ionicons name="download-outline" size={20} color="#FFF" />
+          <Ionicons name="download-outline" size={18} color="#FFF" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* User Profile Card */}
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-          <View style={styles.userInfo}>
-            <Image
-              source={{ uri: "https://i.@pravatar.cc/100" }}
-              style={styles.avatar}
-            />
-            <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={styles.userName}>Ronald Richards</Text>
-              <Text style={styles.userId}>ID: #225432</Text>
+          <View style={styles.userRow}>
+            <Image source={{ uri: order?.vendor?.logoUrl || IMAGE_FALLBACK }} style={styles.avatar} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.userName}>{order?.vendor?.fullName || order?.vendor?.storename || 'Vendor'}</Text>
+              <Text style={styles.userId}>ID: {order?.vendor?.id || 'N/A'}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.messageBtn}>
-            <Ionicons name="chatbubble-outline" size={18} color="#333" />
-            <Text style={styles.messageBtnText}>Message</Text>
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() =>
+              router.push({
+                pathname: '/(screens)/chat_box',
+                params: {
+                  partnerId: order?.vendor?.userId || order?.vendor?.id,
+                  fullname: order?.vendor?.fullName || order?.vendor?.storename || 'Vendor',
+                },
+              })
+            }
+          >
+            <Ionicons name="chatbubble-outline" size={16} color="#2F3A41" />
+            <Text style={styles.messageText}>Message</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Order Items */}
-        <Text style={styles.sectionTitle}>Order items</Text>
         <View style={styles.card}>
-          {orderItems.map((item, idx) => (
-            <View
-              key={item.id}
-              style={[
-                styles.itemRow,
-                idx !== orderItems.length - 1 && styles.borderBottom,
-              ]}
-            >
-              <Image
-                source={{ uri: "https://via.placeholder.com/100" }}
-                style={styles.itemImg}
-              />
-              <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.sectionTitle}>Order items</Text>
+          {items.map((item: any, index: number) => (
+            <View key={item?.id || `${index}`} style={[styles.itemRow, index < items.length - 1 ? styles.itemBorder : null]}>
+              <Image source={{ uri: item?.product?.images?.[0] || IMAGE_FALLBACK }} style={styles.itemImage} />
+              <View style={{ flex: 1, marginLeft: 10 }}>
                 <View style={styles.rowBetween}>
-                  <Text style={styles.itemTitle}>{item.title}</Text>
-                  <Text style={styles.itemPrice}>${item.price}</Text>
+                  <Text style={styles.itemName}>#{order?.orderNumber}</Text>
+                  <Text style={styles.itemPrice}>{formatMoney(item?.unitPrice || item?.totalPrice)}</Text>
                 </View>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.itemDesc} numberOfLines={2}>
-                    {item.desc}
-                  </Text>
-                  <Text style={styles.itemQty}>x{item.qty}</Text>
-                </View>
+                <Text numberOfLines={2} style={styles.itemDesc}>{item?.product?.description || 'No description'}</Text>
+                <Text style={styles.itemQty}>x{item?.quantity || 1}</Text>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Payment Details */}
-        <Text style={styles.sectionTitle}>Payment details</Text>
         <View style={styles.card}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>$80.00</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tax(7.5%)</Text>
-            <Text style={styles.summaryValue}>$10.00</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping</Text>
-            <Text style={styles.summaryValue}>$0.60</Text>
-          </View>
-          <View style={styles.dashedLine} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Grand total</Text>
-            <Text style={styles.totalValue}>$90.60</Text>
-          </View>
+          <Text style={styles.sectionTitle}>Payment details</Text>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Subtotal</Text><Text style={styles.paymentValue}>{formatMoney(subtotal)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Tax(7.5%)</Text><Text style={styles.paymentValue}>{formatMoney(tax)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Shipping</Text><Text style={styles.paymentValue}>{formatMoney(shipping)}</Text></View>
+          <View style={styles.dashed} />
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Discount</Text><Text style={styles.paymentValue}>{formatMoney(discount)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>{formatMoney(total)}</Text></View>
           <View style={styles.paidBadge}>
-            <Text style={styles.paidText}>Paid</Text>
-            <Text style={styles.paidSubText}>Via Credit Card ending 4242</Text>
+            <Text style={styles.paidTag}>{status === 'pending' ? 'Unpaid' : 'Paid'}</Text>
+            <Text style={styles.paidText}>Via {order?.payment?.paymentMethod || 'Card ending 4242'}</Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Order history</Text>
         <View style={styles.card}>
-          {statusSteps.map((step, index) => {
-            const completed = index === 0 || checkCompleted(step.key);
-            const isLast = index === statusSteps.length - 1;
+          <Text style={styles.sectionTitle}>Order history</Text>
+          {timeline.map((step, idx) => {
+            const active = !!step.time;
+            const isLast = idx === timeline.length - 1;
             return (
-              <View key={index} style={styles.historyRow}>
+              <View key={step.key} style={styles.historyRow}>
                 <View style={styles.historyLeft}>
-                  <View style={[styles.dot, completed && styles.dotActive]}>
-                    {completed && (
-                      <Ionicons name="checkmark" size={8} color="#FFF" />
-                    )}
+                  <View style={[styles.dot, active ? styles.dotActive : null]}>
+                    {active ? <Ionicons name="checkmark" size={8} color="#FFF" /> : null}
                   </View>
-                  {!isLast && (
-                    <View
-                      style={[styles.line, completed && styles.lineActive]}
-                    />
-                  )}
+                  {!isLast ? <View style={[styles.line, active ? styles.lineActive : null]} /> : null}
                 </View>
-                <View style={styles.historyRight}>
-                  <Text
-                    style={[
-                      styles.historyLabel,
-                      completed && styles.textActive,
-                    ]}
-                  >
-                    {step.label}
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.historyTitle, active ? styles.historyTitleActive : null]}>{step.title}</Text>
+                  <Text style={styles.historySub}>
+                    {step.time ? step.time.toLocaleString() : 'Waiting...'}
                   </Text>
-                  {step.date ? (
-                    <Text style={styles.historySub}>
-                      {step.location} • {step.date}
-                    </Text>
-                  ) : null}
                 </View>
               </View>
             );
           })}
         </View>
 
-        {status === "Delivered" && (
-          <TouchableOpacity
-            style={styles.feedbackMainBtn}
-            onPress={() => setModalVisible(true)}
-          >
-            <Text style={styles.feedbackMainBtnText}>Give Feedback</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          style={[styles.confirmBtn, !canConfirmPickup ? styles.confirmBtnDisabled : null]}
+          onPress={handleConfirmPickup}
+          disabled={!canConfirmPickup || isUpdating}
+        >
+          {isUpdating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confirmBtnText}>Confirm Pickup</Text>}
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* Feedback Modal */}
-      <Modal visible={modalVisible} transparent animationType="fade">
+      <Modal visible={showFeedbackModal} transparent animationType="fade" onRequestClose={() => setShowFeedbackModal(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setModalVisible(false)}
-            >
-              <Ionicons name="close" size={24} color="#666" />
+          <View style={styles.modalCard}>
+            <TouchableOpacity style={styles.modalClose} onPress={() => setShowFeedbackModal(false)}>
+              <Ionicons name="close" size={18} color="#66737C" />
             </TouchableOpacity>
 
-            <View style={styles.checkCircle}>
-              <Ionicons name="checkmark" size={40} color="#2A8383" />
+            <View style={styles.checkWrap}>
+              <Ionicons name="checkmark" size={24} color="#2A8C8B" />
             </View>
 
             <Text style={styles.modalTitle}>Task Completed</Text>
-            <Text style={styles.modalSub}>
-              Average Rating and Feedback{"\n"}Tamim Sarkar
-            </Text>
+            <Text style={styles.modalSub}>Average Rating and Feedback</Text>
 
-            <Text style={styles.avgRatingLabel}>Avg. Rating</Text>
+            <Text style={styles.ratingLabel}>Avg. Rating</Text>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  onPress={() => setRating(s)}
-                  style={styles.starItem}
-                >
-                  <Ionicons
-                    name="star"
-                    size={35}
-                    color={s <= rating ? "#FF9500" : "#E0E0E0"}
-                  />
-                  <Text style={styles.starText}>
-                    {s === 1
-                      ? "Bad"
-                      : s === 3
-                        ? "Good"
-                        : s === 5
-                          ? "Amazing"
-                          : ""}
-                  </Text>
+                <TouchableOpacity key={s} onPress={() => setRating(s)} style={styles.starCell}>
+                  <Ionicons name="star" size={20} color={s <= rating ? '#FF9D2E' : '#D9E1E5'} />
                 </TouchableOpacity>
               ))}
             </View>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Feedback Note</Text>
-              <TextInput
-                placeholder="Type here..."
-                multiline
-                style={styles.textInput}
-              />
+            <View style={styles.starTextRow}>
+              {['Bad', 'Average', 'Good', 'Great', 'Amazing'].map((label) => (
+                <Text key={label} style={styles.starLabel}>{label}</Text>
+              ))}
             </View>
 
-            <TouchableOpacity
-              style={styles.doneBtn}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.doneBtnText}>Done</Text>
+            <Text style={[styles.ratingLabel, { marginTop: 10 }]}>Feedback Note</Text>
+            <TextInput
+              value={feedback}
+              onChangeText={setFeedback}
+              placeholder="Type here..."
+              placeholderTextColor="#95A2AA"
+              style={styles.feedbackInput}
+              multiline
+            />
+
+            <TouchableOpacity style={styles.doneBtn} onPress={() => setShowFeedbackModal(false)}>
+              <Text style={styles.doneText}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -295,173 +228,63 @@ const OrderDetails = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FBF9" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: "#F7FAF9",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#181725",
-  },
-  scrollContent: { padding: 16 },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-  },
-  userInfo: { flexDirection: "row", alignItems: "center" },
-  avatar: { width: 50, height: 50, borderRadius: 25 },
-  userName: { fontSize: 16, fontWeight: "700" },
-  userId: { fontSize: 12, color: "#999" },
-  messageBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#F5F5F5",
-    padding: 10,
-    borderRadius: 10,
-    marginTop: 15,
-  },
-  messageBtnText: { marginLeft: 8, fontWeight: "600" },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
-    color: "#333",
-  },
-  itemRow: { flexDirection: "row", paddingVertical: 12 },
-  borderBottom: { borderBottomWidth: 1, borderBottomColor: "#F0F0F0" },
-  itemImg: { width: 60, height: 60, borderRadius: 10 },
-  itemTitle: { fontWeight: "700", fontSize: 14 },
-  itemPrice: { fontWeight: "700", color: "#333" },
-  itemDesc: { fontSize: 12, color: "#999", marginTop: 4, flex: 0.9 },
-  itemQty: { fontSize: 12, color: "#666" },
-  rowBetween: { flexDirection: "row", justifyContent: "space-between" },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  summaryLabel: { color: "#666" },
-  summaryValue: { fontWeight: "600" },
-  dashedLine: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEE",
-    borderStyle: "dashed",
-    marginVertical: 10,
-  },
-  totalLabel: { fontSize: 16, fontWeight: "700" },
-  totalValue: { fontSize: 16, fontWeight: "700", color: "#2A8383" },
-  paidBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 15,
-    backgroundColor: "#F0F9F7",
-    padding: 8,
-    borderRadius: 8,
-  },
-  paidText: { color: "#2A8383", fontWeight: "bold", marginRight: 10 },
-  paidSubText: { color: "#666", fontSize: 11 },
-  historyRow: { flexDirection: "row", height: 70 },
-  historyLeft: { alignItems: "center", marginRight: 15, width: 20 },
-  dot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#DDD",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotActive: { backgroundColor: "#2A8383" },
-  line: { width: 2, flex: 1, backgroundColor: "#DDD", marginVertical: 2 },
-  lineActive: { backgroundColor: "#2A8383" },
-  historyRight: { flex: 1 },
-  historyLabel: { fontSize: 14, color: "#999" },
-  textActive: { color: "#2A8383", fontWeight: "700" },
-  historySub: { fontSize: 11, color: "#BBB", marginTop: 2 },
-  feedbackMainBtn: {
-    backgroundColor: "#2A8383",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  feedbackMainBtnText: { color: "#FFF", fontWeight: "bold" },
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "90%",
-    backgroundColor: "#FFF",
-    borderRadius: 24,
-    padding: 20,
-    alignItems: "center",
-  },
-  closeBtn: { alignSelf: "flex-end" },
-  checkCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "#E8F6F6",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 15,
-  },
-  modalTitle: { fontSize: 20, fontWeight: "bold" },
-  modalSub: { textAlign: "center", color: "#999", marginVertical: 10 },
-  avgRatingLabel: {
-    alignSelf: "flex-start",
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-  starsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginVertical: 15,
-  },
-  starItem: { alignItems: "center" },
-  starText: { fontSize: 10, color: "#999", marginTop: 4 },
-  inputContainer: { width: "100%" },
-  inputLabel: { fontWeight: "bold", marginBottom: 8 },
-  textInput: {
-    width: "100%",
-    height: 100,
-    borderWidth: 1,
-    borderColor: "#EEE",
-    borderRadius: 12,
-    padding: 12,
-    textAlignVertical: "top",
-  },
-  doneBtn: {
-    backgroundColor: "#2A8383",
-    width: "100%",
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-    alignItems: "center",
-  },
-  downloadButton: {
-    backgroundColor: "#3B8C8C", // The teal color from your UI
-    width: 45,
-    height: 45,
-    borderRadius: 22.5, // Makes it a perfect circle
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  doneBtnText: { color: "#FFF", fontWeight: "bold" },
+  container: { flex: 1, backgroundColor: '#F3F7F6' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F3F7F6' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#1C252B', flex: 1, textAlign: 'center', marginHorizontal: 8 },
+  downloadBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#2A8C8B', justifyContent: 'center', alignItems: 'center' },
+  content: { paddingHorizontal: 14, paddingBottom: 18 },
+  card: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#E1E8EB', marginBottom: 10 },
+  userRow: { flexDirection: 'row', alignItems: 'center' },
+  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#E8EEF1' },
+  userName: { fontSize: 14, fontWeight: '700', color: '#1F2A30' },
+  userId: { fontSize: 11, color: '#6D7A83', marginTop: 2 },
+  messageBtn: { marginTop: 10, height: 34, borderRadius: 8, backgroundColor: '#F3F7F8', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, borderWidth: 1, borderColor: '#E2E9EC' },
+  messageText: { fontSize: 12, fontWeight: '600', color: '#2F3A41' },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: '#1F2A30', marginBottom: 8 },
+  itemRow: { flexDirection: 'row', paddingVertical: 8 },
+  itemBorder: { borderBottomWidth: 1, borderBottomColor: '#ECF1F3' },
+  itemImage: { width: 58, height: 58, borderRadius: 8, backgroundColor: '#E8EEF1' },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  itemName: { fontSize: 13, fontWeight: '600', color: '#1F2A30' },
+  itemPrice: { fontSize: 13, fontWeight: '700', color: '#1F2A30' },
+  itemDesc: { fontSize: 11, color: '#7C8991', marginTop: 2, marginRight: 30 },
+  itemQty: { textAlign: 'right', fontSize: 11, color: '#6D7A83', marginTop: 2 },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  paymentLabel: { fontSize: 13, color: '#6D7A83' },
+  paymentValue: { fontSize: 13, color: '#1F2A30', fontWeight: '600' },
+  dashed: { borderStyle: 'dashed', borderWidth: 1, borderColor: '#CFD9DE', marginVertical: 6 },
+  totalLabel: { fontSize: 15, fontWeight: '700', color: '#1F2A30' },
+  totalValue: { fontSize: 15, fontWeight: '700', color: '#1F2A30' },
+  paidBadge: { marginTop: 8, flexDirection: 'row', alignItems: 'center' },
+  paidTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: '#E5F8E9', color: '#1D9A49', fontWeight: '700', fontSize: 11 },
+  paidText: { fontSize: 11, color: '#7C8991', marginLeft: 8 },
+  historyRow: { flexDirection: 'row' },
+  historyLeft: { width: 22, alignItems: 'center' },
+  dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#CCD7DC', justifyContent: 'center', alignItems: 'center' },
+  dotActive: { backgroundColor: '#2A8C8B' },
+  line: { width: 2, flex: 1, backgroundColor: '#D3DDE2', marginVertical: 2 },
+  lineActive: { backgroundColor: '#2A8C8B' },
+  historyTitle: { fontSize: 13, color: '#738089', fontWeight: '600' },
+  historyTitleActive: { color: '#228887' },
+  historySub: { fontSize: 11, color: '#8D9AA3', marginBottom: 10 },
+  confirmBtn: { height: 44, borderRadius: 10, backgroundColor: '#2A8C8B', justifyContent: 'center', alignItems: 'center', marginTop: 2 },
+  confirmBtnDisabled: { backgroundColor: '#AFC4C4' },
+  confirmBtnText: { color: '#FFF', fontSize: 15, fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  modalCard: { width: '100%', maxWidth: 360, backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E0E8EB' },
+  modalClose: { alignSelf: 'flex-end' },
+  checkWrap: { width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: '#2A8C8B', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginTop: -6 },
+  modalTitle: { textAlign: 'center', fontSize: 20, fontWeight: '700', color: '#1F2A30', marginTop: 10 },
+  modalSub: { textAlign: 'center', color: '#718089', fontSize: 12, marginTop: 4 },
+  ratingLabel: { fontSize: 12, color: '#4A5962', fontWeight: '700', marginTop: 8 },
+  starsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  starCell: { width: 42, alignItems: 'center' },
+  starTextRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
+  starLabel: { width: 42, textAlign: 'center', fontSize: 10, color: '#8B99A2' },
+  feedbackInput: { borderWidth: 1, borderColor: '#CDD8DD', borderRadius: 8, minHeight: 80, marginTop: 6, padding: 10, textAlignVertical: 'top', color: '#243037' },
+  doneBtn: { height: 40, borderRadius: 8, backgroundColor: '#2A8C8B', justifyContent: 'center', alignItems: 'center', marginTop: 14 },
+  doneText: { color: '#FFF', fontWeight: '700' },
 });
 
 export default OrderDetails;

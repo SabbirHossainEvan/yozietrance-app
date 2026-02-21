@@ -1,8 +1,13 @@
+
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -10,18 +15,115 @@ import {
   View,
 } from "react-native";
 
+import { useRegisterMutation } from "@/store/api/authApiSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { setCredentials } from "@/store/slices/authSlice";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Apple, Chrome, Facebook } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignUpScreen: React.FC = () => {
-  const [fullName, setFullName] = useState<string>("");
-  const [contact, setContact] = useState<string>("");
+  const dispatch = useAppDispatch();
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [acceptedTerms, setAcceptedTerms] = useState<boolean>(false);
+
+  const [register, { isLoading, error }] = useRegisterMutation();
+
+  const handleSignup = async () => {
+    if (!acceptedTerms) {
+      alert("Please accept the terms and conditions");
+      return;
+    }
+    const locationData = await AsyncStorage.getItem("userLocation");
+
+    // Basic Validation
+    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
+    try {
+      let resolvedAddress = "N/A";
+      if (locationData) {
+        try {
+          const parsedLocation = JSON.parse(locationData);
+          resolvedAddress =
+            parsedLocation?.address ||
+            `${parsedLocation?.latitude || ""}, ${parsedLocation?.longitude || ""}`.trim() ||
+            "N/A";
+        } catch {
+          resolvedAddress = String(locationData);
+        }
+      }
+
+      if (!resolvedAddress || resolvedAddress.trim().length < 2) {
+        resolvedAddress = "Unknown";
+      }
+
+      const payload = {
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
+        evanAddress: resolvedAddress,
+      };
+
+      console.log(payload);
+      const response = await register(payload).unwrap();
+      console.log('Signup successful', response);
+
+      const { data } = response;
+      if (data && data.accessToken) {
+        // Correctly handle the nested data structure from backend
+        const user = data.user;
+        const accessToken = data.accessToken;
+        const refreshToken = data.refreshToken || response.refreshToken || null;
+
+        dispatch(setCredentials({ user, accessToken, refreshToken }));
+
+        // Save to AsyncStorage for persistence
+        await AsyncStorage.setItem('accessToken', accessToken);
+        if (refreshToken) await AsyncStorage.setItem('refreshToken', refreshToken);
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+
+        // Save role to AsyncStorage for role-based UI
+        const userType = user?.userType;
+        if (userType) {
+          await AsyncStorage.setItem('userRole', userType);
+        }
+
+        console.log('Signup successful, redirecting to role selection. UserType:', userType);
+        router.replace("/(onboarding)/user-selection");
+      } else {
+        console.error("Signup response missing data/token", response);
+        alert("Signup successful but failed to auto-login. Please login manually.");
+        router.push("/(auth)/login");
+      }
+    } catch (err) {
+      console.error('Signup failed', err);
+      const fetchStatus = (err as any)?.status;
+      const serverMessage = (err as any)?.data?.message;
+      if (fetchStatus === 'FETCH_ERROR') {
+        alert("Signup failed: Unable to reach server. Check EXPO_PUBLIC_API_URL and backend availability.");
+        return;
+      }
+      alert("Signup failed: " + (serverMessage || "Something went wrong"));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar />
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={28} color="#333" />
+      </TouchableOpacity>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
@@ -40,29 +142,33 @@ const SignUpScreen: React.FC = () => {
 
           {/* Form Section */}
           <View style={styles.formContainer}>
+
             <TextInput
               style={styles.input}
-              placeholder="Full name"
-              placeholderTextColor="#999"
-              value={fullName}
-              onChangeText={setFullName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="E-mail address or phone number"
+              placeholder="E-mail address"
               placeholderTextColor="#999"
               keyboardType="email-address"
               autoCapitalize="none"
-              value={contact}
-              onChangeText={setContact}
+              value={email}
+              onChangeText={setEmail}
             />
+
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="********"
               placeholderTextColor="#999"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="********"
+              placeholderTextColor="#999"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
             />
 
             {/* Terms and Conditions */}
@@ -80,12 +186,13 @@ const SignUpScreen: React.FC = () => {
             </TouchableOpacity>
 
             {/* Sign Up Button */}
-            <TouchableOpacity style={styles.signUpButton}>
-              <Text
-                style={styles.signUpButtonText}
-                onPress={() => router.push("/user-selection")}
-              >
-                Sign Up
+            <TouchableOpacity
+              style={[styles.signUpButton, isLoading && { opacity: 0.7 }]}
+              onPress={handleSignup}
+              disabled={isLoading}
+            >
+              <Text style={styles.signUpButtonText}>
+                {isLoading ? "Signing Up..." : "Sign Up"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -116,6 +223,7 @@ const SignUpScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  backButton: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: -20 },
   container: {
     flex: 1,
     backgroundColor: "#F8FAF9",
@@ -143,11 +251,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   input: {
-    height: 56,
+    height: 58, // Height ektu barano hoyeche image-er moto korte
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 12,
+    borderColor: "#E2E2E2", // Image-er moto light border
+    borderRadius: 10, // Rounded corners
     paddingHorizontal: 16,
     fontSize: 16,
     color: "#000",

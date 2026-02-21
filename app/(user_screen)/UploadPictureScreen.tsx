@@ -1,19 +1,150 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+
+import { useRegisterBuyerMutation } from "@/store/api/authApiSlice";
+import { setCredentials } from "@/store/slices/authSlice";
+import { updateBuyerRegistration } from "../../store/slices/registrationSlice";
+import { RootState } from "../../store/store";
 
 const UploadPictureScreen = () => {
+  const dispatch = useDispatch();
+  const buyerData = useSelector((state: RootState) => state.registration.buyer);
+  const auth = useSelector((state: RootState) => state.auth);
+  const [registerBuyer, { isLoading }] = useRegisterBuyerMutation();
   const [image, setImage] = useState<string | null>(null);
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
+
+  const getMimeType = (uri: string) => {
+    const lower = uri.toLowerCase();
+    if (lower.endsWith(".png")) return "image/png";
+    if (lower.endsWith(".heic")) return "image/heic";
+    if (lower.endsWith(".webp")) return "image/webp";
+    return "image/jpeg";
+  };
+
+  const makeFilePart = (uri: string, name: string) => ({
+    uri: Platform.OS === "ios" ? uri.replace("file://", "file://") : uri,
+    name,
+    type: getMimeType(uri),
+  });
+
+  const handleSubmit = async () => {
+    if (!image) {
+      Alert.alert("Required", "Please upload a profile picture.");
+      return;
+    }
+
+    try {
+      // Update slice with final image
+      dispatch(updateBuyerRegistration({ profilePhotoUrl: image }));
+
+      // Use FormData for multipart/form-data request (required for file uploads)
+      const formData = new FormData();
+
+      // Append text fields (Exclude email as backend rejects it)
+      if (buyerData.fullName) formData.append('fullName', buyerData.fullName);
+      if (buyerData.phone) formData.append('phone', buyerData.phone);
+      if (buyerData.gender) formData.append('gender', buyerData.gender);
+      if (buyerData.nidNumber) formData.append('nidNumber', buyerData.nidNumber);
+      if (buyerData.country) formData.append('country', buyerData.country);
+
+      // Append files
+      // NOTE: Backend error literally said 'nidFontPhotoUrl' (missing 'r'). 
+      // We will follow the backend's requested key name.
+      if (image) formData.append('profilePhotoUrl', makeFilePart(image, 'profile.jpg') as any);
+
+      if (buyerData.nidFrontPhotoUrl) {
+        formData.append('nidFontPhotoUrl', makeFilePart(buyerData.nidFrontPhotoUrl, 'nid_front.jpg') as any);
+      }
+
+      if (buyerData.nidBackPhotoUrl) {
+        formData.append('nidBackPhotoUrl', makeFilePart(buyerData.nidBackPhotoUrl, 'nid_back.jpg') as any);
+      }
+
+      console.log('Registering Buyer with FormData:', JSON.stringify(Object.fromEntries((formData as any)._parts)));
+
+      try {
+        let result: any;
+        try {
+          result = await registerBuyer(formData).unwrap();
+        } catch (err: any) {
+          // Fallback for cases where fetchBaseQuery fails multipart upload on some Android builds
+          if (err?.status === "FETCH_ERROR") {
+            const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+            if (!apiUrl) throw err;
+
+            const fallbackResponse = await fetch(`${apiUrl}/auth/register/buyer`, {
+              method: "POST",
+              headers: {
+                ...(auth?.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+              },
+              body: formData,
+            });
+
+            const fallbackJson = await fallbackResponse.json().catch(() => ({}));
+            if (!fallbackResponse.ok) {
+              throw {
+                status: fallbackResponse.status,
+                data: fallbackJson,
+              };
+            }
+            result = fallbackJson;
+          } else {
+            throw err;
+          }
+        }
+
+        console.log('Registration success result:', result);
+
+        const updatedUser = result?.data?.user || result?.user || result?.data;
+        if (updatedUser || auth.user) {
+          const mergedUser = { ...(auth.user || {}), ...(updatedUser || {}), userType: "buyer" };
+          dispatch(
+            setCredentials({
+              user: mergedUser as any,
+              accessToken: auth.accessToken || "",
+              refreshToken: auth.refreshToken,
+            })
+          );
+          await AsyncStorage.setItem("user", JSON.stringify(mergedUser));
+          await AsyncStorage.setItem("userRole", "buyer");
+        }
+
+        Alert.alert("Success", "Registration successful!", [
+          { text: "OK", onPress: () => router.push("/(users)") }
+        ]);
+      } catch (err: any) {
+        console.error("Registration failed raw error:", err);
+        throw err;
+      }
+    } catch (error: any) {
+      console.error("Registration validation failed:", JSON.stringify(error, null, 2));
+      let errorMessage = "Registration failed";
+      if (error?.status === 'FETCH_ERROR') {
+        errorMessage = "Network error: Could not reach server. Please check your connection.";
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+      Alert.alert("Error", errorMessage);
+    }
+  };
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -27,7 +158,7 @@ const UploadPictureScreen = () => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: imageMediaTypes,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -62,9 +193,14 @@ const UploadPictureScreen = () => {
         {/* Submit Button */}
         <TouchableOpacity
           style={styles.submitButton}
-          onPress={() => router.push("/(users)")}
+          onPress={handleSubmit}
+          disabled={isLoading}
         >
-          <Text style={styles.submitButtonText}>Submit</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>Submit</Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

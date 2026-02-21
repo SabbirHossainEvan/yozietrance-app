@@ -1,5 +1,6 @@
+import { useForgotPasswordScreenMutation } from "@/store/api/authApiSlice";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useRouter } from "expo-router";
 import { Mail } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -15,7 +16,24 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const ForgotPasswordScreen: React.FC = () => {
+  const router = useRouter();
   const [email, setEmail] = useState<string>("");
+  const [forgotPassword, { isLoading }] = useForgotPasswordScreenMutation();
+
+  const handleSendCode = async () => {
+    try {
+      if (!email) {
+        alert("Please enter your email");
+        return;
+      }
+      await forgotPassword({ email }).unwrap();
+      // Navigate to OTP screen with email params
+      router.push({ pathname: "/(auth)/OTPVerification", params: { email } });
+    } catch (err) {
+      console.error("Forgot password failed", err);
+      alert("Failed to send code: " + ((err as any)?.data?.message || "Unknown error"));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,10 +83,11 @@ const ForgotPasswordScreen: React.FC = () => {
             </View>
 
             <TouchableOpacity
-              style={styles.sendButton}
-              onPress={() => router.push("/(auth)/OTPVerification")}
+              style={[styles.sendButton, isLoading && { opacity: 0.7 }]}
+              onPress={handleSendCode}
+              disabled={isLoading}
             >
-              <Text style={styles.sendButtonText}>Send Reset Code</Text>
+              <Text style={styles.sendButtonText}>{isLoading ? "Sending..." : "Send Reset Code"}</Text>
             </TouchableOpacity>
           </View>
 

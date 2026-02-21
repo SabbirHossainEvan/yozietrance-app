@@ -1,3 +1,6 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome5, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -13,16 +16,49 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const PersonalInfoScreen = () => {
-  // Dynamic Data
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { data: profileData } = useGetProfileQuery({});
+  const displayUser = profileData?.data || currentUser;
+
+  console.log(displayUser, "displayUser");
+  // Initialize state with Redux data or defaults
   const [user, setUser] = useState({
-    name: "Seam Rahman",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e", // Placeholder
-    dob: "May 15, 1990",
-    email: "alice@example.com",
-    phone: "+1 (555) 123-4567",
-    idType: "Passport",
-    idNumber: "P123456789",
+    name: displayUser?.vendor?.fullName || displayUser?.buyer?.fullName || displayUser?.fullName || displayUser?.name || "N/A",
+    avatar:
+      displayUser?.vendor?.logoUrl ||
+      displayUser?.vendor?.logo ||
+      displayUser?.buyer?.profilePhotoUrl ||
+      displayUser?.avatar ||
+      displayUser?.image ||
+      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+    dob: displayUser?.dob || "N/A",
+    email: displayUser?.email || "N/A",
+    phone: displayUser?.vendor?.phone || displayUser?.buyer?.phone || displayUser?.phone || displayUser?.phoneNumber || "N/A",
+    idType: displayUser?.vendor?.idType || displayUser?.buyer?.idType || "National ID",
+    nationalIdNumber: displayUser?.vendor?.nationalIdNumber || displayUser?.buyer?.nidNumber || "N/A",
   });
+
+  // Effect to update local state when profileData changes
+  React.useEffect(() => {
+    if (displayUser) {
+      setUser({
+        name: displayUser?.vendor?.fullName || displayUser?.buyer?.fullName || displayUser?.fullName || displayUser?.name || "N/A",
+        avatar:
+          displayUser?.vendor?.logoUrl ||
+          displayUser?.vendor?.logo ||
+          displayUser?.buyer?.profilePhotoUrl ||
+          displayUser?.avatar ||
+          displayUser?.image ||
+          "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6",
+        dob: displayUser?.dob || "N/A",
+        email: displayUser?.email || "N/A",
+        phone: displayUser?.vendor?.phone || displayUser?.buyer?.phone || displayUser?.phone || displayUser?.phoneNumber || "N/A",
+        idType: displayUser?.vendor?.idType || displayUser?.buyer?.idType || "National ID",
+        nationalIdNumber: displayUser?.vendor?.nationalIdNumber || displayUser?.buyer?.nidNumber || "N/A",
+      });
+    }
+  }, [displayUser]);
+
 
   // Function to handle image picker
   const handleImagePicker = async () => {
@@ -262,7 +298,7 @@ const PersonalInfoScreen = () => {
           />
           <InfoRow
             label="ID Number"
-            value={user.idNumber}
+            value={user.nationalIdNumber}
             icon={<FontAwesome5 name="id-card" size={20} color="#9CA3AF" />}
           />
         </View>

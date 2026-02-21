@@ -1,297 +1,239 @@
-import { chatConversations, supportTickets } from '@/constants/common';
-import { MaterialIcons } from '@expo/vector-icons';
+import { supportTickets } from '@/constants/common';
+import { useGetConversationsQuery, useMarkAsReadMutation } from '@/store/api/chatApiSlice';
+import { RootState } from '@/store/store';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-//
-const ChatTabs = () => {
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat');
-    const [searchQuery, setSearchQuery] = useState('');
+import { useSelector } from 'react-redux';
 
-    const handleChatPress = (conversationId: string) => {
-        router.push(`/(screens)/chat_box?conversationId=${conversationId}`);
-    };
+const normalizeId = (value: any) => (value === undefined || value === null ? '' : String(value));
+const formatTime = (value: any) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+};
 
-    const handleBack = () => {
-        router.back();
-    };
+export default function ChatTabs() {
+  const router = useRouter();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const currentUserId = normalizeId(user?.userId || user?.id || (user as any)?._id);
 
-    const handleTabPress = (tab: 'chat' | 'support') => {
-        setActiveTab(tab);
-    };
+  const [activeTab, setActiveTab] = useState<'chat' | 'support'>('chat');
+  const [searchQuery, setSearchQuery] = useState('');
 
-    const formatTime = (date: Date) => {
-        const now = new Date();
-        const diff = now.getTime() - date.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const { data: conversationsData = [], isLoading: isConversationsLoading } = useGetConversationsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
+  const [markAsRead] = useMarkAsReadMutation();
 
-        if (hours < 1) return 'Just now';
-        if (hours < 24) return `${hours}h ago`;
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString();
-    };
+  const filteredConversations = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const rows = Array.isArray(conversationsData) ? conversationsData : [];
+    if (!q) return rows;
+    return rows.filter((row: any) => {
+      const partner = row?.partner || row?.participant || {};
+      const name =
+        partner?.fullName ||
+        partner?.businessName ||
+        partner?.storename ||
+        partner?.email ||
+        'User';
+      const text = row?.lastMessage?.messageText || '';
+      return String(name).toLowerCase().includes(q) || String(text).toLowerCase().includes(q);
+    });
+  }, [conversationsData, searchQuery]);
 
-    const filteredChats = chatConversations.filter(chat =>
-        chat.participant.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredTickets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return supportTickets.filter((ticket) =>
+      ticket.title.toLowerCase().includes(q) || ticket.customer.name.toLowerCase().includes(q)
     );
+  }, [searchQuery]);
 
-    const filteredTickets = supportTickets.filter(ticket =>
-        ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.customer.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back-ios-new" size={20} color="#1F2937" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chat</Text>
+        <View style={{ width: 20 }} />
+      </View>
 
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            <View style={{ flex: 1 }}>
-                {/* Fixed Header */}
-                <View style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    paddingVertical: 16,
-                    paddingHorizontal: 20,
-                }}>
-                    <TouchableOpacity onPress={handleBack}>
-                        <MaterialIcons name="arrow-back-ios-new" size={20} color="black" />
-                    </TouchableOpacity>
-                    <Text style={{ fontSize: 16, fontWeight: '600' }}>Chat</Text>
-                    <View style={{ width: 20 }}></View>
-                </View>
+      <View style={styles.searchWrap}>
+        <Ionicons name="search-outline" size={22} color="#111827" />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search by name"
+          placeholderTextColor="#9CA3AF"
+          style={styles.searchInput}
+        />
+      </View>
 
-                {/* Fixed Search Bar */}
-                <View style={{ marginVertical: 16, paddingHorizontal: 20 }}>
-                    <TextInput
-                        placeholder="Search by name"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        style={{
-                            borderWidth: 1,
-                            borderColor: '#E3E6F0',
-                            borderRadius: 12,
-                            padding: 16,
-                            backgroundColor: '#FFF',
-                            fontSize: 14
-                        }}
-                    />
-                </View>
+      <View style={styles.tabRow}>
+        <TouchableOpacity style={[styles.tab, activeTab === 'chat' && styles.tabActive]} onPress={() => setActiveTab('chat')}>
+          <Text style={[styles.tabText, activeTab === 'chat' && styles.tabTextActive]}>Chat</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.tab, activeTab === 'support' && styles.tabActive]} onPress={() => setActiveTab('support')}>
+          <Text style={[styles.tabText, activeTab === 'support' && styles.tabTextActive]}>Support</Text>
+        </TouchableOpacity>
+      </View>
 
-                {/* Fixed Tabs */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginHorizontal: 20, marginBottom: 16 }}>
-                    <TouchableOpacity
-                        onPress={() => handleTabPress('chat')}
-                        style={{
-                            padding: 16,
-                            backgroundColor: activeTab === 'chat' ? '#278687' : '#e6f1ef',
-                            borderRadius: 12,
-                            width: '48%',
-                        }}
-                    >
-                        <Text style={{ color: activeTab === 'chat' ? '#fff' : '#2B2B2B', textAlign: 'center' }}>Chat</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => handleTabPress('support')}
-                        style={{
-                            padding: 16,
-                            backgroundColor: activeTab === 'support' ? '#278687' : '#e6f1ef',
-                            borderRadius: 12,
-                            width: '48%',
-                        }}
-                    >
-                        <Text style={{ color: activeTab === 'support' ? '#fff' : '#2B2B2B', textAlign: 'center' }}>Support</Text>
-                    </TouchableOpacity>
-                </View>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+        {activeTab === 'chat' ? (
+          <View style={styles.listWrap}>
+            {isConversationsLoading ? (
+              <Text style={styles.emptyText}>Loading conversations...</Text>
+            ) : filteredConversations.length ? (
+              filteredConversations.map((conversation: any, index: number) => {
+                const partner = conversation?.partner || conversation?.participant || {};
+                const partnerId = normalizeId(conversation?.partnerId || partner?.id || partner?._id || partner?.userId);
+                const displayName =
+                  partner?.fullName ||
+                  partner?.businessName ||
+                  partner?.storename ||
+                  partner?.email ||
+                  'User';
+                const avatar = partner?.avatar || partner?.logoUrl || 'https://via.placeholder.com/48';
+                const lastText = conversation?.lastMessage?.messageText || 'No messages yet';
+                const unreadCount = Number(conversation?.unreadCount || 0);
+                const messageId = conversation?.lastMessage?.id || conversation?.lastMessage?._id;
 
-                {/* Scrollable Content */}
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ paddingBottom: 30 }}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {activeTab === 'chat' ? (
-                        <View style={{ paddingHorizontal: 20 }}>
-                            {/* Chat List Items */}
-                            <View style={{ gap: 12 }}>
-                                {filteredChats.map((conversation) => (
-                                    <TouchableOpacity
-                                        key={conversation.id}
-                                        onPress={() => handleChatPress(conversation.id)}
-                                        style={{
-                                            backgroundColor: '#F3F8F4',
-                                            borderBottomWidth: 1,
-                                            borderBottomColor: '#E3E6F0',
-                                            paddingVertical: 16,
-                                            paddingHorizontal: 12,
-                                            borderRadius: 12,
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                        }}
-                                    >
-                                        <View style={{ position: 'relative' }}>
-                                            <Image
-                                                source={{ uri: conversation.participant.avatar }}
-                                                style={{
-                                                    width: 40,
-                                                    height: 40,
-                                                    borderRadius: 20,
-                                                    marginRight: 12,
-                                                }}
-                                                resizeMode="cover"
-                                            />
-                                            {conversation.isOnline && (
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    right: 10,
-                                                    width: 12,
-                                                    height: 12,
-                                                    borderRadius: 6,
-                                                    backgroundColor: '#10B981',
-                                                    borderWidth: 2,
-                                                    borderColor: '#fff',
-                                                }} />
-                                            )}
-                                        </View>
-                                        <View style={{ flex: 1 }}>
-                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
-                                                    {conversation.participant.name}
-                                                </Text>
-                                                <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
-                                                    {formatTime(conversation.lastMessage.timestamp)}
-                                                </Text>
-                                            </View>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Text style={{ fontSize: 12, color: '#6B7280', flex: 1 }} numberOfLines={1}>
-                                                    {conversation.isTyping ? (
-                                                        <Text style={{ fontStyle: 'italic', color: '#278687' }}>Typing...</Text>
-                                                    ) : (
-                                                        conversation.lastMessage.text
-                                                    )}
-                                                </Text>
-                                                {conversation.unreadCount > 0 && (
-                                                    <View style={{
-                                                        backgroundColor: '#278687',
-                                                        borderRadius: 10,
-                                                        paddingHorizontal: 6,
-                                                        paddingVertical: 2,
-                                                        marginLeft: 8,
-                                                    }}>
-                                                        <Text style={{ fontSize: 10, color: '#fff', fontWeight: '600' }}>
-                                                            {conversation.unreadCount}
-                                                        </Text>
-                                                    </View>
-                                                )}
-                                            </View>
-                                            {conversation.orderContext && (
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                                                    <MaterialIcons name="shopping-bag" size={12} color="#9CA3AF" />
-                                                    <Text style={{ fontSize: 10, color: '#9CA3AF', marginLeft: 4 }}>
-                                                        {conversation.orderContext.orderNumber} • {conversation.orderContext.status}
-                                                    </Text>
-                                                </View>
-                                            )}
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                return (
+                  <TouchableOpacity
+                    key={normalizeId(conversation?.id || conversation?._id || `${partnerId}-${index}`)}
+                    style={styles.row}
+                    onPress={async () => {
+                      if (unreadCount > 0 && messageId) {
+                        try {
+                          await markAsRead(messageId).unwrap();
+                        } catch {
+                        }
+                      }
+
+                      router.push({
+                        pathname: '/(screens)/chat_box',
+                        params: {
+                          partnerId,
+                          conversationId: normalizeId(conversation?.id || conversation?._id || partnerId),
+                          fullname: displayName,
+                        },
+                      });
+                    }}
+                  >
+                    <Image source={{ uri: avatar }} style={styles.avatar} />
+                    <View style={styles.middle}>
+                      <Text style={styles.name}>{displayName}</Text>
+                      <Text style={styles.preview} numberOfLines={1}>{lastText}</Text>
+                    </View>
+                    <View style={styles.right}>
+                      <Text style={[styles.time, unreadCount > 0 && styles.timeActive]}>
+                        {formatTime(conversation?.lastMessage?.createdAt)}
+                      </Text>
+                      {unreadCount > 0 ? (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>{unreadCount}</Text>
                         </View>
-                    ) : (
-                        <View style={{ paddingHorizontal: 20 }}>
-                            {/* Support Tickets List */}
-                            <View style={{ gap: 12 }}>
-                                {filteredTickets.map((ticket) => (
-                                    <TouchableOpacity
-                                        key={ticket.id}
-                                        style={{
-                                            backgroundColor: '#fff',
-                                            borderRadius: 12,
-                                            padding: 16,
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 1 },
-                                            shadowOpacity: 0.1,
-                                            shadowRadius: 2,
-                                            elevation: 1,
-                                        }}
-                                    >
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                            <View style={{ flex: 1 }}>
-                                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                                    {ticket.title}
-                                                </Text>
-                                                <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 8 }} numberOfLines={2}>
-                                                    {ticket.description}
-                                                </Text>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                                    <View style={{
-                                                        backgroundColor: ticket.priority === 'urgent' ? '#FEE2E2' :
-                                                            ticket.priority === 'high' ? '#FED7AA' :
-                                                                ticket.priority === 'medium' ? '#FEF3C7' : '#E0E7FF',
-                                                        paddingHorizontal: 6,
-                                                        paddingVertical: 2,
-                                                        borderRadius: 4,
-                                                    }}>
-                                                        <Text style={{
-                                                            fontSize: 10,
-                                                            fontWeight: '600',
-                                                            color: ticket.priority === 'urgent' ? '#DC2626' :
-                                                                ticket.priority === 'high' ? '#EA580C' :
-                                                                    ticket.priority === 'medium' ? '#D97706' : '#3730A3',
-                                                        }}>
-                                                            {ticket.priority.toUpperCase()}
-                                                        </Text>
-                                                    </View>
-                                                    <View style={{
-                                                        backgroundColor: ticket.status === 'open' ? '#DBEAFE' :
-                                                            ticket.status === 'in_progress' ? '#FEF3C7' :
-                                                                ticket.status === 'resolved' ? '#D1FAE5' : '#F3F4F6',
-                                                        paddingHorizontal: 6,
-                                                        paddingVertical: 2,
-                                                        borderRadius: 4,
-                                                    }}>
-                                                        <Text style={{
-                                                            fontSize: 10,
-                                                            fontWeight: '600',
-                                                            color: ticket.status === 'open' ? '#1D4ED8' :
-                                                                ticket.status === 'in_progress' ? '#D97706' :
-                                                                    ticket.status === 'resolved' ? '#065F46' : '#6B7280',
-                                                        }}>
-                                                            {ticket.status.replace('_', ' ').toUpperCase()}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <Image
-                                                    source={{ uri: ticket.customer.avatar }}
-                                                    style={{
-                                                        width: 24,
-                                                        height: 24,
-                                                        borderRadius: 12,
-                                                        marginRight: 8,
-                                                    }}
-                                                    resizeMode="cover"
-                                                />
-                                                <Text style={{ fontSize: 12, color: '#6B7280' }}>
-                                                    {ticket.customer.name}
-                                                </Text>
-                                            </View>
-                                            <Text style={{ fontSize: 11, color: '#9CA3AF' }}>
-                                                {formatTime(ticket.createdAt)}
-                                            </Text>
-                                        </View>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-                </ScrollView>
-            </View>
-        </SafeAreaView>
-    )
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <Text style={styles.emptyText}>No conversations found.</Text>
+            )}
+          </View>
+        ) : (
+          <View style={styles.listWrap}>
+            {filteredTickets.map((ticket) => (
+              <View key={ticket.id} style={styles.supportCard}>
+                <Text style={styles.supportTitle}>{ticket.title}</Text>
+                <Text style={styles.supportDesc} numberOfLines={2}>{ticket.description}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
-export default ChatTabs
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F2F6F5' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  headerTitle: { fontSize: 34 / 2, fontWeight: '600', color: '#20272C' },
+  searchWrap: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#D9E1E7',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    height: 54,
+    backgroundColor: '#FAFAFB',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#111827' },
+  tabRow: { flexDirection: 'row', marginHorizontal: 20, marginTop: 16, gap: 10 },
+  tab: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: '#DCE5E5',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    paddingHorizontal: 12,
+  },
+  tabActive: { backgroundColor: '#2A8B8A' },
+  tabText: { color: '#374151', fontSize: 16, fontWeight: '500' },
+  tabTextActive: { color: '#FFFFFF' },
+  listWrap: { paddingHorizontal: 20, paddingTop: 12 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#DEE5EA',
+  },
+  avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: '#CCEFDB' },
+  middle: { flex: 1, marginLeft: 12, marginRight: 8 },
+  name: { fontSize: 31 / 2, fontWeight: '600', color: '#263238' },
+  preview: { fontSize: 29 / 2, color: '#4B5563', marginTop: 2 },
+  right: { alignItems: 'flex-end', minWidth: 64 },
+  time: { fontSize: 14, color: '#4B5563' },
+  timeActive: { color: '#1E8A8D' },
+  badge: {
+    marginTop: 6,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#1E8A8D',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
+  emptyText: { textAlign: 'center', color: '#6B7280', marginTop: 24, fontSize: 14 },
+  supportCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 14,
+    marginBottom: 10,
+  },
+  supportTitle: { fontSize: 15, fontWeight: '700', color: '#1F2937' },
+  supportDesc: { fontSize: 13, color: '#6B7280', marginTop: 6 },
+});

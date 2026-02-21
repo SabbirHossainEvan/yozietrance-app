@@ -1,7 +1,8 @@
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -33,8 +34,29 @@ const InfoItem = ({ icon, label, value, isLast }: InfoItemProps) => (
 );
 
 const ProfileInfoScreen = () => {
-  const [profileImage, setProfileImage] = useState(
-    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg"
+  const { data: profileData } = useGetProfileQuery({});
+  const userData = profileData?.data;
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
+
+  // Helper to safely get user properties with fallbacks for weird backend keys
+  const getName = () => userData?.buyer?.fullName || userData?.name || userData?.fulllName || "User";
+  const getDob = () => userData?.buyer?.dob || "N/A";
+  const getPhone = () => userData?.buyer?.phone || userData?.phoneNumber || "N/A";
+  const getIdType = () => userData?.buyer?.idType || "National ID";
+  const getIdNumber = () => userData?.buyer?.nidNumber || userData?.idNumber || "N/A";
+
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const serverAvatarUri = useMemo(
+    () =>
+      userData?.buyer?.profilePhotoUrl ||
+      userData?.buyer?.avatar ||
+      userData?.avatar ||
+      userData?.image ||
+      userData?.logo ||
+      "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+    [userData]
   );
 
   const pickImage = async () => {
@@ -49,7 +71,7 @@ const ProfileInfoScreen = () => {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: imageMediaTypes,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -89,7 +111,7 @@ const ProfileInfoScreen = () => {
       >
         <View style={styles.profileSection}>
           <View style={styles.imageWrapper}>
-            <Image source={{ uri: profileImage }} style={styles.avatar} />
+            <Image source={{ uri: profileImage || serverAvatarUri }} style={styles.avatar} />
 
             <TouchableOpacity style={styles.cameraBadge} onPress={pickImage}>
               <MaterialCommunityIcons
@@ -99,7 +121,7 @@ const ProfileInfoScreen = () => {
               />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Rokey</Text>
+          <Text style={styles.userName}>{getName()}</Text>
         </View>
 
         <View style={styles.sectionCard}>
@@ -107,12 +129,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="account-outline"
             label="Full Name"
-            value="Rokey Mahmud"
+            value={getName()}
           />
           <InfoItem
             icon="calendar-month-outline"
             label="Date of Birth"
-            value="May 15, 1990"
+            value={getDob()}
             isLast
           />
         </View>
@@ -122,12 +144,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="email-outline"
             label="Email"
-            value="alice@example.com"
+            value={userData?.email || "N/A"}
           />
           <InfoItem
             icon="phone-outline"
             label="Phone"
-            value="+1 (555) 123-4567"
+            value={getPhone()}
             isLast
           />
         </View>
@@ -137,12 +159,12 @@ const ProfileInfoScreen = () => {
           <InfoItem
             icon="card-account-details-outline"
             label="ID Type"
-            value="Passport"
+            value={getIdType()}
           />
           <InfoItem
             icon="card-text-outline"
             label="ID Number"
-            value="P123456789"
+            value={getIdNumber()}
             isLast
           />
         </View>

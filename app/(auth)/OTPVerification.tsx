@@ -1,5 +1,6 @@
+import { useOTPVerificationMutation } from "@/store/api/authApiSlice";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ShieldCheck } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
@@ -15,8 +16,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const OTPVerification: React.FC = () => {
+  const router = useRouter();
+  const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const inputs = useRef<TextInput[]>([]);
+
+  const [verifyOtp, { isLoading }] = useOTPVerificationMutation();
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
@@ -31,6 +36,24 @@ const OTPVerification: React.FC = () => {
   const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === "Backspace" && !otp[index] && index > 0) {
       inputs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerify = async () => {
+    const otpString = otp.join("");
+    if (otpString.length !== 6) {
+      alert("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    try {
+      await verifyOtp({ email, otp: otpString }).unwrap();
+      // Assuming verifyOtp returns success, navigate to SetNewPassword
+      // We pass email and potentially the OTP (if reset endpoint needs it) to the next screen
+      router.push({ pathname: "/(auth)/SetNewPassword", params: { email, otp: otpString } });
+    } catch (err) {
+      console.error("OTP Verification failed", err);
+      alert("Verification failed: " + ((err as any)?.data?.message || "Invalid OTP"));
     }
   };
 
@@ -61,7 +84,7 @@ const OTPVerification: React.FC = () => {
             </View>
             <Text style={styles.title}>Enter Verification Code</Text>
             <Text style={styles.subtitle}>
-              We ve sent a 6-digit code to j***@gmail.com
+              We ve sent a 6-digit code to {email || "your email"}
             </Text>
           </View>
 
@@ -90,11 +113,12 @@ const OTPVerification: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.verifyButton}
+            style={[styles.verifyButton, isLoading && { opacity: 0.7 }]}
             activeOpacity={0.8}
-            onPress={() => router.push("/(auth)/SetNewPassword")}
+            onPress={handleVerify}
+            disabled={isLoading}
           >
-            <Text style={styles.verifyButtonText}>Verify</Text>
+            <Text style={styles.verifyButtonText}>{isLoading ? "Verifying..." : "Verify"}</Text>
           </TouchableOpacity>
 
           <View style={styles.footer}>

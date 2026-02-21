@@ -1,14 +1,55 @@
 import { images } from "@/constants/import_images";
+import { useGetProfileQuery } from "@/store/api/authApiSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import Feather from "@expo/vector-icons/Feather";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Fontisto from "@expo/vector-icons/Fontisto";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { router } from "expo-router";
-import React from "react";
+import React, { useState } from "react";
 import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 const VerificationCard = () => {
+  const currentUser = useAppSelector(selectCurrentUser);
+  const { data: profileData } = useGetProfileQuery({});
+  const displayUser = profileData?.data || currentUser;
+  const [user, setUser] = useState({
+    businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
+    avatar:
+      displayUser?.vendor?.logoUrl ||
+      displayUser?.vendor?.logo ||
+      displayUser?.logo ||
+      displayUser?.image ||
+      "N/A",
+    dob: displayUser?.dob || "N/A",
+    email: displayUser?.email || "N/A",
+    phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",
+    address: displayUser?.vendor?.address || "N/A",
+    bussinessRegNumber: displayUser?.vendor?.bussinessRegNumber || "N/A",
+  });
+
+  // Effect to update local state when profileData changes
+  React.useEffect(() => {
+    if (displayUser) {
+      setUser({
+        businessName: displayUser?.vendor?.businessName || displayUser?.vendor?.storename || "N/A",
+        avatar:
+          displayUser?.vendor?.logoUrl ||
+          displayUser?.vendor?.logo ||
+          displayUser?.logo ||
+          displayUser?.image ||
+          "N/A",
+        dob: displayUser?.dob || "N/A",
+        email: displayUser?.email || "N/A",
+        phone: displayUser?.vendor?.phone || displayUser?.vendor?.phoneNumber || "N/A",
+        address: displayUser?.vendor?.address || "N/A",
+        bussinessRegNumber: displayUser?.vendor?.bussinessRegNumber || "N/A",
+      });
+    }
+  }, [displayUser]);
+
   // handle back
   const handleBack = () => {
     router.back();
@@ -74,7 +115,7 @@ const VerificationCard = () => {
                   height: 120,
                   borderRadius: 50,
                 }}
-                source={images.welcome_image}
+                source={user.avatar && user.avatar !== "N/A" ? { uri: user.avatar } : images.welcome_image}
               />
             </View>
             {/* Personal Information Section */}
@@ -121,7 +162,7 @@ const VerificationCard = () => {
                       color: "#000000",
                     }}
                   >
-                    TechBadgets Inc.
+                    {user.businessName}
                   </Text>
                 </View>
               </View>
@@ -180,7 +221,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    alice@example.com
+                    {user.email}
                   </Text>
                 </View>
               </View>
@@ -218,7 +259,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    +1 (555) 123-4567
+                    {user.phone}
                   </Text>
                 </View>
               </View>
@@ -261,7 +302,7 @@ const VerificationCard = () => {
                       lineHeight: 22,
                     }}
                   >
-                    2715 Ash Dr. San Jose, South Dakota{"\n"}83475
+                    {user.address}
                   </Text>
                 </View>
               </View>
@@ -320,7 +361,7 @@ const VerificationCard = () => {
                       letterSpacing: 0.2,
                     }}
                   >
-                    3264 35465
+                    {user.bussinessRegNumber}
                   </Text>
                 </View>
               </View>

@@ -39,7 +39,7 @@
 //           </TouchableOpacity>
 //           <View style={styles.userText}>
 //             <Text style={styles.welcomeTitle}>Welcome Back</Text>
-//             <Text style={styles.userName}>Rokey Mahmud</Text>
+//             <Text style={styles.userName}>{user?.name || user?.fullName || user?.fulllName || "User"}</Text>
 //           </View>
 //         </View>
 //         <TouchableOpacity style={styles.notificationBtn}>
@@ -322,6 +322,10 @@
 
 // export default Dashboard;
 
+import { useGetUserVendorStatisticsQuery } from "@/store/api/authApiSlice";
+import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
+import { useAppSelector } from "@/store/hooks";
+import { selectCurrentUser } from "@/store/slices/authSlice";
 import { router } from "expo-router";
 import { Bell, QrCode, Star, TrendingUp, Zap } from "lucide-react-native";
 import React from "react";
@@ -335,11 +339,91 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DUMMY_ORDERS } from "./order";
 
 const { width } = Dimensions.get("window");
 
+const toNumber = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const formatMoney = (value: any) => `$${toNumber(value).toFixed(2)}`;
+const normalizeStatus = (value: any) => String(value || "pending").toLowerCase();
+const toTitle = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
+
 const Dashboard: React.FC = () => {
+  const user = useAppSelector(selectCurrentUser);
+  const { data: statsData } = useGetUserVendorStatisticsQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const { data: ordersData = [] } = useGetOrdersQuery(undefined, {
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+
+  const userName = React.useMemo(() => {
+    const displayName =
+      (user as any)?.fullName ||
+      (user as any)?.fulllName ||
+      (user as any)?.name ||
+      (user as any)?.buyer?.fullName ||
+      (user as any)?.vendor?.fullName ||
+      (user as any)?.storename ||
+      (user as any)?.businessName;
+
+    if (displayName && String(displayName).trim()) return String(displayName).trim();
+
+    const email = (user as any)?.email;
+    if (email && String(email).includes("@")) return String(email).split("@")[0];
+
+    return "User";
+  }, [user]);
+
+  const avatarUri =
+    (user as any)?.buyer?.profilePhotoUrl ||
+    (user as any)?.vendor?.logoUrl ||
+    (user as any)?.vendor?.logo ||
+    (user as any)?.avatar ||
+    (user as any)?.image ||
+    (user as any)?.logo ||
+    "https://xsgames.co/randomusers/assets/avatars/male/74.jpg";
+
+  const statsCards = React.useMemo(() => {
+    const role = String(statsData?.role || "").toLowerCase();
+    if (role === "vendor") {
+      return [
+        { key: "sales", label: "Total Sales", value: formatMoney(statsData?.totalSales?.value), Icon: TrendingUp },
+        { key: "active", label: "Active Orders", value: String(toNumber(statsData?.activeOrders?.value)), Icon: Zap },
+      ];
+    }
+    return [
+      { key: "completed", label: "Completed Order", value: String(toNumber(statsData?.completedOrders)), Icon: TrendingUp },
+      { key: "active", label: "Active Orders", value: String(toNumber(statsData?.activeOrders)), Icon: Zap },
+    ];
+  }, [statsData]);
+
+  const recentOrders = React.useMemo(() => {
+    const sorted = [...ordersData].sort((a: any, b: any) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+    return sorted.slice(0, 3);
+  }, [ordersData]);
+
+  const getStatusTheme = (statusValue: string) => {
+    const map: Record<string, { bg: string; text: string }> = {
+      pending: { bg: "#FFF3E0", text: "#E65100" },
+      processing: { bg: "#E3F2FD", text: "#0D47A1" },
+      shipped: { bg: "#E1F5FE", text: "#01579B" },
+      delivered: { bg: "#F3E5F5", text: "#4A148C" },
+      completed: { bg: "#E3F9E7", text: "#1B5E20" },
+      cancelled: { bg: "#FDEBEC", text: "#D43C49" },
+    };
+    return map[statusValue] || { bg: "#E8F0FE", text: "#3B82F6" };
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -350,14 +434,14 @@ const Dashboard: React.FC = () => {
           >
             <Image
               source={{
-                uri: "https://xsgames.co/randomusers/assets/avatars/male/74.jpg",
+                uri: avatarUri,
               }}
               style={styles.avatar}
             />
           </TouchableOpacity>
           <View style={styles.userText}>
-            <Text style={styles.welcomeTitle}>Welcome Back</Text>
-            <Text style={styles.userName}>Rokey Mahmud</Text>
+            <Text style={styles.welcomeTitle}>Welcome back</Text>
+            <Text style={styles.userName}>{userName}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notificationBtn}>
@@ -375,25 +459,17 @@ const Dashboard: React.FC = () => {
       >
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <View
-              style={[styles.statIconCircle, { backgroundColor: "#F0F9F9" }]}
-            >
-              <TrendingUp color="#2D8C8C" size={20} />
+          {statsCards.map((item) => (
+            <View key={item.key} style={styles.statCard}>
+              <View
+                style={[styles.statIconCircle, { backgroundColor: "#F0F9F9" }]}
+              >
+                <item.Icon color="#2D8C8C" size={20} />
+              </View>
+              <Text style={styles.statNumber}>{item.value}</Text>
+              <Text style={styles.statLabel}>{item.label}</Text>
             </View>
-            <Text style={styles.statNumber}>56</Text>
-            <Text style={styles.statLabel}>Completed Order</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <View
-              style={[styles.statIconCircle, { backgroundColor: "#F0F9F9" }]}
-            >
-              <Zap color="#2D8C8C" size={20} />
-            </View>
-            <Text style={styles.statNumber}>85</Text>
-            <Text style={styles.statLabel}>Active Orders</Text>
-          </View>
+          ))}
         </View>
 
         {/* QR Scan Section */}
@@ -434,14 +510,33 @@ const Dashboard: React.FC = () => {
         <Text style={styles.sectionTitleMain}>Recent order</Text>
 
         <View style={{ gap: 15 }}>
-          {DUMMY_ORDERS.slice(0, 3).map((order) => (
+          {recentOrders.length ? (
+            recentOrders.map((order: any) => {
+              const orderId = order?.id || order?._id;
+              const status = normalizeStatus(order?.status);
+              const statusTheme = getStatusTheme(status);
+              const firstItem = Array.isArray(order?.orderItems) ? order.orderItems[0] : null;
+              const coverImage =
+                firstItem?.product?.images?.[0] ||
+                firstItem?.product?.imageUrl ||
+                "https://via.placeholder.com/150";
+              const partyName =
+                order?.vendor?.fullName ||
+                order?.vendor?.storename ||
+                order?.buyer?.fullName ||
+                "Customer";
+              const itemTitle =
+                firstItem?.product?.name ||
+                firstItem?.product?.title ||
+                `${Array.isArray(order?.orderItems) ? order.orderItems.length : 0} items`;
+              return (
             <TouchableOpacity
-              key={order.id}
+              key={orderId}
               style={styles.orderCard}
               onPress={() =>
                 router.push({
                   pathname: "/(user_screen)/OrderDetails",
-                  params: { status: order.status, id: order.id },
+                  params: { status, id: orderId },
                 })
               }
               activeOpacity={0.9}
@@ -449,33 +544,27 @@ const Dashboard: React.FC = () => {
               <View style={styles.orderTopRow}>
                 <Image
                   source={{
-                    uri: order.image,
+                    uri: coverImage,
                   }}
                   style={styles.orderImage}
                 />
                 <View style={styles.orderInfoContainer}>
                   <View style={styles.orderHeaderRow}>
-                    <Text style={styles.orderIdText}>{order.orderNo}</Text>
-                    <View style={styles.statusBadge}>
-                      <Text style={styles.statusText}>{order.status}</Text>
+                    <Text style={styles.orderIdText}>{order?.orderNumber || `#${orderId}`}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: statusTheme.bg }]}>
+                      <Text style={[styles.statusText, { color: statusTheme.text }]}>{toTitle(status)}</Text>
                     </View>
                   </View>
 
                   <Text style={styles.orderAddress} numberOfLines={1}>
-                    {order.address}
+                    {order?.shippingAddress || "Address unavailable"}
                   </Text>
 
                   <View style={styles.ratingRow}>
                     <Star color="#FFD700" size={16} fill="#FFD700" />
                     <Text style={styles.ratingText}>
-                      {" "}
-                      {order.rating
-                        .split(" ")[0]
-                        .replace("(", "")
-                        .replace(")", "")}{" "}
-                      <Text style={styles.reviewCount}>
-                        ({order.rating.split(" ")[1] || "1.2k"})
-                      </Text>
+                      {" 4.5 "}
+                      <Text style={styles.reviewCount}>({order?.buyer?.id || order?.vendor?.id || "N/A"})</Text>
                     </Text>
                   </View>
                 </View>
@@ -483,15 +572,19 @@ const Dashboard: React.FC = () => {
 
               <View style={styles.orderBottomRow}>
                 <View>
-                  <Text style={styles.customerName}>{order.customer}</Text>
+                  <Text style={styles.customerName}>{partyName}</Text>
                   <Text style={styles.itemDetail}>
-                    {order.itemSummary || "Items info..."}
+                    {itemTitle}
                   </Text>
                 </View>
-                <Text style={styles.orderPrice}>${order.price.toFixed(2)}</Text>
+                <Text style={styles.orderPrice}>{formatMoney(order?.totalAmount || order?.totalPrice)}</Text>
               </View>
             </TouchableOpacity>
-          ))}
+              );
+            })
+          ) : (
+            <Text style={{ fontSize: 13, color: "#6B7280" }}>No recent orders found.</Text>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -1,6 +1,7 @@
+import { useGetProfileQuery, useUpdateProfileMutation } from "@/store/api/authApiSlice";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -14,26 +15,42 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const EditPersonalInfoScreen = () => {
+  const { data: profileData } = useGetProfileQuery({});
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
+  const userData = profileData?.data;
+
   const [formData, setFormData] = useState({
     fullName: "",
     emailOrNumber: "",
-    phoneNumber: "",
+    phone: "",
     email: "",
     address: "",
   });
 
-  const handleInputChange = (field: any, value: any) => {
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        fullName: userData.vendor.fullName || userData.name || "",
+        emailOrNumber: userData.email || "",
+        phone: userData.vendor.phone || userData.phoneNumber || "",
+        email: userData.email || "",
+        address: userData.vendor.address || "",
+      });
+    }
+  }, [userData]);
+
+  const handleInputChange = (field: keyof typeof formData, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Validate form
-    const requiredFields = ["fullName", "phoneNumber", "email", "address"];
+    const requiredFields = ["fullName", "phone", "email", "address"];
     const emptyFields = requiredFields.filter(
-      (field) => !formData[field].trim()
+      (field) => !formData[field as keyof typeof formData]?.trim()
     );
 
     if (emptyFields.length > 0) {
@@ -56,7 +73,7 @@ const EditPersonalInfoScreen = () => {
 
     // Phone validation (basic)
     const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-    if (formData.phoneNumber && !phoneRegex.test(formData.phoneNumber)) {
+    if (formData.phone && !phoneRegex.test(formData.phone)) {
       Alert.alert("Invalid Phone", "Please enter a valid phone number.", [
         { text: "OK" },
       ]);
@@ -64,20 +81,36 @@ const EditPersonalInfoScreen = () => {
     }
 
     // Success - Save data and navigate back
-    Alert.alert(
-      "Success",
-      "Your personal information has been saved successfully!",
-      [
-        {
-          text: "OK",
-          onPress: () => {
-            // Here you would typically save to your backend/state management
-            console.log("Saved data:", formData);
-            router.back();
+    try {
+      const updateData: any = {};
+
+      // Send only vendor table fields without nesting
+      if (formData.fullName) updateData.fullName = formData.fullName;
+      if (formData.phone) updateData.phone = formData.phone;
+      if (formData.address) updateData.address = formData.address;
+
+      // Clean up empty objects if necessary, but backend might handle partials.
+      // If user provided no email change, we might not want to send user object with just empty fields if backend validates.
+      // But typically sending what we have is okay.
+
+      await updateProfile(updateData).unwrap();
+
+      Alert.alert(
+        "Success",
+        "Your personal information has been saved successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              router.back();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    } catch (error) {
+      console.error("Update failed", error);
+      Alert.alert("Error", "Failed to update profile. Please try again.");
+    }
   };
 
   return (
@@ -153,7 +186,7 @@ const EditPersonalInfoScreen = () => {
                   height: "100%",
                   letterSpacing: -0.3,
                 }}
-                placeholder="Enter email address or number"
+                placeholder="Enter Your Full Name"
                 placeholderTextColor="#999999"
                 value={formData.fullName}
                 onChangeText={(text) => handleInputChange("fullName", text)}
@@ -199,8 +232,8 @@ const EditPersonalInfoScreen = () => {
                 }}
                 placeholder="Enter phone number"
                 placeholderTextColor="#999999"
-                value={formData.phoneNumber}
-                onChangeText={(text) => handleInputChange("phoneNumber", text)}
+                value={formData.phone}
+                onChangeText={(text) => handleInputChange("phone", text)}
                 keyboardType="phone-pad"
                 returnKeyType="next"
               />
@@ -240,11 +273,12 @@ const EditPersonalInfoScreen = () => {
                   flex: 1,
                   height: "100%",
                   letterSpacing: -0.3,
+                  opacity: 0.6
                 }}
                 placeholder="Enter email address"
                 placeholderTextColor="#999999"
                 value={formData.email}
-                onChangeText={(text) => handleInputChange("email", text)}
+                editable={false}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -325,7 +359,7 @@ const EditPersonalInfoScreen = () => {
                 letterSpacing: -0.3,
               }}
             >
-              Save
+              {isLoading ? "Saving..." : "Save"}
             </Text>
           </TouchableOpacity>
 

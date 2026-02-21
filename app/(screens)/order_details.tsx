@@ -1,643 +1,311 @@
-import { chatConversations, recentOrders } from '@/constants/common';
+import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '@/store/api/orderApiSlice';
 import { AntDesign, Feather, MaterialIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const OrderDetails = () => {
-    const { id } = useLocalSearchParams();
-    const order = recentOrders.find(order => order.id === id);
-    const [showCancelModal, setShowCancelModal] = useState(false);
-    const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+const IMAGE_FALLBACK = 'https://via.placeholder.com/72';
 
-    if (!order) {
-        return (
-            <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <Text>Order not found</Text>
-            </SafeAreaView>
-        );
-    }
-
-    const getStatusColor = (status: any) => {
-        switch (status) {
-            case 'Completed': return '#4CAF50';
-            case 'Pending': return '#FFA000';
-            case 'Processing': return '#2196F3';
-            case 'Shipped': return '#9C27B0';
-            case 'Delivered': return '#4CAF50';
-            default: return '#9E9E9E';
-        }
-    };
-
-    const statusColor = getStatusColor(order.orderStatus.status);
-
-    const handleBack = () => {
-        router.back();
-    };
-
-    return (
-        <SafeAreaView style={{ flex: 1 }}>
-            {/* Header */}
-            <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 16,
-                paddingHorizontal: 16,
-            }}>
-                <TouchableOpacity onPress={handleBack}>
-                    <MaterialIcons name="arrow-back-ios-new" size={20} color="black" />
-                </TouchableOpacity>
-                <Text style={{ fontSize: 16, fontWeight: '600' }}>Orders {order.orderNumber}</Text>
-                <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: '/(screens)/export_invoice',
-                        params: { id: order.id }
-                    })}
-                    style={{
-                        backgroundColor: "#278687",
-                        padding: 8,
-                        borderRadius: 50,
-                        width: 36,
-                        height: 36,
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                    <Feather name="download" size={18} color="white" />
-                </TouchableOpacity>
-            </View>
-
-            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-                {/* User Info Card */}
-                <View style={{
-                    backgroundColor: '#fff',
-                    marginHorizontal: 16,
-                    marginTop: 16,
-                    borderRadius: 12,
-                    padding: 16,
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.1,
-                    shadowRadius: 3,
-                    elevation: 2,
-                }}>
-                    <View style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 12
-                    }}>
-                        <Image
-                            source={{ uri: order.customer.avatar }}
-                            resizeMode="cover"
-                            style={{
-                                height: 48,
-                                width: 48,
-                                borderRadius: 24,
-                                marginRight: 12
-                            }}
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Text style={{ fontSize: 16, fontWeight: "600", color: '#1F2937', marginBottom: 2 }}>
-                                {order.customer.name}
-                            </Text>
-                            <Text style={{ fontSize: 13, color: "#6B7280" }}>
-                                ID: {order.customer.customerId}
-                            </Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity
-                        onPress={() => {
-                            const conversation = chatConversations.find(c =>
-                                c.participant.customerId === order.customer.customerId ||
-                                c.participant.name === order.customer.name
-                            );
-                            if (conversation) {
-                                router.push({
-                                    pathname: '/(screens)/chat_box',
-                                    params: { conversationId: conversation.id }
-                                });
-                            } else {
-                                console.log('No conversation found for this user');
-                                // Optionally handle creating a new conversation or showing an alert
-                            }
-                        }}
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: "#f2f8f8",
-                            padding: 12,
-                            borderRadius: 8,
-                            gap: 8,
-                            borderColor: "#E3E6F0",
-                            borderWidth: 1
-                        }}>
-                        <AntDesign name="message" size={24} color="#2B2B2B" />
-                        <Text style={{ fontSize: 14, fontWeight: '500', color: '#2B2B2B' }}>Message</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={{
-                    backgroundColor: "white",
-                    marginHorizontal: 12,
-                    marginTop: 12,
-                    marginBottom: 8,
-                    borderRadius: 12,
-                    padding: 12,
-                    gap: 12
-                }}>
-                    {/* Order Items Section */}
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 12,
-                        padding: 16,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 1,
-                        elevation: 0.5,
-                    }}>
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
-                            Order Items
-                        </Text>
-
-                        {order.orderItems.map((item, index) => (
-                            <View key={item.id}>
-                                <View style={{ borderColor: '#F3F4F6', borderWidth: 1, borderRadius: 8, padding: 12, flexDirection: 'row', marginBottom: index === order.orderItems.length - 1 ? 0 : 16 }}>
-                                    <Image
-                                        source={{ uri: item.image }}
-                                        style={{ width: 72, height: 72, borderRadius: 8, marginRight: 12 }}
-                                        resizeMode="cover"
-                                    />
-                                    <View style={{ flex: 1 }}>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', flex: 1 }}>
-                                                {order.orderNumber}
-                                            </Text>
-                                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
-                                                ${item.price}
-                                            </Text>
-                                        </View>
-                                        <Text style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 8 }} numberOfLines={2}>
-                                            {item.description}
-                                        </Text>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-                                            <Text style={{ fontSize: 12, color: '#6B7280' }}>x{item.quantity}</Text>
-                                        </View>
-                                    </View>
-                                </View>
-                                {index < order.orderItems.length - 1 && (
-                                    <View style={{ height: 1, backgroundColor: '#F3F4F6', marginVertical: 0 }} />
-                                )}
-                            </View>
-                        ))}
-                    </View>
-
-                    {/* Payment Details Section */}
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 12,
-                        padding: 16,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 1,
-                        elevation: 0.5,
-                    }}>
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
-                            Payment details
-                        </Text>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Subtotal</Text>
-                            <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.subtotal.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Tax(25%)</Text>
-                            <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.tax.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-                            <Text style={{ fontSize: 14, color: '#6B7280' }}>Shipping</Text>
-                            <Text style={{ fontSize: 14, color: '#1F2937', fontWeight: '500' }}>
-                                ${order.payment.shipping.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{
-                            height: 1,
-                            backgroundColor: '#F3F4F6',
-                            marginVertical: 12,
-                            borderStyle: 'dashed'
-                        }} />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937' }}>Grand total</Text>
-                            <Text style={{ fontSize: 15, fontWeight: '700', color: '#1F2937' }}>
-                                ${order.payment.grandTotal.toFixed(2)}
-                            </Text>
-                        </View>
-
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            gap: 8,
-                            paddingHorizontal: 12,
-                            paddingVertical: 8,
-                            borderRadius: 6,
-                        }}>
-                            <Text style={{ fontSize: 13, fontWeight: '600', color: '#2E7D32', backgroundColor: '#E8F5E9', padding: 6, borderRadius: 6 }}>
-                                {order.payment.status}
-                            </Text>
-                            <Text style={{ fontSize: 12 }}>
-                                {order.payment.method}
-                            </Text>
-                        </View>
-                    </View>
-
-                    {/* Order History Section */}
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 12,
-                        padding: 16,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 1,
-                        elevation: 0.5,
-                    }}>
-                        <Text style={{ fontSize: 15, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
-                            Order History
-                        </Text>
-
-                        {/* Order Created */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: '#4CAF50',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Order Created
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Processing */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Processing' ||
-                                        order.orderStatus.status === 'Shipped' ||
-                                        order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Processing
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Shipped */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Shipped' ||
-                                        order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Shipped
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Delivered */}
-                        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Delivered' ||
-                                        order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                                <View style={{
-                                    width: 2,
-                                    flex: 1,
-                                    backgroundColor: '#E5E7EB',
-                                    marginVertical: 4,
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937', marginBottom: 4 }}>
-                                    Delivered
-                                </Text>
-                                <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
-                                    {order.orderStatus.location} • {order.orderStatus.date}
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Ready to Receive */}
-                        <View style={{ flexDirection: 'row' }}>
-                            <View style={{ alignItems: 'center', marginRight: 12 }}>
-                                <View style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: order.orderStatus.status === 'Completed' ? '#4CAF50' : '#E5E7EB',
-                                }} />
-                            </View>
-                            <View style={{ flex: 1, paddingTop: -2 }}>
-                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#1F2937' }}>
-                                    Ready to Receive
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Action Buttons */}
-                    <View style={{
-                        flexDirection: 'row',
-                        paddingBottom: 12
-                    }}>
-                        <TouchableOpacity onPress={() => setShowCancelModal(true)} style={{
-                            flex: 1,
-                            flexDirection: 'row',
-                            gap: 8,
-                            paddingVertical: 14,
-                            borderRadius: 16,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderWidth: 1.7,
-                            borderColor: '#FF5C5C',
-                        }}>
-                            <Text style={{ color: '#FF5C5C', fontWeight: '600', fontSize: 16 }}>Cancel Order</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => setShowUpdateStatusModal(true)} style={{
-                            flex: 1,
-                            flexDirection: 'row',
-                            gap: 8,
-                            alignItems: 'center',
-                            paddingVertical: 14,
-                            borderRadius: 16,
-                            justifyContent: 'center',
-                            backgroundColor: '#278687',
-                            marginLeft: 12,
-                        }}>
-                            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 16 }}>Update Status</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-
-            {/* Cancel Order Confirmation Modal */}
-            <Modal
-                visible={showCancelModal}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowCancelModal(false)}
-            >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                }}>
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 16,
-                        padding: 24,
-                        width: '100%',
-                        maxWidth: 320,
-                        alignItems: 'center',
-                    }}>
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 20,
-                            fontWeight: '600',
-                            color: '#1F2937',
-                            textAlign: 'center',
-                            marginBottom: 8,
-                        }}>
-                            Are you sure?
-                        </Text>
-
-                        {/* Description */}
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#6B7280',
-                            textAlign: 'center',
-                            lineHeight: 20,
-                            marginBottom: 24,
-                        }}>
-                            Are you sure you want to cancel this order? This action cannot be undone.
-                        </Text>
-
-                        {/* Buttons */}
-                        <View style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            gap: 12,
-                        }}>
-                            <TouchableOpacity
-                                onPress={() => setShowCancelModal(false)}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    borderWidth: 1.7,
-                                    borderColor: '#FF5C5C',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#FF5C5C',
-                                }}>
-                                    No, keep it
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setShowCancelModal(false);
-                                    // Handle actual cancel order logic here
-                                    console.log('Order cancelled');
-                                }}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    backgroundColor: '#278687',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#fff',
-                                }}>
-                                    Yes, cancel
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-            {/* Update Status Confirmation Modal */}
-            <Modal
-                visible={showUpdateStatusModal}
-                transparent={true}
-                animationType="fade"
-                onRequestClose={() => setShowUpdateStatusModal(false)}
-            >
-                <View style={{
-                    flex: 1,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                }}>
-                    <View style={{
-                        backgroundColor: '#fff',
-                        borderRadius: 16,
-                        padding: 24,
-                        width: '100%',
-                        maxWidth: 320,
-                        alignItems: 'center',
-                    }}>
-                        {/* Title */}
-                        <Text style={{
-                            fontSize: 20,
-                            fontWeight: '600',
-                            color: '#1F2937',
-                            textAlign: 'center',
-                            marginBottom: 8,
-                        }}>
-                            Update Status?
-                        </Text>
-
-                        {/* Description */}
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#6B7280',
-                            textAlign: 'center',
-                            lineHeight: 20,
-                            marginBottom: 24,
-                        }}>
-                            Are you sure you want to update the status?
-                        </Text>
-
-                        {/* Buttons */}
-                        <View style={{
-                            flexDirection: 'row',
-                            width: '100%',
-                            gap: 12,
-                        }}>
-                            <TouchableOpacity
-                                onPress={() => setShowUpdateStatusModal(false)}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    borderWidth: 1.7,
-                                    borderColor: '#FF5C5C',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#FF5C5C',
-                                }}>
-                                    Cancel
-                                </Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setShowUpdateStatusModal(false);
-                                    // Handle actual update status logic here
-                                    console.log('Status updated');
-                                }}
-                                style={{
-                                    flex: 1,
-                                    paddingVertical: 14,
-                                    borderRadius: 12,
-                                    backgroundColor: '#278687',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <Text style={{
-                                    fontSize: 16,
-                                    fontWeight: '600',
-                                    color: '#fff',
-                                }}>
-                                    Yes
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-        </SafeAreaView>
-    );
+const toNumber = (value: any, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 };
 
-export default OrderDetails;
+const formatMoney = (value: any) => `$${toNumber(value).toFixed(2)}`;
+const getItems = (order: any) => (Array.isArray(order?.orderItems) ? order.orderItems : []);
+const normalizeStatus = (value: any) => String(value || 'pending').toLowerCase();
+
+const STATUS_OPTIONS = [
+  { label: 'Pending', value: 'pending' },
+  { label: 'Processing', value: 'processing' },
+  { label: 'Shipped', value: 'shipped' },
+  { label: 'Delivered', value: 'delivered' },
+  { label: 'Completed', value: 'completed' },
+  { label: 'Cancelled', value: 'cancelled' },
+];
+
+const statusTheme = (status: string) => {
+  const map: Record<string, { bg: string; text: string }> = {
+    pending: { bg: '#FFF4E5', text: '#C27A22' },
+    processing: { bg: '#E8F1FF', text: '#2A66BF' },
+    shipped: { bg: '#F1EDFF', text: '#6D49B8' },
+    delivered: { bg: '#E7F8ED', text: '#1F9254' },
+    completed: { bg: '#E7F8ED', text: '#1F9254' },
+    cancelled: { bg: '#FDEBED', text: '#D34550' },
+  };
+  return map[status] || { bg: '#EEF2F4', text: '#56636B' };
+};
+
+export default function OrderDetails() {
+  const { id } = useLocalSearchParams();
+  const { data: order, isLoading, error, refetch } = useGetOrderByIdQuery(id as string, { skip: !id });
+  const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showUpdateStatusModal, setShowUpdateStatusModal] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('');
+
+  const items = useMemo(() => getItems(order), [order]);
+  const status = normalizeStatus(order?.status);
+  const theme = statusTheme(status);
+
+  const subtotal = toNumber(order?.subtotal);
+  const discount = toNumber(order?.discountAmount);
+  const total = toNumber(order?.totalAmount);
+  const shipping = toNumber(order?.shippingCost, 0);
+  const tax = toNumber(order?.taxAmount, 0);
+
+  const timeline = useMemo(() => {
+    const created = order?.createdAt ? new Date(order.createdAt) : null;
+    return [
+      { title: 'Order Created', time: created },
+      { title: status.charAt(0).toUpperCase() + status.slice(1), time: order?.updatedAt ? new Date(order.updatedAt) : created },
+    ];
+  }, [order, status]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <ActivityIndicator size="large" color="#278687" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!order || error) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <Text style={{ color: '#2B3439' }}>Order not found</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 10 }}>
+          <Text style={{ color: '#278687' }}>Go Back</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  const handleStatusUpdate = async (nextStatus: string) => {
+    try {
+      await updateStatus({ id: id as string, status: nextStatus }).unwrap();
+      await refetch();
+      setShowUpdateStatusModal(false);
+      setShowCancelModal(false);
+      Alert.alert('Success', 'Order status updated');
+    } catch (err: any) {
+      Alert.alert('Error', err?.data?.message || 'Failed to update status');
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <MaterialIcons name="arrow-back-ios-new" size={20} color="#202427" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Orders #{order?.orderNumber || order?.id}</Text>
+        <TouchableOpacity
+          style={styles.downloadFab}
+          onPress={() => router.push({ pathname: '/(screens)/export_invoice', params: { id: order?.id || order?._id } })}
+        >
+          <Feather name="download" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.customerCard}>
+          <View style={styles.customerRow}>
+            <Image source={{ uri: order?.buyer?.profilePhotoUrl || IMAGE_FALLBACK }} style={styles.customerAvatar} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.customerName}>{order?.buyer?.fullName || 'Customer'}</Text>
+              <Text style={styles.customerId}>ID: {order?.buyer?.id || 'N/A'}</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.messageButton}
+            onPress={() =>
+              router.push({
+                pathname: '/(screens)/chat_box',
+                params: {
+                  partnerId: order?.buyer?.userId || order?.buyer?.id,
+                  fullname: order?.buyer?.fullName || 'Customer',
+                },
+              })
+            }
+          >
+            <AntDesign name="message" size={14} color="#2C3338" />
+            <Text style={styles.messageText}>Message</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Order items</Text>
+          {items.map((item: any, idx: number) => (
+            <View key={item?.id || `${idx}`} style={[styles.itemRow, idx < items.length - 1 ? { marginBottom: 10 } : null]}>
+              <Image source={{ uri: item?.product?.images?.[0] || IMAGE_FALLBACK }} style={styles.itemImage} />
+              <View style={{ flex: 1 }}>
+                <View style={styles.itemTop}>
+                  <Text style={styles.itemName} numberOfLines={1}>#{order?.orderNumber}</Text>
+                  <Text style={styles.itemPrice}>{formatMoney(item?.unitPrice || item?.price)}</Text>
+                </View>
+                <Text style={styles.itemDesc} numberOfLines={2}>{item?.product?.description || 'Product details unavailable'}</Text>
+                <Text style={styles.itemQty}>x{item?.quantity || 1}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Payment details</Text>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Subtotal</Text><Text style={styles.paymentValue}>{formatMoney(subtotal)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Tax</Text><Text style={styles.paymentValue}>{formatMoney(tax)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Shipping</Text><Text style={styles.paymentValue}>{formatMoney(shipping)}</Text></View>
+          <View style={styles.dashed} />
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Discount</Text><Text style={styles.paymentValue}>{formatMoney(discount)}</Text></View>
+          <View style={styles.totalRow}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>{formatMoney(total)}</Text></View>
+          <View style={styles.paidRow}>
+            <Text style={[styles.statusBadge, { backgroundColor: theme.bg, color: theme.text }]}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Text>
+            <Text style={styles.paidMethod}>{order?.payment?.paymentMethod || 'Card payment'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Order history</Text>
+          {timeline.map((step, idx) => (
+            <View key={`${step.title}-${idx}`} style={styles.timelineRow}>
+              <View style={styles.timelineLeft}>
+                <View style={[styles.dot, idx === timeline.length - 1 ? styles.dotActive : null]} />
+                {idx < timeline.length - 1 && <View style={styles.line} />}
+              </View>
+              <View>
+                <Text style={styles.timelineTitle}>{step.title}</Text>
+                <Text style={styles.timelineTime}>
+                  {step.time ? step.time.toLocaleString() : 'N/A'}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      <View style={styles.bottomActions}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowCancelModal(true)}>
+          <Text style={styles.cancelBtnText}>Cancel order</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.updateBtn}
+          onPress={() => {
+            setSelectedStatus(status);
+            setShowUpdateStatusModal(true);
+          }}
+        >
+          <Text style={styles.updateBtnText}>Update Status</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal transparent visible={showCancelModal} animationType="fade" onRequestClose={() => setShowCancelModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Are you sure you want to update the order status?</Text>
+            <Text style={styles.modalSub}>This will mark this order as cancelled.</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalGhost} onPress={() => setShowCancelModal(false)}>
+                <Text style={styles.modalGhostText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalSolid} onPress={() => handleStatusUpdate('cancelled')} disabled={isUpdating}>
+                {isUpdating ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSolidText}>Yes</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal transparent visible={showUpdateStatusModal} animationType="fade" onRequestClose={() => setShowUpdateStatusModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.statusModal}>
+            <Text style={styles.modalTitle}>Update Status</Text>
+            {STATUS_OPTIONS.map((option) => (
+              <TouchableOpacity key={option.value} style={styles.statusOption} onPress={() => setSelectedStatus(option.value)}>
+                <Text style={[styles.statusOptionText, selectedStatus === option.value ? { color: '#278687', fontWeight: '700' } : null]}>
+                  {option.label}
+                </Text>
+                {selectedStatus === option.value ? <Feather name="check" size={18} color="#278687" /> : null}
+              </TouchableOpacity>
+            ))}
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalGhost} onPress={() => setShowUpdateStatusModal(false)}>
+                <Text style={styles.modalGhostText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSolid}
+                onPress={() => selectedStatus && handleStatusUpdate(selectedStatus)}
+                disabled={isUpdating}
+              >
+                {isUpdating ? <ActivityIndicator color="#fff" /> : <Text style={styles.modalSolidText}>Update</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F2F6F5' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F2F6F5' },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#202427', flex: 1, textAlign: 'center', marginHorizontal: 8 },
+  downloadFab: { backgroundColor: '#278687', width: 34, height: 34, borderRadius: 17, justifyContent: 'center', alignItems: 'center' },
+  content: { paddingHorizontal: 14, paddingBottom: 20 },
+  customerCard: { backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E3E9EC', padding: 12, marginBottom: 10 },
+  customerRow: { flexDirection: 'row', alignItems: 'center' },
+  customerAvatar: { width: 44, height: 44, borderRadius: 22, marginRight: 10, backgroundColor: '#E7EDF0' },
+  customerName: { fontSize: 15, fontWeight: '700', color: '#222C31' },
+  customerId: { fontSize: 12, color: '#6F7C84', marginTop: 2 },
+  messageButton: { marginTop: 10, backgroundColor: '#F3F7F8', borderRadius: 8, borderWidth: 1, borderColor: '#E1E7EA', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', paddingVertical: 10, gap: 8 },
+  messageText: { color: '#2C3338', fontWeight: '500', fontSize: 13 },
+  sectionCard: { backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E3E9EC', padding: 12, marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: '#212A30', marginBottom: 10 },
+  itemRow: { borderWidth: 1, borderColor: '#E9EFF2', borderRadius: 10, padding: 8, flexDirection: 'row' },
+  itemImage: { width: 62, height: 62, borderRadius: 8, marginRight: 10, backgroundColor: '#E7EDF0' },
+  itemTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  itemName: { fontSize: 14, fontWeight: '600', color: '#222C31', flex: 1, paddingRight: 8 },
+  itemPrice: { fontSize: 14, fontWeight: '700', color: '#222C31' },
+  itemDesc: { fontSize: 11, color: '#7B868D', marginTop: 2 },
+  itemQty: { textAlign: 'right', marginTop: 5, fontSize: 11, color: '#65727A' },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  paymentLabel: { color: '#66737C', fontSize: 13 },
+  paymentValue: { color: '#222C31', fontSize: 13, fontWeight: '600' },
+  dashed: { borderStyle: 'dashed', borderWidth: 1, borderColor: '#D5DEE2', marginVertical: 8 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 },
+  totalLabel: { fontSize: 15, fontWeight: '700', color: '#212A30' },
+  totalValue: { fontSize: 15, fontWeight: '700', color: '#212A30' },
+  paidRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, fontSize: 12, fontWeight: '700' },
+  paidMethod: { marginLeft: 8, color: '#6E7B83', fontSize: 12 },
+  timelineRow: { flexDirection: 'row' },
+  timelineLeft: { width: 22, alignItems: 'center' },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#B8C4CB', marginTop: 2 },
+  dotActive: { backgroundColor: '#278687' },
+  line: { width: 1, flex: 1, backgroundColor: '#CED8DD', marginVertical: 2 },
+  timelineTitle: { fontSize: 13, fontWeight: '600', color: '#2A343A' },
+  timelineTime: { fontSize: 11, color: '#7A868E', marginBottom: 10 },
+  bottomActions: { paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', backgroundColor: '#F2F6F5' },
+  cancelBtn: { flex: 1, borderWidth: 1.5, borderColor: '#F09AA0', borderRadius: 12, alignItems: 'center', justifyContent: 'center', height: 44, marginRight: 8 },
+  cancelBtnText: { color: '#E36570', fontWeight: '600' },
+  updateBtn: { flex: 1, backgroundColor: '#278687', borderRadius: 12, alignItems: 'center', justifyContent: 'center', height: 44, marginLeft: 8 },
+  updateBtnText: { color: '#FFFFFF', fontWeight: '700' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', paddingHorizontal: 24 },
+  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 18 },
+  statusModal: { backgroundColor: '#FFFFFF', borderRadius: 14, padding: 18 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#202A30', textAlign: 'center', marginBottom: 8 },
+  modalSub: { fontSize: 13, color: '#63707A', textAlign: 'center', marginBottom: 12 },
+  modalActions: { flexDirection: 'row', marginTop: 12, gap: 10 },
+  modalGhost: { flex: 1, height: 40, borderRadius: 10, borderWidth: 1.3, borderColor: '#D7E0E4', justifyContent: 'center', alignItems: 'center' },
+  modalGhostText: { color: '#4E5B64', fontWeight: '600' },
+  modalSolid: { flex: 1, height: 40, borderRadius: 10, backgroundColor: '#278687', justifyContent: 'center', alignItems: 'center' },
+  modalSolidText: { color: '#FFFFFF', fontWeight: '700' },
+  statusOption: { height: 42, borderBottomWidth: 1, borderBottomColor: '#EDF2F4', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  statusOptionText: { fontSize: 15, color: '#2A343A' },
+});

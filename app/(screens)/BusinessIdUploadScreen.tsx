@@ -1,7 +1,9 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -14,13 +16,40 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { useRegisterVendorMutation } from "../../store/api/authApiSlice";
+import { setCredentials } from "../../store/slices/authSlice";
+import { updateVendorRegistration } from "../../store/slices/registrationSlice";
+import { RootState } from "../../store/store";
 
 const BusinessIdUploadScreen: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const vendorData = useSelector((state: RootState) => state.registration.vendor);
+  const auth = useSelector((state: RootState) => state.auth);
+  const [registerVendor, { isLoading }] = useRegisterVendorMutation();
+  const imageMediaTypes = (ImagePicker as any).MediaType?.Images
+    ? [(ImagePicker as any).MediaType.Images]
+    : ImagePicker.MediaTypeOptions.Images;
 
   // States
   const [businessId, setBusinessId] = useState<string>("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getMimeType = (uri: string) => {
+    const lower = uri.toLowerCase();
+    if (lower.endsWith(".png")) return "image/png";
+    if (lower.endsWith(".heic")) return "image/heic";
+    if (lower.endsWith(".webp")) return "image/webp";
+    return "image/jpeg";
+  };
+
+  const makeFilePart = (uri: string, name: string) => ({
+    uri: Platform.OS === "ios" ? uri.replace("file://", "file://") : uri,
+    name,
+    type: getMimeType(uri),
+  });
 
   const handleImagePicker = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -33,12 +62,14 @@ const BusinessIdUploadScreen: React.FC = () => {
       return;
     }
 
+
+
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: imageMediaTypes,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 1,
+        quality: 0.5,
       });
 
       if (!result.canceled) {
@@ -50,11 +81,140 @@ const BusinessIdUploadScreen: React.FC = () => {
     }
   };
 
-  const handleSubmit = () => {
-    console.log("Business ID:", businessId);
-    console.log("Selected Image:", selectedImage);
+  const handleSubmit = async () => {
+    if (isSubmitting || isLoading) return;
 
-    router.push("/(tabs)");
+    if (!businessId || !selectedImage) {
+      Alert.alert("Required", "Please provide Business ID and upload an image.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      // FIX: Merging current states with Redux data to avoid stale selector values
+      const latestData = {
+        ...vendorData,
+        businessId: selectedImage,
+        bussinessRegNumber: businessId,
+      };
+
+      dispatch(updateVendorRegistration({
+        businessId: selectedImage,
+        bussinessRegNumber: businessId,
+      }));
+
+      const buildVendorFormData = () => {
+        const formData = new FormData();
+
+        const safeAppend = (key: string, value: any) => {
+          if (value !== undefined && value !== null) {
+            formData.append(key, value);
+          }
+        };
+
+        safeAppend('fullName', String(latestData.fullName || ''));
+        safeAppend('phone', String(latestData.phone || ''));
+        safeAppend('address', String(latestData.address || ''));
+        safeAppend('storename', String(latestData.storename || ''));
+        safeAppend('storeDescription', String(latestData.storeDescription || ''));
+        safeAppend('gender', String(latestData.gender || 'Other'));
+        safeAppend('nationalIdNumber', String(latestData.nationalIdNumber || ''));
+        safeAppend('bussinessRegNumber', String(latestData.bussinessRegNumber || businessId || ''));
+        safeAppend('country', String(latestData.country || 'United States'));
+
+        if (latestData.logo) {
+          formData.append('logo', makeFilePart(latestData.logo, 'logo.jpg') as any);
+        }
+
+        if (latestData.nidFront) {
+          formData.append('nidFront', makeFilePart(latestData.nidFront, 'nid_front.jpg') as any);
+        }
+
+        if (latestData.nidBack) {
+          formData.append('nidBack', makeFilePart(latestData.nidBack, 'nid_back.jpg') as any);
+        }
+
+        if (selectedImage) {
+          formData.append('businessId', makeFilePart(selectedImage, 'business_id.jpg') as any);
+        }
+
+        return formData;
+      };
+
+      const formData = buildVendorFormData();
+
+      console.log('Registering Vendor with FormData:', JSON.stringify(Object.fromEntries((formData as any)._parts)));
+
+      let response: any;
+      try {
+        response = await registerVendor(formData).unwrap();
+      } catch (err: any) {
+        // Fallback for timeout/abort issues in fetchBaseQuery multipart uploads.
+        const isAbortFetchError =
+          err?.status === "FETCH_ERROR" &&
+          (String(err?.error || "").includes("AbortError") || String(err?.error || "").includes("Network request failed"));
+
+        if (!isAbortFetchError) {
+          throw err;
+        }
+
+        const apiUrl = (process.env.EXPO_PUBLIC_API_URL || "").trim().replace(/\/+$/, "");
+        if (!apiUrl) throw err;
+
+        const fallbackFormData = buildVendorFormData();
+        const fallbackResponse = await fetch(`${apiUrl}/auth/register/vendor`, {
+          method: "POST",
+          headers: {
+            ...(auth?.accessToken ? { Authorization: `Bearer ${auth.accessToken}` } : {}),
+          },
+          body: fallbackFormData,
+        });
+
+        const fallbackJson = await fallbackResponse.json().catch(() => ({}));
+        if (!fallbackResponse.ok) {
+          throw {
+            status: fallbackResponse.status,
+            data: fallbackJson,
+          };
+        }
+        response = fallbackJson;
+      }
+
+      console.log('Vendor registration success result:', response);
+      const updatedUser = response?.data?.user || response?.user || response?.data;
+
+      if (updatedUser) {
+        const mergedUser = { ...updatedUser, userType: "vendor" };
+        // Update Redux
+        const accessToken = await AsyncStorage.getItem('accessToken');
+        const refreshToken = await AsyncStorage.getItem('refreshToken');
+        dispatch(setCredentials({
+          user: mergedUser,
+          accessToken: accessToken || '',
+          refreshToken: refreshToken || ''
+        }));
+
+        // Update AsyncStorage
+        await AsyncStorage.setItem('user', JSON.stringify(mergedUser));
+        await AsyncStorage.setItem('userRole', 'vendor');
+      }
+
+      Alert.alert("Success", "Vendor registration successful!", [
+        { text: "OK", onPress: () => router.push("/(tabs)") }
+      ]);
+
+    } catch (error: any) {
+      console.error("Vendor registration failed raw error:", error);
+      const errorMessage =
+        error?.data?.message ||
+        error?.data?.error ||
+        error?.error ||
+        error?.message ||
+        "Something went wrong.";
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -113,8 +273,13 @@ const BusinessIdUploadScreen: React.FC = () => {
             style={styles.submitButton}
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={isLoading || isSubmitting}
           >
-            <Text style={styles.submitButtonText}>Submit</Text>
+            {isLoading || isSubmitting ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

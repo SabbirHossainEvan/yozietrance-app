@@ -13,18 +13,23 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
 
+import { useSelector } from "react-redux";
+import { RootState } from "../../store/store";
+
 export default function UserSelection() {
+  const user = useSelector((state: RootState) => state.auth.user);
   const [selectedRole, setSelectedRole] = useState<"user" | "vendor" | null>(
     null
   );
 
+  const userType = (user as any)?.userType;
+
   const handleSelection = (role: "user" | "vendor") => {
     setSelectedRole(role);
-
     if (role === "user") {
-      router.push("/(user_screen)/CompleteProfileScreen");
+      router.replace("/(user_screen)/CompleteProfileScreen");
     } else {
-      router.push("/(screens)/CompleteProfileScreen");
+      router.replace("/(screens)/CompleteProfileScreen");
     }
   };
 

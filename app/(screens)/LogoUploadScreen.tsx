@@ -10,9 +10,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch } from "react-redux";
+import { updateVendorRegistration } from "../../store/slices/registrationSlice";
 
 const LogoUploadScreen: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleImagePicker = async () => {
@@ -30,7 +33,7 @@ const LogoUploadScreen: React.FC = () => {
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 1,
+        quality: 0.5,
       });
 
       if (!result.canceled) {
@@ -44,7 +47,7 @@ const LogoUploadScreen: React.FC = () => {
 
   const handleSubmit = () => {
     if (selectedImage) {
-      console.log("Logo selected:", selectedImage);
+      dispatch(updateVendorRegistration({ logo: selectedImage }));
     }
     router.push("/(screens)/endorIDUploadScreen");
   };

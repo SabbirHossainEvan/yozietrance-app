@@ -1,8 +1,13 @@
+import { useAddToCartMutation, useGetCartQuery } from "@/store/api/cartApiSlice";
+import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
+import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
+import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Image,
@@ -13,6 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSelector } from "react-redux";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -54,61 +60,56 @@ const PRODUCTS = [
 
 const ElectronicsScreen = () => {
   const router = useRouter();
+  const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
   const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
+  const user = useSelector((state: RootState) => state.auth.user);
+  const currentUserId = user?.userId || user?.id || (user as any)?._id;
 
-  const loadAddedItems = async () => {
-    try {
-      const cartData = await AsyncStorage.getItem("userCart");
-      if (cartData) {
-        const cartItems = JSON.parse(cartData);
-        const addedMap: { [key: string]: boolean } = {};
-        cartItems.forEach((item: any) => {
-          addedMap[item.id] = true;
-        });
-        setAddedItems(addedMap);
-      }
-    } catch (error) {
-      console.log("Error loading cart for UI sync:", error);
+  const { data: connections, isLoading: isConnectionsLoading } = useGetMyConnectionsQuery(currentUserId, {
+    skip: !currentUserId,
+    refetchOnMountOrArgChange: true,
+  });
+  const activeVendorId = connections?.data?.[0]?.vendor?._id || connections?.data?.[0]?.vendor?.id;
+
+  const { data: products, isLoading: isProductsLoading } = useGetProductsByVendorQuery(
+    { vendorId: activeVendorId, categoryId },
+    { skip: !activeVendorId }
+  );
+
+  const [addToCartMutation, { isLoading: isAddingToCart }] = useAddToCartMutation();
+  const { data: cartData, refetch: refetchCart } = useGetCartQuery();
+
+  const loadAddedItems = useCallback(() => {
+    if (cartData) {
+      const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
+      const addedMap: { [key: string]: boolean } = {};
+      rawItems.forEach((item: any) => {
+        const id = item.productId?._id || item.productId?.id || item.productId;
+        if (id) addedMap[id] = true;
+      });
+      setAddedItems(addedMap);
     }
-  };
+  }, [cartData]);
 
   useFocusEffect(
     useCallback(() => {
+      refetchCart();
       loadAddedItems();
-    }, []),
+    }, [refetchCart, loadAddedItems]),
   );
 
   const addToCart = async (product: any) => {
     try {
-      // 1. Get existing cart
-      const existingCart = await AsyncStorage.getItem("userCart");
-      let cart = existingCart ? JSON.parse(existingCart) : [];
+      await addToCartMutation({
+        productId: product._id || product.id,
+        quantity: 1
+      }).unwrap();
 
-      // 2. Check if item exists
-      const existingItemIndex = cart.findIndex(
-        (item: any) => item.id === product.id,
-      );
-
-      if (existingItemIndex > -1) {
-        cart[existingItemIndex].quantity += 1;
-      } else {
-        // New Item
-        cart.push({
-          id: product.id,
-          name: product.title,
-          price: parseFloat(product.price.replace("$", "")),
-          quantity: 1,
-          image: Image.resolveAssetSource(product.image).uri,
-        });
-      }
-
-      // 3. Save back to storage
-      await AsyncStorage.setItem("userCart", JSON.stringify(cart));
-
-      // 4. Update UI state
-      setAddedItems((prev) => ({ ...prev, [product.id]: true }));
-    } catch (error) {
+      Alert.alert("Success", "Product added to cart!");
+      // loadAddedItems will be updated via cartData change
+    } catch (error: any) {
       console.error("Error adding to cart:", error);
+      Alert.alert("Error", error?.data?.message || "Failed to add to cart");
     }
   };
 
@@ -119,7 +120,7 @@ const ElectronicsScreen = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Electronics</Text>
+        <Text style={styles.headerTitle}>{categoryName || "Electronics"}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -134,65 +135,78 @@ const ElectronicsScreen = () => {
       </View>
 
       {/* Product Grid List */}
-      <FlatList
-        data={PRODUCTS}
-        numColumns={2}
-        keyExtractor={(item) => item.id}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.listPadding}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            activeOpacity={0.8}
-            onPress={() => router.push("/(user_screen)/ProductDetails")}
-          >
-            {/* Light Blue Image Container */}
-            <View style={styles.imageBox}>
-              <Image
-                source={item.image}
-                style={styles.img}
-                resizeMode="contain"
-              />
-            </View>
-
-            {/* Product Title */}
-            <Text style={styles.title} numberOfLines={1}>
-              {item.title}
-            </Text>
-
-            {/* Rating Section */}
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={16} color="#FFB800" />
-              <Text style={styles.ratingText}>{item.rating}</Text>
-              <Text style={styles.reviews}>({item.reviews} reviews)</Text>
-            </View>
-
-            {/* Price and Circular Add Button */}
-            <View style={styles.cardBottom}>
-              <View>
-                <Text style={styles.priceText}>
-                  {item.price}
-                  <Text style={styles.unitText}> /unit</Text>
-                </Text>
+      {isConnectionsLoading || isProductsLoading ? (
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color="#2A8383" />
+        </View>
+      ) : (
+        <FlatList
+          data={products}
+          numColumns={2}
+          keyExtractor={(item) => item.id || item._id}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listPadding}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.card}
+              activeOpacity={0.8}
+              onPress={() =>
+                router.push({
+                  pathname: "/(user_screen)/ProductDetails",
+                  params: { productId: item.id || item._id },
+                })
+              }
+            >
+              {/* Light Blue Image Container */}
+              <View style={styles.imageBox}>
+                <Image
+                  source={item.images?.[0] ? { uri: item.images[0] } : item.image}
+                  style={styles.img}
+                  resizeMode="contain"
+                />
               </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.addButton,
-                  addedItems[item.id] && { backgroundColor: "#E0F2F1" },
-                ]}
-                onPress={() => addToCart(item)}
-              >
-                {addedItems[item.id] ? (
-                  <Ionicons name="checkmark" size={24} color="#2A8383" />
-                ) : (
-                  <Ionicons name="add" size={24} color="#333" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+              {/* Product Title */}
+              <Text style={styles.title} numberOfLines={1}>
+                {item.title || item.name}
+              </Text>
+
+              {/* Rating Section */}
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={16} color="#FFB800" />
+                <Text style={styles.ratingText}>{item.rating || "0.0"}</Text>
+                <Text style={styles.reviews}>({item.reviews || 0} reviews)</Text>
+              </View>
+
+              {/* Price and Circular Add Button */}
+              <View style={styles.cardBottom}>
+                <View>
+                  <Text style={styles.priceText}>
+                    ${item.price}
+                    <Text style={styles.unitText}> /unit</Text>
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.addButton,
+                    addedItems[item.id || item._id] && {
+                      backgroundColor: "#E0F2F1",
+                    },
+                  ]}
+                  onPress={() => addToCart(item)}
+                >
+                  {addedItems[item.id || item._id] ? (
+                    <Ionicons name="checkmark" size={24} color="#2A8383" />
+                  ) : (
+                    <Ionicons name="add" size={24} color="#333" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
     </SafeAreaView>
   );
 };

@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { useSetNewPasswordScreenMutation } from "@/store/api/authApiSlice";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -14,11 +15,41 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SetNewPasswordScreen: React.FC = () => {
+  const router = useRouter();
+  const { email, otp } = useLocalSearchParams<{ email: string; otp: string }>();
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
+
+  const [resetPassword, { isLoading }] = useSetNewPasswordScreenMutation();
+
+  const handleUpdatePassword = async () => {
+    if (!email || !otp) {
+      alert("Missing email or OTP. Please try the reset process again.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
+    if (!newPassword) {
+      alert("Please enter a new password");
+      return;
+    }
+
+    try {
+      // Prepare payload with email, newPassword, and confirmPassword as required by the backend
+      await resetPassword({ email, otp, newPassword, confirmPassword }).unwrap();
+      alert("Password updated successfully!");
+      router.push("/(auth)/login");
+    } catch (err) {
+      console.error("Reset password failed", err);
+      alert("Reset failed: " + ((err as any)?.data?.message || "Unknown error"));
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -98,8 +129,13 @@ const SetNewPasswordScreen: React.FC = () => {
             </View>
 
             {/* Update Button */}
-            <TouchableOpacity style={styles.updateButton} activeOpacity={0.8}>
-              <Text style={styles.updateButtonText}>Update Password</Text>
+            <TouchableOpacity
+              style={[styles.updateButton, isLoading && { opacity: 0.7 }]}
+              activeOpacity={0.8}
+              onPress={handleUpdatePassword}
+              disabled={isLoading}
+            >
+              <Text style={styles.updateButtonText}>{isLoading ? "Updating..." : "Update Password"}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

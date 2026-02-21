@@ -18,9 +18,7 @@ export default function TermsCondition() {
       <View style={styles.modalContainer}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Terms & Condition</Text>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#333" />
-          </TouchableOpacity>
+
         </View>
 
         <ScrollView
