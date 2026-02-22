@@ -7,6 +7,7 @@ import { Provider, useSelector } from 'react-redux';
 import { SocketProvider } from "../context/SocketContext";
 import { useGetProfileQuery } from "../store/api/authApiSlice";
 import { setCredentials } from '../store/slices/authSlice';
+import { setLanguage } from '../store/slices/languageSlice';
 import { RootState, store } from '../store/store';
 import "./global.css";
 
@@ -54,6 +55,11 @@ export default function RootLayout() {
       let targetPath = "/(onboarding)";
 
       try {
+        const savedLanguage = await AsyncStorage.getItem("app_language");
+        if (savedLanguage === "en" || savedLanguage === "he" || savedLanguage === "hi") {
+          store.dispatch(setLanguage(savedLanguage));
+        }
+
         // Force startup flow to always begin from onboarding.
         targetPath = "/(onboarding)";
         shouldRedirect = true;

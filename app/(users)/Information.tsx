@@ -364,6 +364,7 @@
 
 
 import { useGetCartQuery } from "@/store/api/cartApiSlice";
+import { useTranslation } from "@/hooks/use-translation";
 import { useCreateOrderMutation } from "@/store/api/orderApiSlice";
 import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
@@ -396,6 +397,7 @@ const stateData = [
 ];
 
 export default function InformationScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const user = useSelector((state: RootState) => state.auth.user);
   const { data: cartData, isLoading: isCartLoading } = useGetCartQuery();
@@ -434,14 +436,14 @@ export default function InformationScreen() {
 
   const handleContinue = async () => {
     if (!fullName.trim() || !email.trim() || !address1.trim() || !address2.trim() || !city.trim() || !stateValue || !zipCode.trim()) {
-      Alert.alert("Error", "Please fill all required fields (including Address 2)");
+      Alert.alert(t("error", "Error"), t("info_fill_required_fields", "Please fill all required fields (including Address 2)"));
       return;
     }
 
     const rawItems = cartData?.items || cartData?.data?.items || (Array.isArray(cartData) ? cartData : []);
 
     if (rawItems.length === 0) {
-      Alert.alert("Error", "Your cart is empty");
+      Alert.alert(t("error", "Error"), t("info_cart_empty", "Your cart is empty"));
       return;
     }
 
@@ -467,7 +469,7 @@ export default function InformationScreen() {
 
       const vendors = Object.keys(vendorGroups);
       if (vendors.length === 0) {
-        Alert.alert("Error", "Unable to process order. Products missing vendor information.");
+        Alert.alert(t("error", "Error"), t("info_vendor_missing", "Unable to process order. Products missing vendor information."));
         return;
       }
 
@@ -497,15 +499,15 @@ export default function InformationScreen() {
       } else {
         // Fallback if no ID found (should typically not happen if successful)
         Alert.alert(
-          "Success",
-          `Order${vendors.length > 1 ? 's' : ''} placed successfully!`,
-          [{ text: "OK", onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
+          t("success", "Success"),
+          `${t("info_order_word", "Order")}${vendors.length > 1 ? 's' : ''} ${t("info_placed_successfully", "placed successfully!")}`,
+          [{ text: t("ok", "OK"), onPress: () => router.replace("/(user_screen)/OrderAcceptedScreen") }]
         );
       }
 
     } catch (err: any) {
       console.error('Order creation error:', err);
-      Alert.alert("Error", err?.data?.message || "Failed to place order");
+      Alert.alert(t("error", "Error"), err?.data?.message || t("info_failed_place_order", "Failed to place order"));
     }
   };
 
@@ -516,7 +518,7 @@ export default function InformationScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Information</Text>
+        <Text style={styles.headerTitle}>{t("info_title", "Information")}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -530,15 +532,15 @@ export default function InformationScreen() {
         >
           {/* Autofill Banner */}
           <View style={styles.autofillBanner}>
-            <Text style={styles.autofillText}>Save time, Autofill your current location</Text>
+            <Text style={styles.autofillText}>{t("info_autofill_hint", "Save time, Autofill your current location")}</Text>
             <TouchableOpacity style={styles.autofillButton}>
-              <Text style={styles.autofillButtonText}>Autofill</Text>
+              <Text style={styles.autofillButtonText}>{t("info_autofill", "Autofill")}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Country/Region Selector with Search */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Country/Region</Text>
+            <Text style={styles.label}>{t("info_country_region", "Country/Region")}</Text>
             <TouchableOpacity
               style={styles.countrySelector}
               onPress={() => setIsCountryPickerVisible(true)}
@@ -564,24 +566,24 @@ export default function InformationScreen() {
 
           {/* Full Name */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Full Name</Text>
+            <Text style={styles.label}>{t("info_full_name", "Full Name")}</Text>
             <TextInput
               style={styles.input}
               value={fullName}
               onChangeText={setFullName}
-              placeholder="Rokey Mahmud"
+              placeholder={t("info_full_name_placeholder", "Rokey Mahmud")}
               placeholderTextColor="#999"
             />
           </View>
 
           {/* Email */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{t("info_email", "Email")}</Text>
             <TextInput
               style={[styles.input, { opacity: 0.6 }]}
               value={email}
               editable={false}
-              placeholder="example@email.com"
+              placeholder={t("info_email_placeholder", "example@email.com")}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -589,36 +591,36 @@ export default function InformationScreen() {
 
           {/* Phone */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.label}>{t("info_phone", "Phone")}</Text>
             <TextInput
               style={styles.input}
               value={phone}
               onChangeText={setPhone}
-              placeholder="+1 9999999999"
+              placeholder={t("info_phone_placeholder", "+1 9999999999")}
               keyboardType="phone-pad"
             />
           </View>
 
           {/* Address 1 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Address 1</Text>
+            <Text style={styles.label}>{t("info_address_1", "Address 1")}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={address1}
               onChangeText={setAddress1}
-              placeholder="123 Main Street, Jersey City, New Jersey 07302, USA"
+              placeholder={t("info_address_placeholder", "123 Main Street, Jersey City, New Jersey 07302, USA")}
               multiline
             />
           </View>
 
           {/* Address 2 */}
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Address 2 (optional)</Text>
+            <Text style={styles.label}>{t("info_address_2_optional", "Address 2 (optional)")}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={address2}
               onChangeText={setAddress2}
-              placeholder="123 Main Street, Jersey City, New Jersey 07302, USA"
+              placeholder={t("info_address_placeholder", "123 Main Street, Jersey City, New Jersey 07302, USA")}
               multiline
             />
           </View>
@@ -626,7 +628,7 @@ export default function InformationScreen() {
           {/* City, State, Zip Code Row */}
           <View style={styles.row}>
             <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
-              <Text style={styles.label}>City</Text>
+              <Text style={styles.label}>{t("info_city", "City")}</Text>
               <TextInput
                 style={styles.input}
                 value={city}
@@ -636,7 +638,7 @@ export default function InformationScreen() {
             </View>
 
             <View style={[styles.formGroup, { flex: 1.2, marginRight: 8 }]}>
-              <Text style={styles.label}>State</Text>
+              <Text style={styles.label}>{t("info_state", "State")}</Text>
               <Dropdown
                 style={styles.dropdown}
                 placeholderStyle={styles.placeholderStyle}
@@ -645,13 +647,13 @@ export default function InformationScreen() {
                 maxHeight={300}
                 labelField="label"
                 valueField="value"
-                placeholder="Select"
+                placeholder={t("info_select", "Select")}
                 value={stateValue}
                 onChange={item => setStateValue(item.value)}
               />
             </View>
             <View style={[styles.formGroup, { flex: 0.8 }]}>
-              <Text style={styles.label}>Zip Code</Text>
+              <Text style={styles.label}>{t("info_zip_code", "Zip Code")}</Text>
               <TextInput
                 style={styles.input}
                 value={zipCode}
@@ -672,7 +674,7 @@ export default function InformationScreen() {
             {isCreatingOrder ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.continueButtonText}>Continue</Text>
+              <Text style={styles.continueButtonText}>{t("info_continue", "Continue")}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>

@@ -1,5 +1,5 @@
-
-import { useGetCartQuery, useRemoveFromCartMutation, useUpdateCartItemMutation } from "@/store/api/cartApiSlice";
+﻿import { useGetCartQuery, useRemoveFromCartMutation, useUpdateCartItemMutation } from "@/store/api/cartApiSlice";
+import { useTranslation } from "@/hooks/use-translation";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
@@ -17,6 +17,7 @@ interface CartItem {
 const { width } = Dimensions.get("window");
 
 const MyCart: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { data: cartData, isLoading, isError, refetch } = useGetCartQuery();
   const [updateCartItem] = useUpdateCartItemMutation();
@@ -24,24 +25,16 @@ const MyCart: React.FC = () => {
 
   const cartItems = useMemo(() => {
     const rawItems = cartData?.data?.items || cartData?.items || (Array.isArray(cartData) ? cartData : []);
-    console.log('Raw Cart Data:', JSON.stringify(cartData, null, 2));
-    console.log('Raw Items:', JSON.stringify(rawItems, null, 2));
 
-    return rawItems.map((item: any) => {
-      console.log('Processing item:', JSON.stringify(item, null, 2));
-      const mappedItem = {
-        id: item.id || item._id,
-        name: item.product?.name || item.product?.title || item.productId?.title || item.productId?.name || item.title || item.name || "Unknown Product",
-        price: parseFloat(item.product?.price || item.productId?.price || item.price || 0),
-        quantity: item.quantity,
-        image: item.product?.images?.[0] || item.product?.imageUrl || item.productId?.images?.[0] || item.productId?.image || item.image || "https://via.placeholder.com/150",
-      };
-      console.log('Mapped item:', mappedItem);
-      return mappedItem;
-    });
-  }, [cartData]);
+    return rawItems.map((item: any) => ({
+      id: item.id || item._id,
+      name: item.product?.name || item.product?.title || item.productId?.title || item.productId?.name || item.title || item.name || t("cart_unknown_product", "Unknown Product"),
+      price: parseFloat(item.product?.price || item.productId?.price || item.price || 0),
+      quantity: item.quantity,
+      image: item.product?.images?.[0] || item.product?.imageUrl || item.productId?.images?.[0] || item.productId?.image || item.image || "https://via.placeholder.com/150",
+    }));
+  }, [cartData, t]);
 
-  // 1. Modal state define kora hoyeche
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   useFocusEffect(
@@ -63,7 +56,7 @@ const MyCart: React.FC = () => {
     try {
       await updateCartItem({ itemId: id, quantity: newQty }).unwrap();
     } catch (err: any) {
-      Alert.alert("Error", err?.data?.message || "Failed to update quantity");
+      Alert.alert(t("error", "Error"), err?.data?.message || t("cart_failed_update_quantity", "Failed to update quantity"));
     }
   };
 
@@ -71,7 +64,7 @@ const MyCart: React.FC = () => {
     try {
       await removeFromCart(id).unwrap();
     } catch (err: any) {
-      Alert.alert("Error", err?.data?.message || "Failed to remove item");
+      Alert.alert(t("error", "Error"), err?.data?.message || t("cart_failed_remove_item", "Failed to remove item"));
     }
   };
 
@@ -82,7 +75,6 @@ const MyCart: React.FC = () => {
   const tax: number = subtotal * TAX_RATE;
   const total: number = subtotal + tax + SHIPPING_FEE;
 
-  // 2. Checkout handle korar function
   const handleConfirmPurchase = () => {
     setIsModalVisible(false);
     router.push("/(users)/Information" as any);
@@ -100,7 +92,6 @@ const MyCart: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
 
-      {/* 3. Modal Design (Image onujayi) */}
       <Modal
         transparent={true}
         visible={isModalVisible}
@@ -110,7 +101,7 @@ const MyCart: React.FC = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              Are you sure you want to buy this product?
+              {t("cart_confirm_buy_q", "Are you sure you want to buy this product?")}
             </Text>
 
             <View style={styles.modalButtonRow}>
@@ -118,14 +109,14 @@ const MyCart: React.FC = () => {
                 style={styles.noBtn}
                 onPress={() => setIsModalVisible(false)}
               >
-                <Text style={styles.noBtnText}>NO</Text>
+                <Text style={styles.noBtnText}>{t("cart_no", "NO")}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.yesBtn}
                 onPress={handleConfirmPurchase}
               >
-                <Text style={styles.yesBtnText}>Yes</Text>
+                <Text style={styles.yesBtnText}>{t("cart_yes", "Yes")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -136,7 +127,7 @@ const MyCart: React.FC = () => {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Cart</Text>
+        <Text style={styles.headerTitle}>{t("cart_title", "My Cart")}</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -163,7 +154,7 @@ const MyCart: React.FC = () => {
                       onPress={() => updateQuantity(item.id, "dec")}
                       style={styles.stepBtn}
                     >
-                      <Text style={styles.stepText}>—</Text>
+                      <Text style={styles.stepText}>-</Text>
                     </TouchableOpacity>
                     <Text style={styles.qtyText}>{item.quantity}</Text>
                     <TouchableOpacity
@@ -193,41 +184,41 @@ const MyCart: React.FC = () => {
           <View style={styles.promoBox}>
             <Text style={styles.promoText}>YYt34uri</Text>
             <View style={styles.promoApplied}>
-              <Text style={styles.appliedText}>Promo code applied</Text>
+              <Text style={styles.appliedText}>{t("cart_promo_applied", "Promo code applied")}</Text>
               <Ionicons name="checkmark-circle" size={18} color="#349488" />
             </View>
           </View>
 
-          <Text style={styles.sectionTitle}>Payment details</Text>
+          <Text style={styles.sectionTitle}>{t("order_details_payment_details", "Payment details")}</Text>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Subtotal</Text>
+            <Text style={styles.detailLabel}>{t("order_details_subtotal", "Subtotal")}</Text>
             <Text style={styles.detailValue}>${subtotal.toFixed(2)}</Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Tax(7.5%)</Text>
+            <Text style={styles.detailLabel}>{t("order_details_tax", "Tax(7.5%)")}</Text>
             <Text style={styles.detailValue}>${tax.toFixed(2)}</Text>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Shipping</Text>
+            <Text style={styles.detailLabel}>{t("order_details_shipping", "Shipping")}</Text>
             <Text style={styles.detailValue}>${SHIPPING_FEE.toFixed(2)}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total</Text>
+            <Text style={styles.totalLabel}>{t("chat_total_label", "Total")}</Text>
             <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
           </View>
 
           <TouchableOpacity
             style={styles.checkoutBtn}
-            onPress={() => setIsModalVisible(true)} // Modal open hobe
+            onPress={() => setIsModalVisible(true)}
           >
             <Text style={styles.checkoutBtnText}>
-              Checkout (${total.toFixed(2)})
+              {t("cart_checkout", "Checkout")} (${total.toFixed(2)})
             </Text>
           </TouchableOpacity>
         </View>
@@ -237,7 +228,6 @@ const MyCart: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  // ... (Apnar baki styles thakbe)
   safeArea: { flex: 1, backgroundColor: "#F8FBFB" },
   header: {
     flexDirection: "row",
@@ -354,7 +344,6 @@ const styles = StyleSheet.create({
   },
   checkoutBtnText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
 
-  // --- Modal Styles ---
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -413,4 +402,3 @@ const styles = StyleSheet.create({
 });
 
 export default MyCart;
-

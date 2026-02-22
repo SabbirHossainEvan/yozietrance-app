@@ -3,6 +3,7 @@ import { useGetConversationsQuery, useGetMessagesQuery, useMarkAsReadMutation, u
 import { useAssignCouponMutation, useGetCouponsByVendorQuery } from "@/store/api/couponApiSlice";
 import { useGetOrdersQuery } from "@/store/api/orderApiSlice";
 import { RootState } from "@/store/store";
+import { useTranslation } from "@/hooks/use-translation";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -57,12 +58,20 @@ const AttachmentBtn = ({ icon, label, onPress }: any) => (
   </TouchableOpacity>
 );
 
-const ChatCouponCard = ({ coupon, isOwn }: { coupon: any, isOwn: boolean }) => {
+const ChatCouponCard = ({
+  coupon,
+  isOwn,
+  labels,
+}: {
+  coupon: any;
+  isOwn: boolean;
+  labels: { code: string; limitedTime: string; minSpend: string; offer: string; defaultDiscount: string };
+}) => {
   if (!coupon) return null;
   return (
     <View style={[styles.chatCouponContainer, isOwn ? styles.chatCouponOwn : styles.chatCouponOther]}>
       <View style={[styles.chatCouponSide, { backgroundColor: coupon.color || '#FF9100' }]}>
-        <Text style={styles.chatCouponVerticalText}>{coupon.type || 'OFFER'}</Text>
+        <Text style={styles.chatCouponVerticalText}>{coupon.type || labels.offer}</Text>
         <View style={styles.chatCouponDotContainer}>
           {[...Array(4)].map((_, i) => (
             <View key={i} style={styles.chatCouponDot} />
@@ -71,18 +80,18 @@ const ChatCouponCard = ({ coupon, isOwn }: { coupon: any, isOwn: boolean }) => {
       </View>
       <View style={styles.chatCouponBody}>
         <View style={styles.chatCouponTop}>
-          <Text style={styles.chatCouponCode}>Code:{coupon.code}</Text>
-          <Text style={styles.chatCouponDiscount}>{coupon.discount || '10%'}</Text>
+          <Text style={styles.chatCouponCode}>{labels.code}:{coupon.code}</Text>
+          <Text style={styles.chatCouponDiscount}>{coupon.discount || labels.defaultDiscount}</Text>
         </View>
         <Text style={styles.chatCouponDesc} numberOfLines={2}>{coupon.desc || coupon.description}</Text>
         <View style={styles.chatCouponFooter}>
           <View style={styles.chatCouponInfo}>
             <Ionicons name="time-outline" size={12} color="#666" />
-            <Text style={styles.chatCouponInfoText}>Limited Time</Text>
+            <Text style={styles.chatCouponInfoText}>{labels.limitedTime}</Text>
           </View>
           <View style={styles.chatCouponInfo}>
             <Ionicons name="bag-handle-outline" size={12} color="#666" />
-            <Text style={styles.chatCouponInfoText}>Min. Spend</Text>
+            <Text style={styles.chatCouponInfoText}>{labels.minSpend}</Text>
           </View>
         </View>
       </View>
@@ -90,12 +99,12 @@ const ChatCouponCard = ({ coupon, isOwn }: { coupon: any, isOwn: boolean }) => {
   );
 };
 
-const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
+const CouponModal = ({ visible, onClose, onSelect, coupons, labels }: any) => (
   <Modal visible={visible} transparent animationType="slide">
     <View style={styles.modalOverlay}>
       <View style={styles.modalContent}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Select Coupon</Text>
+          <Text style={styles.modalTitle}>{labels.selectCoupon}</Text>
           <TouchableOpacity onPress={onClose}>
             <MaterialIcons name="close" size={24} color="#333" />
           </TouchableOpacity>
@@ -114,7 +123,7 @@ const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
                 </View>
                 <View style={styles.couponBody}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={styles.couponCode}>Code: {coupon.code}</Text>
+                    <Text style={styles.couponCode}>{labels.code}: {coupon.code}</Text>
                     <Text style={styles.couponDiscountMain}>{coupon.discount}</Text>
                   </View>
                   <Text style={styles.couponDesc}>{coupon.desc}</Text>
@@ -123,8 +132,8 @@ const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
             ))
           ) : (
             <View style={{ padding: 40, alignItems: 'center' }}>
-              <Text style={{ color: '#666', fontSize: 16 }}>No active coupons</Text>
-              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>Create coupons to send to buyers</Text>
+              <Text style={{ color: '#666', fontSize: 16 }}>{labels.noActiveCoupons}</Text>
+              <Text style={{ color: '#999', fontSize: 14, marginTop: 8 }}>{labels.createCouponsHint}</Text>
             </View>
           )}
         </ScrollView>
@@ -134,6 +143,7 @@ const CouponModal = ({ visible, onClose, onSelect, coupons }: any) => (
 );
 
 const ChatBox: React.FC = () => {
+  const { t } = useTranslation();
   const user = useSelector((state: RootState) => state.auth.user);
   const currentUserId = user?.userId || user?.id || (user as any)?._id;
   const router = useRouter();
@@ -184,13 +194,13 @@ const ChatBox: React.FC = () => {
     return fromParams;
   }, [conversationsData, activePartnerId, fullname, name, conversationId, user?.id]);
 
-  const displayName = partnerData.name || "Partner";
+  const displayName = partnerData.name || t("chat_partner_fallback", "Partner");
   const partnerAvatar = partnerData.avatar;
 
   const [messageText, setMessageText] = useState("");
   const [showOptions, setShowOptions] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
-  const [activeTab, setActiveTab] = useState("Chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "categories" | "order_history">("chat");
   const [storedRole, setStoredRole] = useState<string | null>(null);
   const [assignCoupon] = useAssignCouponMutation();
   const [markAsRead] = useMarkAsReadMutation();
@@ -214,29 +224,34 @@ const ChatBox: React.FC = () => {
   // 1. Detect role from global state & storage
   const role = user?.userType?.toLowerCase() || storedRole?.toLowerCase() || "buyer";
   const isVendorSide = role === "vendor";
+  const couponPrefix = t("chat_coupon_message_prefix", "Sent a coupon");
+  const legacyCouponPrefix = "Sent a coupon";
 
   // 2. Define Tab Configuration dynamically - SWAPPED as per user request
   const tabs = isVendorSide
     ? [
-      { name: "Chat", action: () => setActiveTab("Chat") },
+      { key: "chat" as const, label: t("chat_tab_chat", "Chat"), action: () => setActiveTab("chat") },
       // {
       //   name: "Categories",
       //   action: () => router.push("/(users)/categoriesScreen")
       // },
       {
-        name: "Order History",
-        action: () => setActiveTab("Order History")
+        key: "order_history" as const,
+        label: t("chat_tab_order_history", "Order History"),
+        action: () => setActiveTab("order_history")
       },
     ]
     : [
-      { name: "Chat", action: () => setActiveTab("Chat") },
+      { key: "chat" as const, label: t("chat_tab_chat", "Chat"), action: () => setActiveTab("chat") },
       {
-        name: "Categories",
+        key: "categories" as const,
+        label: t("chat_tab_categories", "Categories"),
         action: () => router.push("/(users)/categoriesScreen")
       },
       {
-        name: "Order History",
-        action: () => setActiveTab("Order History")
+        key: "order_history" as const,
+        label: t("chat_tab_order_history", "Order History"),
+        action: () => setActiveTab("order_history")
       },
     ];
 
@@ -246,10 +261,10 @@ const ChatBox: React.FC = () => {
   });
   const { data: categoriesData, isLoading: categoriesLoading } = useGetCategoriesByVendorQuery(
     activePartnerId,
-    { skip: isVendorSide || !activePartnerId || activeTab !== "Categories" }
+    { skip: isVendorSide || !activePartnerId || activeTab !== "categories" }
   );
   const { data: ordersData, isLoading: ordersLoading } = useGetOrdersQuery(undefined, {
-    skip: activeTab !== "Order History"
+    skip: activeTab !== "order_history"
   });
 
   const [sendMessage] = useSendMessageMutation();
@@ -339,7 +354,7 @@ const ChatBox: React.FC = () => {
         // Validation: Ensure we don't send conversationId as buyerId
         if (targetBuyerId === conversationId) {
           console.error('ChatBox.handleSendMessage - ERROR: Target Buyer ID is same as Conversation ID! Aborting assignment.');
-          alert("Error: Cannot assign coupon. Buyer ID not resolved.");
+          alert(t("chat_coupon_assign_error", "Error: Cannot assign coupon. Buyer ID not resolved."));
           return;
         }
 
@@ -358,7 +373,7 @@ const ChatBox: React.FC = () => {
         }
       }
 
-      const msgText = type === "coupon" ? `Sent a coupon: ${coupon?.code} - ${coupon?.desc}` : text;
+      const msgText = type === "coupon" ? `${couponPrefix}: ${coupon?.code} - ${coupon?.desc}` : text;
 
       await sendMessage({
         receiverId: activePartnerId,
@@ -382,7 +397,10 @@ const ChatBox: React.FC = () => {
   };
 
   const renderMessage = ({ item: msg }: { item: CustomChatMessage }) => {
-    const isCoupon = msg.type === "coupon" || msg.text?.startsWith("Sent a coupon:");
+    const isCoupon =
+      msg.type === "coupon" ||
+      msg.text?.startsWith(`${couponPrefix}:`) ||
+      msg.text?.startsWith(`${legacyCouponPrefix}:`);
 
     return (
       <View style={[styles.messageRow, msg.isOwn ? styles.rowReverse : {}]}>
@@ -394,6 +412,13 @@ const ChatBox: React.FC = () => {
             <ChatCouponCard
               coupon={msg.couponDetails || parseCouponFromText(msg.text)}
               isOwn={msg.isOwn}
+              labels={{
+                code: t("chat_coupon_code", "Code"),
+                limitedTime: t("chat_coupon_limited_time", "Limited Time"),
+                minSpend: t("chat_coupon_min_spend", "Min. Spend"),
+                offer: t("chat_coupon_offer", "OFFER"),
+                defaultDiscount: t("chat_coupon_default_discount", "10%"),
+              }}
             />
           ) : (
             <View style={[styles.bubble, msg.isOwn ? styles.myBubble : styles.otherBubble]}>
@@ -410,18 +435,25 @@ const ChatBox: React.FC = () => {
 
   // Helper to parse coupon info from text fallback
   const parseCouponFromText = (text: string) => {
-    if (!text || !text.includes("Sent a coupon:")) return null;
+    const activePrefix = `${couponPrefix}:`;
+    const legacyPrefixWithColon = `${legacyCouponPrefix}:`;
+    if (!text || (!text.includes(activePrefix) && !text.includes(legacyPrefixWithColon))) return null;
     try {
-      // Format: "Sent a coupon: CODE - DESC"
-      const parts = text.split(":");
+      // Format: "<prefix>: CODE - DESC"
+      const normalized = text.startsWith(legacyPrefixWithColon)
+        ? text.replace(legacyPrefixWithColon, activePrefix)
+        : text;
+      const parts = normalized.split(":");
       if (parts.length < 2) return null;
       const details = parts[1].split("-");
       return {
-        code: details[0]?.trim() || "COUPON",
-        desc: details[1]?.trim() || "Special Offer",
-        type: details[1]?.includes("CASHBACK") ? "CASHBACK" : "DISCOUNT",
+        code: details[0]?.trim() || t("chat_coupon_fallback_code", "COUPON"),
+        desc: details[1]?.trim() || t("chat_coupon_fallback_desc", "Special Offer"),
+        type: details[1]?.includes("CASHBACK")
+          ? t("chat_coupon_cashback", "CASHBACK")
+          : t("chat_coupon_discount", "DISCOUNT"),
         color: details[1]?.includes("CASHBACK") ? "#FF4D67" : "#FF9100",
-        discount: details[1]?.match(/\d+[%$]/)?.[0] || "10%",
+        discount: details[1]?.match(/\d+[%$]/)?.[0] || t("chat_coupon_default_discount", "10%"),
       };
     } catch {
       return null;
@@ -444,9 +476,9 @@ const ChatBox: React.FC = () => {
             <Text style={styles.headerName}>{displayName}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {isVendorSide && (
-                <Text style={styles.headerId}>ID: #{(activePartnerId || "").slice(-6).toUpperCase()} • </Text>
+                <Text style={styles.headerId}>{t("chat_id_fallback", "ID")}: #{(activePartnerId || "").slice(-6).toUpperCase()} • </Text>
               )}
-              <Text style={styles.headerStatus}>Online</Text>
+              <Text style={styles.headerStatus}>{t("chat_online", "Online")}</Text>
             </View>
           </View>
         </View>
@@ -461,11 +493,11 @@ const ChatBox: React.FC = () => {
     <View style={styles.tabsContainer}>
       {tabs.map((tab) => (
         <TouchableOpacity
-          key={tab.name}
-          style={[styles.tab, activeTab === tab.name && styles.activeTab]}
+          key={tab.key}
+          style={[styles.tab, activeTab === tab.key && styles.activeTab]}
           onPress={tab.action}
         >
-          <Text style={[styles.tabText, activeTab === tab.name && styles.activeTabText]}>{tab.name}</Text>
+          <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>{tab.label}</Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -474,7 +506,7 @@ const ChatBox: React.FC = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "Categories":
+      case "categories":
         return (
           <View style={{ flex: 1, padding: 16 }}>
             {categoriesLoading ? <ActivityIndicator color="#2A8383" /> : (
@@ -488,12 +520,12 @@ const ChatBox: React.FC = () => {
                     <Text style={styles.categoryLabel}>{item.name}</Text>
                   </TouchableOpacity>
                 )}
-                ListEmptyComponent={<Text style={styles.emptyText}>No categories found</Text>}
+                ListEmptyComponent={<Text style={styles.emptyText}>{t("chat_no_categories_found", "No categories found")}</Text>}
               />
             )}
           </View>
         );
-      case "Order History":
+      case "order_history":
         return (
           <View style={{ flex: 1, padding: 16 }}>
             {ordersLoading ? <ActivityIndicator color="#2A8383" /> : (
@@ -503,14 +535,14 @@ const ChatBox: React.FC = () => {
                 renderItem={({ item }) => (
                   <View style={styles.orderCard}>
                     <View style={styles.orderHeader}>
-                      <Text style={styles.orderNo}>Order #{(item._id || item.id)?.slice(-6)?.toUpperCase() || 'ID'}</Text>
+                      <Text style={styles.orderNo}>{t("chat_order_label", "Order")} #{(item._id || item.id)?.slice(-6)?.toUpperCase() || t("chat_id_fallback", "ID")}</Text>
                       <Text style={[styles.orderStatus, { color: item.status === 'DELIVERED' ? '#4CAF50' : '#FF9800' }]}>{item.status}</Text>
                     </View>
-                    <Text style={styles.orderDate}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Date N/A'}</Text>
-                    <Text style={styles.orderTotal}>Total: ${item.totalAmount || '0.00'}</Text>
+                    <Text style={styles.orderDate}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : t("chat_date_na", "Date N/A")}</Text>
+                    <Text style={styles.orderTotal}>{t("chat_total_label", "Total")}: ${item.totalAmount || '0.00'}</Text>
                   </View>
                 )}
-                ListEmptyComponent={<Text style={styles.emptyText}>No orders found between you</Text>}
+                ListEmptyComponent={<Text style={styles.emptyText}>{t("chat_no_orders_between_you", "No orders found between you")}</Text>}
               />
             )}
           </View>
@@ -543,16 +575,16 @@ const ChatBox: React.FC = () => {
           <View style={{ flex: 1 }}>
             {renderContent()}
 
-            {activeTab === "Chat" && (
+            {activeTab === "chat" && (
               <>
                 {showOptions && (
                   <View style={styles.attachmentMenu}>
                     <View style={styles.attachmentRow}>
-                      <AttachmentBtn icon="image" label="Photo" onPress={() => { }} />
-                      <AttachmentBtn icon="camera-alt" label="camera" onPress={() => { }} />
-                      <AttachmentBtn icon="location-on" label="Location" onPress={() => { }} />
+                      <AttachmentBtn icon="image" label={t("chat_attachment_photo", "Photo")} onPress={() => { }} />
+                      <AttachmentBtn icon="camera-alt" label={t("chat_attachment_camera", "camera")} onPress={() => { }} />
+                      <AttachmentBtn icon="location-on" label={t("chat_attachment_location", "Location")} onPress={() => { }} />
                       {isVendorSide && (
-                        <AttachmentBtn icon="confirmation-number" label="Coupon" onPress={() => setShowCouponModal(true)} />
+                        <AttachmentBtn icon="confirmation-number" label={t("chat_attachment_coupon", "Coupon")} onPress={() => setShowCouponModal(true)} />
                       )}
                     </View>
                   </View>
@@ -563,7 +595,7 @@ const ChatBox: React.FC = () => {
                     <Feather name={showOptions ? "x" : "plus"} size={28} color="#2A8383" />
                   </TouchableOpacity>
                   <TextInput
-                    placeholder="Type a message..."
+                    placeholder={t("chat_type_message", "Type a message...")}
                     style={styles.textInput}
                     value={messageText}
                     onChangeText={setMessageText}
@@ -586,6 +618,12 @@ const ChatBox: React.FC = () => {
         onClose={() => setShowCouponModal(false)}
         onSelect={(c: CouponData) => handleSendMessage("", "coupon", c)}
         coupons={availableCoupons}
+        labels={{
+          selectCoupon: t("chat_select_coupon", "Select Coupon"),
+          code: t("chat_coupon_code", "Code"),
+          noActiveCoupons: t("chat_no_active_coupons", "No active coupons"),
+          createCouponsHint: t("chat_create_coupons_hint", "Create coupons to send to buyers"),
+        }}
       />
     </SafeAreaView>
   );

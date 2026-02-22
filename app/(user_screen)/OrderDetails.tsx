@@ -1,4 +1,5 @@
 import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '@/store/api/orderApiSlice';
+import { useTranslation } from '@/hooks/use-translation';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
@@ -17,6 +18,7 @@ const normalizeStatus = (value: any) => String(value || 'pending').toLowerCase()
 const getItems = (order: any) => (Array.isArray(order?.orderItems) ? order.orderItems : []);
 
 const OrderDetails = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { data: order, isLoading, error, refetch } = useGetOrderByIdQuery(id as string, { skip: !id });
@@ -39,12 +41,12 @@ const OrderDetails = () => {
     const created = order?.createdAt ? new Date(order.createdAt) : null;
     const updated = order?.updatedAt ? new Date(order.updatedAt) : created;
     return [
-      { key: 'created', title: 'Order Created', time: created },
-      { key: 'processing', title: 'Processing', time: status === 'processing' || status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
-      { key: 'shipped', title: 'Shipped', time: status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
-      { key: 'ready', title: 'Ready For Pickup', time: status === 'delivered' || status === 'completed' ? updated : null },
+      { key: 'created', title: t('order_details_timeline_created', 'Order Created'), time: created },
+      { key: 'processing', title: t('orders_filter_processing', 'Processing'), time: status === 'processing' || status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
+      { key: 'shipped', title: t('orders_filter_shipped', 'Shipped'), time: status === 'shipped' || status === 'delivered' || status === 'completed' ? updated : null },
+      { key: 'ready', title: t('order_details_timeline_ready_pickup', 'Ready For Pickup'), time: status === 'delivered' || status === 'completed' ? updated : null },
     ];
-  }, [order, status]);
+  }, [order, status, t]);
 
   if (isLoading) {
     return (
@@ -57,7 +59,7 @@ const OrderDetails = () => {
   if (!order || error) {
     return (
       <SafeAreaView style={styles.centered}>
-        <Text style={{ color: '#2A3035' }}>Order not found</Text>
+        <Text style={{ color: '#2A3035' }}>{t('order_details_not_found', 'Order not found')}</Text>
       </SafeAreaView>
     );
   }
@@ -68,7 +70,7 @@ const OrderDetails = () => {
       await refetch();
       setShowFeedbackModal(true);
     } catch (err: any) {
-      Alert.alert('Error', err?.data?.message || 'Failed to confirm pickup');
+      Alert.alert(t('error', 'Error'), err?.data?.message || t('order_details_failed_confirm_pickup', 'Failed to confirm pickup'));
     }
   };
 
@@ -80,7 +82,7 @@ const OrderDetails = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1C252B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Orders #{order?.orderNumber || order?.id}</Text>
+        <Text style={styles.headerTitle}>{t('orders_title', 'Orders')} #{order?.orderNumber || order?.id}</Text>
         <TouchableOpacity
           style={styles.downloadBtn}
           onPress={() => router.push({ pathname: '/(user_screen)/ExportInvoiceScreen', params: { id: order?.id } })}
@@ -94,8 +96,8 @@ const OrderDetails = () => {
           <View style={styles.userRow}>
             <Image source={{ uri: order?.vendor?.logoUrl || IMAGE_FALLBACK }} style={styles.avatar} />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.userName}>{order?.vendor?.fullName || order?.vendor?.storename || 'Vendor'}</Text>
-              <Text style={styles.userId}>ID: {order?.vendor?.id || 'N/A'}</Text>
+              <Text style={styles.userName}>{order?.vendor?.fullName || order?.vendor?.storename || t('order_details_vendor_fallback', 'Vendor')}</Text>
+              <Text style={styles.userId}>ID: {order?.vendor?.id || t('orders_na', 'N/A')}</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -105,18 +107,18 @@ const OrderDetails = () => {
                 pathname: '/(screens)/chat_box',
                 params: {
                   partnerId: order?.vendor?.userId || order?.vendor?.id,
-                  fullname: order?.vendor?.fullName || order?.vendor?.storename || 'Vendor',
+                  fullname: order?.vendor?.fullName || order?.vendor?.storename || t('order_details_vendor_fallback', 'Vendor'),
                 },
               })
             }
           >
             <Ionicons name="chatbubble-outline" size={16} color="#2F3A41" />
-            <Text style={styles.messageText}>Message</Text>
+            <Text style={styles.messageText}>{t('order_details_message', 'Message')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Order items</Text>
+          <Text style={styles.sectionTitle}>{t('order_details_order_items', 'Order items')}</Text>
           {items.map((item: any, index: number) => (
             <View key={item?.id || `${index}`} style={[styles.itemRow, index < items.length - 1 ? styles.itemBorder : null]}>
               <Image source={{ uri: item?.product?.images?.[0] || IMAGE_FALLBACK }} style={styles.itemImage} />
@@ -125,7 +127,7 @@ const OrderDetails = () => {
                   <Text style={styles.itemName}>#{order?.orderNumber}</Text>
                   <Text style={styles.itemPrice}>{formatMoney(item?.unitPrice || item?.totalPrice)}</Text>
                 </View>
-                <Text numberOfLines={2} style={styles.itemDesc}>{item?.product?.description || 'No description'}</Text>
+                <Text numberOfLines={2} style={styles.itemDesc}>{item?.product?.description || t('product_details_no_description', 'No description')}</Text>
                 <Text style={styles.itemQty}>x{item?.quantity || 1}</Text>
               </View>
             </View>
@@ -133,21 +135,21 @@ const OrderDetails = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Payment details</Text>
-          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Subtotal</Text><Text style={styles.paymentValue}>{formatMoney(subtotal)}</Text></View>
-          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Tax(7.5%)</Text><Text style={styles.paymentValue}>{formatMoney(tax)}</Text></View>
-          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Shipping</Text><Text style={styles.paymentValue}>{formatMoney(shipping)}</Text></View>
+          <Text style={styles.sectionTitle}>{t('order_details_payment_details', 'Payment details')}</Text>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>{t('order_details_subtotal', 'Subtotal')}</Text><Text style={styles.paymentValue}>{formatMoney(subtotal)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>{t('order_details_tax', 'Tax(7.5%)')}</Text><Text style={styles.paymentValue}>{formatMoney(tax)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>{t('order_details_shipping', 'Shipping')}</Text><Text style={styles.paymentValue}>{formatMoney(shipping)}</Text></View>
           <View style={styles.dashed} />
-          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>Discount</Text><Text style={styles.paymentValue}>{formatMoney(discount)}</Text></View>
-          <View style={styles.paymentRow}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>{formatMoney(total)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.paymentLabel}>{t('order_details_discount', 'Discount')}</Text><Text style={styles.paymentValue}>{formatMoney(discount)}</Text></View>
+          <View style={styles.paymentRow}><Text style={styles.totalLabel}>{t('chat_total_label', 'Total')}</Text><Text style={styles.totalValue}>{formatMoney(total)}</Text></View>
           <View style={styles.paidBadge}>
-            <Text style={styles.paidTag}>{status === 'pending' ? 'Unpaid' : 'Paid'}</Text>
-            <Text style={styles.paidText}>Via {order?.payment?.paymentMethod || 'Card ending 4242'}</Text>
+            <Text style={styles.paidTag}>{status === 'pending' ? t('order_details_unpaid', 'Unpaid') : t('order_details_paid', 'Paid')}</Text>
+            <Text style={styles.paidText}>{t('order_details_via', 'Via')} {order?.payment?.paymentMethod || t('order_details_card_ending', 'Card ending 4242')}</Text>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Order history</Text>
+          <Text style={styles.sectionTitle}>{t('order_details_order_history', 'Order history')}</Text>
           {timeline.map((step, idx) => {
             const active = !!step.time;
             const isLast = idx === timeline.length - 1;
@@ -162,7 +164,7 @@ const OrderDetails = () => {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.historyTitle, active ? styles.historyTitleActive : null]}>{step.title}</Text>
                   <Text style={styles.historySub}>
-                    {step.time ? step.time.toLocaleString() : 'Waiting...'}
+                    {step.time ? step.time.toLocaleString() : t('order_details_waiting', 'Waiting...')}
                   </Text>
                 </View>
               </View>
@@ -175,7 +177,7 @@ const OrderDetails = () => {
           onPress={handleConfirmPickup}
           disabled={!canConfirmPickup || isUpdating}
         >
-          {isUpdating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confirmBtnText}>Confirm Pickup</Text>}
+          {isUpdating ? <ActivityIndicator color="#FFF" /> : <Text style={styles.confirmBtnText}>{t('order_details_confirm_pickup', 'Confirm Pickup')}</Text>}
         </TouchableOpacity>
       </ScrollView>
 
@@ -190,10 +192,10 @@ const OrderDetails = () => {
               <Ionicons name="checkmark" size={24} color="#2A8C8B" />
             </View>
 
-            <Text style={styles.modalTitle}>Task Completed</Text>
-            <Text style={styles.modalSub}>Average Rating and Feedback</Text>
+            <Text style={styles.modalTitle}>{t('order_details_task_completed', 'Task Completed')}</Text>
+            <Text style={styles.modalSub}>{t('order_details_avg_rating_feedback', 'Average Rating and Feedback')}</Text>
 
-            <Text style={styles.ratingLabel}>Avg. Rating</Text>
+            <Text style={styles.ratingLabel}>{t('order_details_avg_rating', 'Avg. Rating')}</Text>
             <View style={styles.starsRow}>
               {[1, 2, 3, 4, 5].map((s) => (
                 <TouchableOpacity key={s} onPress={() => setRating(s)} style={styles.starCell}>
@@ -202,23 +204,23 @@ const OrderDetails = () => {
               ))}
             </View>
             <View style={styles.starTextRow}>
-              {['Bad', 'Average', 'Good', 'Great', 'Amazing'].map((label) => (
+              {[t('order_details_bad', 'Bad'), t('order_details_average', 'Average'), t('order_details_good', 'Good'), t('order_details_great', 'Great'), t('order_details_amazing', 'Amazing')].map((label) => (
                 <Text key={label} style={styles.starLabel}>{label}</Text>
               ))}
             </View>
 
-            <Text style={[styles.ratingLabel, { marginTop: 10 }]}>Feedback Note</Text>
+            <Text style={[styles.ratingLabel, { marginTop: 10 }]}>{t('order_details_feedback_note', 'Feedback Note')}</Text>
             <TextInput
               value={feedback}
               onChangeText={setFeedback}
-              placeholder="Type here..."
+              placeholder={t('order_details_type_here', 'Type here...')}
               placeholderTextColor="#95A2AA"
               style={styles.feedbackInput}
               multiline
             />
 
             <TouchableOpacity style={styles.doneBtn} onPress={() => setShowFeedbackModal(false)}>
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.doneText}>{t('order_details_done', 'Done')}</Text>
             </TouchableOpacity>
           </View>
         </View>

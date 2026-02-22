@@ -1,5 +1,6 @@
 import { useAddToCartMutation, useGetCartQuery } from "@/store/api/cartApiSlice";
 import { useGetMyConnectionsQuery } from "@/store/api/connectionApiSlice";
+import { useTranslation } from "@/hooks/use-translation";
 import { useGetProductsByVendorQuery } from "@/store/api/product_api_slice";
 import { RootState } from "@/store/store";
 import { Ionicons } from "@expo/vector-icons";
@@ -59,6 +60,7 @@ const PRODUCTS = [
 ];
 
 const ElectronicsScreen = () => {
+  const { t } = useTranslation();
   const router = useRouter();
   const { categoryId, categoryName } = useLocalSearchParams<{ categoryId: string; categoryName: string }>();
   const [addedItems, setAddedItems] = useState<{ [key: string]: boolean }>({});
@@ -105,11 +107,11 @@ const ElectronicsScreen = () => {
         quantity: 1
       }).unwrap();
 
-      Alert.alert("Success", "Product added to cart!");
+      Alert.alert(t("success", "Success"), t("electronics_added_to_cart", "Product added to cart!"));
       // loadAddedItems will be updated via cartData change
     } catch (error: any) {
       console.error("Error adding to cart:", error);
-      Alert.alert("Error", error?.data?.message || "Failed to add to cart");
+      Alert.alert(t("error", "Error"), error?.data?.message || t("electronics_failed_add_to_cart", "Failed to add to cart"));
     }
   };
 
@@ -120,7 +122,7 @@ const ElectronicsScreen = () => {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{categoryName || "Electronics"}</Text>
+        <Text style={styles.headerTitle}>{categoryName || t("electronics_title", "Electronics")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -128,7 +130,7 @@ const ElectronicsScreen = () => {
       <View style={styles.searchBar}>
         <Ionicons name="search-outline" size={20} color="#888" />
         <TextInput
-          placeholder="Search Product.."
+          placeholder={t("electronics_search_placeholder", "Search Product..")}
           style={styles.searchInput}
           placeholderTextColor="#888"
         />
@@ -175,7 +177,7 @@ const ElectronicsScreen = () => {
               <View style={styles.ratingRow}>
                 <Ionicons name="star" size={16} color="#FFB800" />
                 <Text style={styles.ratingText}>{item.rating || "0.0"}</Text>
-                <Text style={styles.reviews}>({item.reviews || 0} reviews)</Text>
+                <Text style={styles.reviews}>({item.reviews || 0} {t("electronics_reviews", "reviews")})</Text>
               </View>
 
               {/* Price and Circular Add Button */}
@@ -183,7 +185,7 @@ const ElectronicsScreen = () => {
                 <View>
                   <Text style={styles.priceText}>
                     ${item.price}
-                    <Text style={styles.unitText}> /unit</Text>
+                    <Text style={styles.unitText}> /{t("electronics_unit", "unit")}</Text>
                   </Text>
                 </View>
 
@@ -205,6 +207,11 @@ const ElectronicsScreen = () => {
               </View>
             </TouchableOpacity>
           )}
+          ListEmptyComponent={
+            <Text style={{ textAlign: "center", color: "#6B7280", marginTop: 32 }}>
+              {t("electronics_no_products", "No products found")}
+            </Text>
+          }
         />
       )}
     </SafeAreaView>
