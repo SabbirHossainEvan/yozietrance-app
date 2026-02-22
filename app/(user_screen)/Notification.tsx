@@ -1,4 +1,5 @@
 import { useSocket } from "@/context/SocketContext";
+import { useTranslation } from "@/hooks/use-translation";
 import {
   UserNotification,
   useDeleteMyNotificationMutation,
@@ -22,20 +23,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const timeAgo = (value: string) => {
+const timeAgo = (value: string, t: (key: string, fallback?: string) => string) => {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Just now";
+  if (Number.isNaN(date.getTime())) return t("notif_just_now", "Just now");
   const diff = Date.now() - date.getTime();
   const minute = 60 * 1000;
   const hour = 60 * minute;
   const day = 24 * hour;
-  if (diff < minute) return "Just now";
-  if (diff < hour) return `${Math.floor(diff / minute)} min ago`;
-  if (diff < day) return `${Math.floor(diff / hour)}h ago`;
-  return `${Math.floor(diff / day)}d ago`;
+  if (diff < minute) return t("notif_just_now", "Just now");
+  if (diff < hour) return `${Math.floor(diff / minute)} ${t("notif_min_ago", "min ago")}`;
+  if (diff < day) return `${Math.floor(diff / hour)}${t("notif_h_ago", "h ago")}`;
+  return `${Math.floor(diff / day)}${t("notif_d_ago", "d ago")}`;
 };
 
 export default function NotificationsScreen() {
+  const { t } = useTranslation();
   const { socket } = useSocket();
   const {
     data: notifications = [],
@@ -81,31 +83,31 @@ export default function NotificationsScreen() {
   };
 
   const showOptions = (item: UserNotification) => {
-    Alert.alert("Options", "Choose an action", [
+    Alert.alert(t("notif_options", "Options"), t("notif_choose_action", "Choose an action"), [
       !item.isRead
         ? {
-            text: "Mark as read",
+            text: t("notif_mark_as_read", "Mark as read"),
             onPress: async () => {
               try {
                 await markAsRead(item.id).unwrap();
               } catch (error: any) {
-                Alert.alert("Error", error?.data?.message || "Failed to mark as read");
+                Alert.alert(t("error", "Error"), error?.data?.message || t("notif_failed_mark_read", "Failed to mark as read"));
               }
             },
           }
-        : { text: "Read", style: "cancel" },
+        : { text: t("notif_read", "Read"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("notif_delete", "Delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await deleteNotification(item.id).unwrap();
           } catch (error: any) {
-            Alert.alert("Error", error?.data?.message || "Failed to delete notification");
+            Alert.alert(t("error", "Error"), error?.data?.message || t("notif_failed_delete", "Failed to delete notification"));
           }
         },
       },
-      { text: "Close", style: "cancel" },
+      { text: t("notif_close", "Close"), style: "cancel" },
     ]);
   };
 
@@ -116,12 +118,12 @@ export default function NotificationsScreen() {
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.titleText} numberOfLines={1}>
-          {item.title || "Notification"}
+          {item.title || t("notif_notification", "Notification")}
         </Text>
         <Text style={styles.messageText} numberOfLines={2}>
           {item.message}
         </Text>
-        <Text style={styles.timeText}>{timeAgo(item.createdAt)}</Text>
+        <Text style={styles.timeText}>{timeAgo(item.createdAt, t)}</Text>
       </View>
 
       <TouchableOpacity style={styles.moreButton} onPress={() => showOptions(item)}>
@@ -137,19 +139,19 @@ export default function NotificationsScreen() {
         <TouchableOpacity onPress={() => router.replace("/(users)")}>
           <Ionicons name="chevron-back" size={28} color="black" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications ({unreadCount})</Text>
+        <Text style={styles.headerTitle}>{t("notif_notifications", "Notifications")} ({unreadCount})</Text>
         <TouchableOpacity
           disabled={!unreadCount || isMarkingAllRead}
           onPress={async () => {
             try {
               await markAllRead().unwrap();
             } catch (error: any) {
-              Alert.alert("Error", error?.data?.message || "Failed to mark all as read");
+              Alert.alert(t("error", "Error"), error?.data?.message || t("notif_failed_mark_all_read", "Failed to mark all as read"));
             }
           }}
         >
           <Text style={[styles.markAllText, (!unreadCount || isMarkingAllRead) && styles.markAllDisabled]}>
-            Mark all
+            {t("notif_mark_all", "Mark all")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -165,7 +167,7 @@ export default function NotificationsScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           refreshControl={<RefreshControl refreshing={isFetching} onRefresh={refetch} />}
-          ListEmptyComponent={<Text style={styles.emptyText}>No notifications</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{t("notif_no_notifications", "No notifications")}</Text>}
         />
       )}
 
